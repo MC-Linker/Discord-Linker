@@ -1,0 +1,6 @@
+name: SMPBotPlugin
+version: '${project.version}'
+main: me.lianecx.smpbotplugin.SMPBotPlugin
+api-version: 1.17
+authors: [ Lianecx ]
+description: The official SMPBotPlugin
