@@ -1,7 +1,6 @@
 package me.lianecx.smpbotplugin;
 
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
+import com.google.gson.*;
 import org.bukkit.Bukkit;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -24,7 +23,6 @@ public class ChatListeners implements Listener  {
             reader.close();
             return chat;
         } catch (IOException err) {
-            err.printStackTrace();
             return false;
         }
     }
@@ -34,33 +32,36 @@ public class ChatListeners implements Listener  {
             try {
                 Reader reader = Files.newBufferedReader(Paths.get(Bukkit.getServer().getPluginManager().getPlugin("SMPBotPlugin").getDataFolder() + "/connection.conn"));
                 JsonObject parser = new JsonParser().parse(reader).getAsJsonObject();
+                JsonArray types = parser.get("types").getAsJsonArray();
+
+                JsonObject typeObject = new JsonObject();
+                typeObject.addProperty("type", String.valueOf(type));
+                typeObject.addProperty("enabled", true);
+                if(!types.contains(typeObject)) return;
 
                 JsonObject chatJson = new JsonObject();
                 chatJson.addProperty("type", type);
                 chatJson.addProperty("player", player);
                 chatJson.addProperty("message", message);
-                chatJson.addProperty("channel", parser.get("channel").getAsString());
-                Bukkit.getLogger().info(chatJson.toString());
+                chatJson.add("channel", parser.get("channel"));
+                chatJson.add("guild", parser.get("guild"));
 
                 byte[] out = chatJson.toString().getBytes(StandardCharsets.UTF_8);
                 int length = out.length;
                 //TODO change IP
-                HttpURLConnection conn = (HttpURLConnection) new URL("http://192.168.178.26:3100/chat").openConnection();
+                HttpURLConnection conn = (HttpURLConnection) new URL("http://localhost:3100/chat").openConnection();
+                conn.setRequestMethod("POST");
                 conn.setRequestProperty("Content-type", "application/json");
                 conn.setRequestProperty("Accept", "application/json");
                 conn.setDoOutput(true);
                 conn.setFixedLengthStreamingMode(length);
-                conn.setRequestMethod("POST");
                 conn.connect();
 
                 OutputStream outputStream = conn.getOutputStream();
                 outputStream.write(out);
 
-                //TODO remove
-                Bukkit.getLogger().info(String.valueOf(conn.getResponseCode()));
-                Bukkit.getLogger().info("Sent Message: " + message);
-            } catch(IOException err) {
-                Bukkit.getLogger().info("Cannot send Message.");
+                conn.getInputStream();
+            } catch(IOException ignored) {
             }
         }
     }
