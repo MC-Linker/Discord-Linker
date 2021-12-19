@@ -45,24 +45,23 @@ public class ChatListeners implements Listener  {
                 chatJson.addProperty("message", message);
                 chatJson.add("channel", parser.get("channel"));
                 chatJson.add("guild", parser.get("guild"));
+                chatJson.add("ip", parser.get("ip"));
 
                 byte[] out = chatJson.toString().getBytes(StandardCharsets.UTF_8);
                 int length = out.length;
                 //TODO change IP
-                HttpURLConnection conn = (HttpURLConnection) new URL("http://localhost:3100/chat").openConnection();
+                HttpURLConnection conn = (HttpURLConnection) new URL("http://87.161.150.145:3100/chat").openConnection();
                 conn.setRequestMethod("POST");
                 conn.setRequestProperty("Content-type", "application/json");
                 conn.setRequestProperty("Accept", "application/json");
                 conn.setDoOutput(true);
                 conn.setFixedLengthStreamingMode(length);
-                conn.connect();
 
                 OutputStream outputStream = conn.getOutputStream();
                 outputStream.write(out);
 
                 conn.getInputStream();
-            } catch(IOException ignored) {
-            }
+            } catch(IOException ignored) {}
         }
     }
 
