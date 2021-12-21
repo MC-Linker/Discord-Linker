@@ -1,8 +1,6 @@
 package me.lianecx.smpbotplugin;
 
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParseException;
-import com.google.gson.JsonParser;
+import com.google.gson.*;
 import express.Express;
 import express.http.request.Request;
 import express.utils.Status;
@@ -17,8 +15,6 @@ import org.bukkit.command.CommandException;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.*;
-import java.net.BindException;
-import java.net.InetAddress;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -36,23 +32,31 @@ import java.util.stream.Collectors;
 
 public final class SMPBotPlugin extends JavaPlugin {
     public Express app;
+    public static JsonObject connJson;
 
     @Override
     public void onEnable() {
         getConfig().options().copyDefaults();
         saveDefaultConfig();
+
+        try {
+            Reader connReader = Files.newBufferedReader(Paths.get(getDataFolder() + "/connection.conn"));
+            JsonElement parser = new JsonParser().parse(connReader);
+            connJson = parser.isJsonObject() ? parser.getAsJsonObject() : new JsonObject();
+        } catch (IOException ignored) {}
+
         app = loadExpress();
         getServer().getPluginManager().registerEvents(new ChatListeners(), this);
 
         ChatListeners.send("The server has opened!", 6, null);
-        getLogger().info(ChatColor.GREEN + "[SMPBot] Plugin enabled.");
+        getLogger().info(ChatColor.GREEN + "Plugin enabled.");
     }
 
     @Override
     public void onDisable() {
         app.stop();
         ChatListeners.send("The server has shutdown!", 7, null);
-        getLogger().info(ChatColor.RED + "[SMPBot] Plugin disabled.");
+        getLogger().info(ChatColor.RED + "Plugin disabled.");
     }
 
     public Express loadExpress() {
@@ -60,20 +64,21 @@ public final class SMPBotPlugin extends JavaPlugin {
 
         //GET localhost:11111/file/get/?hash=hash&path=/path/to/file
         app.get("/file/get/", (req, res) -> {
-            if(checkHash(req.getQuery("hash"))) {
-                try {
-                    Path file = Paths.get(req.getQuery("path"));
-                    if(!res.sendAttachment(file)) {
-                        res.setStatus(Status._500);
-                        res.send("Invalid Path");
-                    }
-                } catch (InvalidPathException err) {
-                    res.setStatus(Status._500);
-                    res.send(err.toString());
-                }
-            } else {
+            if(wrongHash(req.getQuery("hash"))) {
                 res.setStatus(Status._400);
                 res.send("Wrong hash");
+                return;
+            }
+
+            try {
+                Path file = Paths.get(req.getQuery("path"));
+                if(!res.sendAttachment(file)) {
+                    res.setStatus(Status._500);
+                    res.send("Invalid Path");
+                }
+            } catch (InvalidPathException err) {
+                res.setStatus(Status._500);
+                res.send(err.toString());
             }
         });
 
@@ -81,114 +86,120 @@ public final class SMPBotPlugin extends JavaPlugin {
             { fileStreamToFile }
          */
         app.post("/file/put/", (req, res) -> {
-            if(checkHash(req.getQuery("hash"))) {
-                try {
-                    FileOutputStream outputStream = new FileOutputStream(req.getQuery("path"));
-                    req.getBody().transferTo(outputStream);
-                    res.send("Success");
-                } catch (InvalidPathException | IOException err) {
-                    res.setStatus(Status._500);
-                    res.send(err.toString());
-                }
-            } else {
+            if(wrongHash(req.getQuery("hash"))) {
                 res.setStatus(Status._400);
                 res.send("Wrong hash");
+                return;
+            }
+
+            try {
+                FileOutputStream outputStream = new FileOutputStream(req.getQuery("path"));
+                req.getBody().transferTo(outputStream);
+                res.send("Success");
+            } catch (InvalidPathException | IOException err) {
+                res.setStatus(Status._500);
+                res.send(err.toString());
             }
         });
 
         //GET localhost:11111/file/find/?hash=hash&file=level.dat&path=/path/to/file&depth=4
         app.get("/file/find/", (req, res) -> {
-            if(checkHash(req.getQuery("hash"))) {
-                try {
-                    List<Path> searchFiles = Files.walk(Paths.get(req.getQuery("path")), Integer.parseInt(req.getQuery("depth")))
-                        .filter(Files::isRegularFile)
-                        .filter(file -> file.getFileName().toString().equalsIgnoreCase(req.getQuery("file")))
-                        .collect(Collectors.toList());
-                    res.send(searchFiles.get(0).toFile().getCanonicalPath());
-                } catch (IOException err) {
-                    res.setStatus(Status._500);
-                    res.send(err.toString());
-                }
-            } else {
+            if(wrongHash(req.getQuery("hash"))) {
                 res.setStatus(Status._400);
                 res.send("Wrong hash");
+                return;
+            }
+
+            try {
+                List<Path> searchFiles = Files.walk(Paths.get(req.getQuery("path")), Integer.parseInt(req.getQuery("depth")))
+                    .filter(Files::isRegularFile)
+                    .filter(file -> file.getFileName().toString().equalsIgnoreCase(req.getQuery("file")))
+                    .collect(Collectors.toList());
+                res.send(searchFiles.get(0).toFile().getCanonicalPath());
+            } catch (IOException err) {
+                res.setStatus(Status._500);
+                res.send(err.toString());
             }
         });
 
         //GET localhost:11111/command/?hash=hash&cmd=ban+Lianecx
         app.get("/command/", (req, res) -> {
-            if(checkHash(req.getQuery("hash"))) {
-                try {
-                    getServer().getScheduler().runTask(this, () ->
-                            getServer().dispatchCommand(Bukkit.getConsoleSender(), URLDecoder.decode(req.getQuery("cmd"), StandardCharsets.UTF_8)));
-                    res.send("Success");
-                } catch(CommandException | IllegalArgumentException err) {
-                    res.setStatus(Status._500);
-                    res.send(err.toString());
-                }
-            } else {
+            if(wrongHash(req.getQuery("hash"))) {
                 res.setStatus(Status._400);
                 res.send("Wrong hash");
+                return;
+            }
+
+            try {
+                getServer().getScheduler().runTask(this, () ->
+                        getServer().dispatchCommand(Bukkit.getConsoleSender(), URLDecoder.decode(req.getQuery("cmd"), StandardCharsets.UTF_8)));
+                res.send("Success");
+            } catch(CommandException | IllegalArgumentException err) {
+                res.setStatus(Status._500);
+                res.send(err.toString());
             }
         });
 
         //GET localhost:11111/chat/?hash=hash"&msg=bruhhhhh&username=Lianecx
         app.get("/chat/", (req, res) -> {
-            if(checkHash(req.getQuery("hash"))) {
-                String msg = req.getQuery("msg");
-                String username = req.getQuery("username");
-                msg = URLDecoder.decode(msg, StandardCharsets.UTF_8);
-                username = URLDecoder.decode(username, StandardCharsets.UTF_8);
-
-                ComponentBuilder messageBuilder = new ComponentBuilder("Discord")
-                    .bold(true)
-                    .color(net.md_5.bungee.api.ChatColor.BLUE)
-                    .event(new ClickEvent(ClickEvent.Action.OPEN_URL, "https://top.gg/bot/712759741528408064"))
-                    .event(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new Text("Message sent using \u00A76SMP-Bot")))
-                    .append(" | " + username, ComponentBuilder.FormatRetention.NONE)
-                        .bold(true)
-                    .append(" >> ", ComponentBuilder.FormatRetention.NONE)
-                        .color(net.md_5.bungee.api.ChatColor.DARK_GRAY);
-
-                Pattern urlPattern = Pattern.compile("((http://|https://)?(\\S*)?(([a-zA-Z0-9-]){2,}\\.){1,4}([a-zA-Z]){2,6}(/([a-zA-Z-_/.0-9#:?=&;,]*)?)?)");
-                Matcher matcher = urlPattern.matcher(msg);
-                if (matcher.find()) {
-                    String url = matcher.group();
-                    List<String> msgArray = Arrays.stream(msg.split("\\s+")).toList();
-
-                    for (String m : msgArray) {
-                        if(m.equals(url)) {
-                            messageBuilder.append(m + " ", ComponentBuilder.FormatRetention.NONE)
-                                .event(new ClickEvent(ClickEvent.Action.OPEN_URL, m))
-                                .underlined(true);
-                        } else messageBuilder.append(m + " ", ComponentBuilder.FormatRetention.NONE);
-                    }
-                } else messageBuilder.append(msg, ComponentBuilder.FormatRetention.NONE);
-
-                BaseComponent[] messageComponent = messageBuilder.create();
-                getServer().spigot().broadcast(messageComponent);
-                res.send("Success");
-            } else {
+            if(wrongHash(req.getQuery("hash"))) {
                 res.setStatus(Status._400);
                 res.send("Wrong hash");
+                return;
             }
+
+            String msg = req.getQuery("msg");
+            String username = req.getQuery("username");
+            msg = URLDecoder.decode(msg, StandardCharsets.UTF_8);
+            username = URLDecoder.decode(username, StandardCharsets.UTF_8);
+
+            ComponentBuilder messageBuilder = new ComponentBuilder("Discord")
+                .bold(true)
+                .color(net.md_5.bungee.api.ChatColor.BLUE)
+                .event(new ClickEvent(ClickEvent.Action.OPEN_URL, "https://top.gg/bot/712759741528408064"))
+                .event(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new Text("Message sent using \u00A76SMP-Bot")))
+                .append(" | " + username, ComponentBuilder.FormatRetention.NONE)
+                    .bold(true)
+                .append(" >> ", ComponentBuilder.FormatRetention.NONE)
+                    .color(net.md_5.bungee.api.ChatColor.DARK_GRAY);
+
+            Pattern urlPattern = Pattern.compile("((http://|https://)?(\\S*)?(([a-zA-Z0-9-]){2,}\\.){1,4}([a-zA-Z]){2,6}(/([a-zA-Z-_/.0-9#:?=&;,]*)?)?)");
+            Matcher matcher = urlPattern.matcher(msg);
+            if (matcher.find()) {
+                String url = matcher.group();
+                List<String> msgArray = Arrays.stream(msg.split("\\s+")).toList();
+
+                for (String m : msgArray) {
+                    if(m.equals(url)) {
+                        messageBuilder.append(m + " ", ComponentBuilder.FormatRetention.NONE)
+                            .event(new ClickEvent(ClickEvent.Action.OPEN_URL, m))
+                            .underlined(true);
+                    } else messageBuilder.append(m + " ", ComponentBuilder.FormatRetention.NONE);
+                }
+            } else messageBuilder.append(msg, ComponentBuilder.FormatRetention.NONE);
+
+            BaseComponent[] messageComponent = messageBuilder.create();
+            getServer().spigot().broadcast(messageComponent);
+            res.send("Success");
         });
 
         //GET localhost:11111/disconnect/?hash=hash
         app.get("/disconnect/", (req, res) -> {
-            if(checkHash(req.getQuery("hash"))) {
-                File connection = new File(getDataFolder() + "/connection.conn");
-                boolean deleted = connection.delete();
-                if(deleted) {
-                    getLogger().info("Disconnected from discord...");
-                    res.send("Success");
-                } else {
-                    res.setStatus(Status._500);
-                    res.send("Cannot delete file");
-                }
-            } else {
+            if(wrongHash(req.getQuery("hash"))) {
                 res.setStatus(Status._400);
-                res.send("Wrong hash or IP");
+                res.send("Wrong hash");
+                return;
+            }
+
+            connJson = new JsonObject();
+            File connection = new File(getDataFolder() + "/connection.conn");
+            boolean deleted = connection.delete();
+            if(deleted) {
+                getLogger().info("Disconnected from discord...");
+                res.send("Success");
+            } else {
+                res.setStatus(Status._500);
+                res.send("Could not delete file");
             }
         });
 
@@ -210,39 +221,45 @@ public final class SMPBotPlugin extends JavaPlugin {
         app.post("/connect/", (req, res) -> {
             getLogger().info("Connection request...");
             JsonObject parser = new JsonParser().parse(new InputStreamReader(req.getBody())).getAsJsonObject();
-            if(checkConnection(req, parser.get("hash").getAsString())) {
-                try {
-                    JsonObject connectJson = new JsonObject();
-                    connectJson.addProperty("hash", createHash(parser.get("hash").getAsString()));
-                    connectJson.add("chat", parser.get("chat"));
-                    connectJson.add("guild", parser.get("guild"));
-                    connectJson.add("ip", parser.get("ip"));
-                    if(parser.get("chat").getAsBoolean()) {
-                        connectJson.add("types", parser.get("types").getAsJsonArray());
-                        connectJson.add("channel", parser.get("channel"));
-                    }
-
-                    FileWriter writer = new FileWriter(getDataFolder() + "/connection.conn");
-                    writer.write(connectJson.toString());
-                    writer.close();
-
-                    connectJson.remove("hash");
-                    connectJson.add("hash", parser.get("hash"));
-                    connectJson.add("ip", parser.get("ip"));
-                    connectJson.addProperty("version", getServer().getBukkitVersion());
-                    connectJson.addProperty("path", URLEncoder.encode(getServer().getWorlds().get(0).getWorldFolder().getCanonicalPath().replaceAll("\\\\", "/"), StandardCharsets.UTF_8));
-
-                    res.send(connectJson.toString());
-                    getLogger().info("Successfully connected with discord server. Id: " + parser.get("guild"));
-                } catch (IOException | NoSuchAlgorithmException err) {
-                    getLogger().info("Connection unsuccessful");
-                    res.setStatus(Status._500);
-                    res.send(err.toString());
-                }
-            } else {
+            if(!checkConnection(req, parser.get("hash").getAsString())) {
                 getLogger().info("Connection unsuccessful");
                 res.setStatus(Status._400);
                 res.send("Wrong hash-format or IP");
+                return;
+            }
+
+            try {
+                connJson.addProperty("hash", createHash(parser.get("hash").getAsString()));
+                connJson.add("chat", parser.get("chat"));
+                connJson.add("guild", parser.get("guild"));
+                connJson.add("ip", parser.get("ip"));
+                if(parser.get("chat").getAsBoolean()) {
+                    connJson.add("types", parser.get("types").getAsJsonArray());
+                    connJson.add("channel", parser.get("channel"));
+                }
+
+                FileWriter writer = new FileWriter(getDataFolder() + "/connection.conn");
+                writer.write(connJson.toString());
+                writer.close();
+
+                JsonObject botConnJson = new JsonObject();
+                botConnJson.add("chat", parser.get("chat"));
+                botConnJson.add("guild", parser.get("guild"));
+                botConnJson.add("ip", parser.get("ip"));
+                if(parser.get("chat").getAsBoolean()) {
+                    botConnJson.add("types", parser.get("types").getAsJsonArray());
+                    botConnJson.add("channel", parser.get("channel"));
+                }
+                botConnJson.add("hash", parser.get("hash"));
+                botConnJson.addProperty("version", getServer().getBukkitVersion());
+                botConnJson.addProperty("path", URLEncoder.encode(getServer().getWorlds().get(0).getWorldFolder().getCanonicalPath().replaceAll("\\\\", "/"), StandardCharsets.UTF_8));
+
+                res.send(botConnJson.toString());
+                getLogger().info("Successfully connected with discord server. Id: " + parser.get("guild"));
+            } catch (IOException | NoSuchAlgorithmException err) {
+                getLogger().info("Connection unsuccessful");
+                res.setStatus(Status._500);
+                res.send(err.toString());
             }
         });
 
@@ -255,17 +272,15 @@ public final class SMPBotPlugin extends JavaPlugin {
         return app;
     }
 
-    public boolean checkHash(String hash) {
+    public boolean wrongHash(String hash) {
         try {
-            Reader reader = Files.newBufferedReader(Paths.get(getDataFolder() + "/connection.conn"));
-            JsonObject parser = new JsonParser().parse(reader).getAsJsonObject();
-            String correctHash = parser.get("hash").getAsString();
-            reader.close();
+            if(connJson.get("hash") == null) return true;
+            String correctHash = connJson.get("hash").getAsString();
 
             hash = URLEncoder.encode(hash, StandardCharsets.UTF_8);
-            return correctHash.equals(createHash(hash));
-        } catch(IOException | JsonParseException | NoSuchAlgorithmException err) {
-            return false;
+            return !correctHash.equals(createHash(hash));
+        } catch(NoSuchAlgorithmException err) {
+            return true;
         }
     }
 
