@@ -5,26 +5,29 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.player.*;
+import org.bukkit.event.server.ServerCommandEvent;
 
 import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 
-import static me.lianecx.smpbotplugin.SMPBotPlugin.connJson;
-
 public class ChatListeners implements Listener  {
+    private static final SMPBotPlugin PLUGIN = SMPBotPlugin.getPlugin();
+
     public static boolean shouldChat() {
-        if(connJson.get("chat") == null) return false;
-        return connJson.get("chat").getAsBoolean();
+        if(SMPBotPlugin.getConnJson() == null || SMPBotPlugin.getConnJson().get("chat") == null) return false;
+        return SMPBotPlugin.getConnJson().get("chat").getAsBoolean();
     }
 
     public static void send(String message, int type, String player) {
         if(!shouldChat()) return;
 
         try {
-            JsonArray types = connJson.get("types").getAsJsonArray();
+            //TODO Change IP
+            HttpURLConnection conn = (HttpURLConnection) new URL("http://91.50.83.91:3100/chat").openConnection();
 
+            JsonArray types = SMPBotPlugin.getConnJson().get("types").getAsJsonArray();
             JsonObject typeObject = new JsonObject();
             typeObject.addProperty("type", String.valueOf(type));
             typeObject.addProperty("enabled", true);
@@ -34,14 +37,13 @@ public class ChatListeners implements Listener  {
             chatJson.addProperty("type", type);
             chatJson.addProperty("player", player);
             chatJson.addProperty("message", message);
-            chatJson.add("channel", connJson.get("channel"));
-            chatJson.add("guild", connJson.get("guild"));
-            chatJson.add("ip", connJson.get("ip"));
+            chatJson.add("channel", SMPBotPlugin.getConnJson().get("channel"));
+            chatJson.add("guild", SMPBotPlugin.getConnJson().get("guild"));
+            chatJson.add("ip", SMPBotPlugin.getConnJson().get("ip"));
 
             byte[] out = chatJson.toString().getBytes(StandardCharsets.UTF_8);
             int length = out.length;
-            //TODO change IP
-            HttpURLConnection conn = (HttpURLConnection) new URL("http://87.161.150.145:3100/chat").openConnection();
+
             conn.setRequestMethod("POST");
             conn.setRequestProperty("Content-type", "application/json");
             conn.setRequestProperty("Accept", "application/json");
@@ -57,31 +59,43 @@ public class ChatListeners implements Listener  {
 
     @EventHandler
     public void onChatmessage(AsyncPlayerChatEvent event) {
-        send(event.getMessage(), 0, event.getPlayer().getDisplayName());
+        PLUGIN.getServer().getScheduler().runTaskAsynchronously(PLUGIN, () ->
+            send(event.getMessage(), 0, event.getPlayer().getDisplayName()));
     }
 
     @EventHandler
     public void onPlayerJoin(PlayerJoinEvent event) {
-        send(event.getJoinMessage(), 1, event.getPlayer().getDisplayName());
+        PLUGIN.getServer().getScheduler().runTaskAsynchronously(PLUGIN, () ->
+                send(event.getJoinMessage(), 1, event.getPlayer().getDisplayName()));
     }
 
     @EventHandler
     public void onPlayerQuit(PlayerQuitEvent event) {
-        send(event.getQuitMessage(), 2, event.getPlayer().getDisplayName());
+        PLUGIN.getServer().getScheduler().runTaskAsynchronously(PLUGIN, () ->
+            send(event.getQuitMessage(), 2, event.getPlayer().getDisplayName()));
     }
 
     @EventHandler
     public void onAdvancement(PlayerAdvancementDoneEvent event) {
-        send(event.getAdvancement().getKey().toString(), 3, event.getPlayer().getDisplayName());
+        PLUGIN.getServer().getScheduler().runTaskAsynchronously(PLUGIN, () ->
+            send(event.getAdvancement().getKey().toString(), 3, event.getPlayer().getDisplayName()));
     }
 
     @EventHandler
     public void onPlayerDeath(PlayerDeathEvent event) {
-        send(event.getDeathMessage(), 4, event.getEntity().getDisplayName());
+        PLUGIN.getServer().getScheduler().runTaskAsynchronously(PLUGIN, () ->
+            send(event.getDeathMessage(), 4, event.getEntity().getDisplayName()));
     }
 
     @EventHandler
-    public void onCommand(PlayerCommandPreprocessEvent event) {
-        send(event.getMessage(), 5, event.getPlayer().getDisplayName());
+    public void onPlayerCommand(PlayerCommandPreprocessEvent event) {
+        PLUGIN.getServer().getScheduler().runTaskAsynchronously(PLUGIN, () ->
+            send(event.getMessage(), 5, event.getPlayer().getDisplayName()));
+    }
+
+    @EventHandler
+    public void onServerCommand(ServerCommandEvent event) {
+        PLUGIN.getServer().getScheduler().runTaskAsynchronously(PLUGIN, () ->
+                send(event.getCommand(), 5, event.getSender().getName()));
     }
 }

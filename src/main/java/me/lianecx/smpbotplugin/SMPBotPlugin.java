@@ -1,6 +1,8 @@
 package me.lianecx.smpbotplugin;
 
-import com.google.gson.*;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import express.Express;
 import express.http.request.Request;
 import express.utils.Status;
@@ -31,32 +33,43 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 public final class SMPBotPlugin extends JavaPlugin {
-    public Express app;
-    public static JsonObject connJson;
+    private static Express app;
+    private static JsonObject connJson;
+    private static SMPBotPlugin plugin;
 
     @Override
     public void onEnable() {
+        plugin = this;
         getConfig().options().copyDefaults();
         saveDefaultConfig();
-
-        try {
-            Reader connReader = Files.newBufferedReader(Paths.get(getDataFolder() + "/connection.conn"));
-            JsonElement parser = new JsonParser().parse(connReader);
-            connJson = parser.isJsonObject() ? parser.getAsJsonObject() : new JsonObject();
-        } catch (IOException ignored) {}
-
-        app = loadExpress();
         getServer().getPluginManager().registerEvents(new ChatListeners(), this);
 
-        ChatListeners.send("The server has opened!", 6, null);
+        getServer().getScheduler().runTaskAsynchronously(this, () -> {
+            try {
+                Reader connReader = Files.newBufferedReader(Paths.get(getDataFolder() + "/connection.conn"));
+                JsonElement parser = new JsonParser().parse(connReader);
+                connJson = parser.isJsonObject() ? parser.getAsJsonObject() : new JsonObject();
+
+                ChatListeners.send("The server has opened!", 6, null);
+            } catch (IOException ignored) {}
+        });
+
+        app = loadExpress();
         getLogger().info(ChatColor.GREEN + "Plugin enabled.");
     }
 
     @Override
     public void onDisable() {
-        app.stop();
         ChatListeners.send("The server has shutdown!", 7, null);
         getLogger().info(ChatColor.RED + "Plugin disabled.");
+        app.stop();
+    }
+
+    public static JsonObject getConnJson() {
+        return connJson;
+    }
+    public static SMPBotPlugin getPlugin() {
+        return plugin;
     }
 
     public Express loadExpress() {
@@ -71,7 +84,8 @@ public final class SMPBotPlugin extends JavaPlugin {
             }
 
             try {
-                Path file = Paths.get(req.getQuery("path"));
+                Path file = Paths.get(URLDecoder.decode(req.getQuery("path"), StandardCharsets.UTF_8));
+
                 if(!res.sendAttachment(file)) {
                     res.setStatus(Status._500);
                     res.send("Invalid Path");
@@ -93,7 +107,7 @@ public final class SMPBotPlugin extends JavaPlugin {
             }
 
             try {
-                FileOutputStream outputStream = new FileOutputStream(req.getQuery("path"));
+                FileOutputStream outputStream = new FileOutputStream(URLDecoder.decode(req.getQuery("path"), StandardCharsets.UTF_8));
                 req.getBody().transferTo(outputStream);
                 res.send("Success");
             } catch (InvalidPathException | IOException err) {
@@ -111,7 +125,9 @@ public final class SMPBotPlugin extends JavaPlugin {
             }
 
             try {
-                List<Path> searchFiles = Files.walk(Paths.get(req.getQuery("path")), Integer.parseInt(req.getQuery("depth")))
+                Path path = Paths.get(URLDecoder.decode(req.getQuery("path"), StandardCharsets.UTF_8));
+
+                List<Path> searchFiles = Files.walk(path, Integer.parseInt(req.getQuery("depth")))
                     .filter(Files::isRegularFile)
                     .filter(file -> file.getFileName().toString().equalsIgnoreCase(req.getQuery("file")))
                     .collect(Collectors.toList());
@@ -157,7 +173,7 @@ public final class SMPBotPlugin extends JavaPlugin {
                 .bold(true)
                 .color(net.md_5.bungee.api.ChatColor.BLUE)
                 .event(new ClickEvent(ClickEvent.Action.OPEN_URL, "https://top.gg/bot/712759741528408064"))
-                .event(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new Text("Message sent using \u00A76SMP-Bot")))
+                .event(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new Text("Message sent using \u00A76Minecraft SMP-Bot")))
                 .append(" | " + username, ComponentBuilder.FormatRetention.NONE)
                     .bold(true)
                 .append(" >> ", ComponentBuilder.FormatRetention.NONE)
@@ -229,6 +245,7 @@ public final class SMPBotPlugin extends JavaPlugin {
             }
 
             try {
+                connJson = new JsonObject();
                 connJson.addProperty("hash", createHash(parser.get("hash").getAsString()));
                 connJson.add("chat", parser.get("chat"));
                 connJson.add("guild", parser.get("guild"));
