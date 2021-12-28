@@ -27,8 +27,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -147,8 +145,7 @@ public final class SMPPlugin extends JavaPlugin {
          */
         app.post("/log/", (req, res) -> {
             JsonObject parser = new JsonParser().parse(new InputStreamReader(req.getBody())).getAsJsonObject();
-            //TODO Add hash to bot
-            if(!checkConnection(req, parser.get("hash").getAsString())) {
+            if(wrongConnection(req, parser.get("hash").getAsString())) {
                 res.setStatus(Status._400);
                 res.send("Wrong hash-format or IP");
                 return;
@@ -256,7 +253,7 @@ public final class SMPPlugin extends JavaPlugin {
         app.post("/connect/", (req, res) -> {
             getLogger().info("Connection request...");
             JsonObject parser = new JsonParser().parse(new InputStreamReader(req.getBody())).getAsJsonObject();
-            if(!checkConnection(req, parser.get("hash").getAsString())) {
+            if(wrongConnection(req, parser.get("hash").getAsString())) {
                 getLogger().info("Connection unsuccessful");
                 res.setStatus(Status._400);
                 res.send("Wrong hash-format or IP");
@@ -320,12 +317,13 @@ public final class SMPPlugin extends JavaPlugin {
         }
     }       
 
-    public boolean checkConnection(Request req, String hash) {
+    public boolean wrongConnection(Request req, String hash) {
         try {
             String correctAddress = InetAddress.getByName("smpbot.duckdns.org").getHostAddress();
-            return URLDecoder.decode(hash, StandardCharsets.UTF_8).matches("^([A-Za-z0-9+/]{4})*([A-Za-z0-9+/]{3}=|[A-Za-z0-9+/]{2}==)?$") && URLDecoder.decode(hash, StandardCharsets.UTF_8).length() >= 30 && req.getIp().equals(correctAddress);
+            hash = URLDecoder.decode(hash, StandardCharsets.UTF_8);
+            return !hash.matches("^([A-Za-z0-9+/]{4})*([A-Za-z0-9+/]{3}=|[A-Za-z0-9+/]{2}==)?$") || hash.length()<30 || !req.getIp().equals(correctAddress);
         } catch (UnknownHostException e) {
-            return false;
+            return true;
         }
     }
 
