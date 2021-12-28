@@ -1,6 +1,7 @@
 name: SMPBotPlugin
 version: ${project.version}
-main: me.lianecx.smpbotplugin.SMPBotPlugin
+main: me.lianecx.smpplugin.SMPPlugin
 api-version: 1.17
 authors: [ Lianecx ]
-description: The official minecraft plugin to connect with the SMP Minecraft Bot
+description: Official plugin for the Minecraft SMP Bot.
+prefix: SMP-Plugin

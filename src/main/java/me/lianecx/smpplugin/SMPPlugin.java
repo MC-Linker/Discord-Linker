@@ -1,4 +1,4 @@
-package me.lianecx.smpbotplugin;
+package me.lianecx.smpplugin;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -10,15 +10,16 @@ import net.md_5.bungee.api.chat.BaseComponent;
 import net.md_5.bungee.api.chat.ClickEvent;
 import net.md_5.bungee.api.chat.ComponentBuilder;
 import net.md_5.bungee.api.chat.HoverEvent;
-import net.md_5.bungee.api.chat.hover.content.Text;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.command.CommandException;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.*;
+import java.net.InetAddress;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
+import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
@@ -26,16 +27,17 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.Arrays;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-public final class SMPBotPlugin extends JavaPlugin {
+public final class SMPPlugin extends JavaPlugin {
     private static Express app;
     private static JsonObject connJson;
-    private static SMPBotPlugin plugin;
+    private static SMPPlugin plugin;
 
     @Override
     public void onEnable() {
@@ -68,7 +70,7 @@ public final class SMPBotPlugin extends JavaPlugin {
     public static JsonObject getConnJson() {
         return connJson;
     }
-    public static SMPBotPlugin getPlugin() {
+    public static SMPPlugin getPlugin() {
         return plugin;
     }
 
@@ -138,6 +140,23 @@ public final class SMPBotPlugin extends JavaPlugin {
             }
         });
 
+        /*POST localhost:11111/log/
+            {
+                "message": "some message"
+            }
+         */
+        app.post("/log/", (req, res) -> {
+            JsonObject parser = new JsonParser().parse(new InputStreamReader(req.getBody())).getAsJsonObject();
+            //TODO Add hash to bot
+            if(!checkConnection(req, parser.get("hash").getAsString())) {
+                res.setStatus(Status._400);
+                res.send("Wrong hash-format or IP");
+                return;
+            }
+            getLogger().info(parser.get("message").getAsString());
+            res.send("Success");
+        });
+
         //GET localhost:11111/command/?hash=hash&cmd=ban+Lianecx
         app.get("/command/", (req, res) -> {
             if(wrongHash(req.getQuery("hash"))) {
@@ -173,7 +192,7 @@ public final class SMPBotPlugin extends JavaPlugin {
                 .bold(true)
                 .color(net.md_5.bungee.api.ChatColor.BLUE)
                 .event(new ClickEvent(ClickEvent.Action.OPEN_URL, "https://top.gg/bot/712759741528408064"))
-                .event(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new Text("Message sent using \u00A76Minecraft SMP-Bot")))
+                .event(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new ComponentBuilder("Message sent using \u00A76Minecraft SMP-Bot").create()))
                 .append(" | " + username, ComponentBuilder.FormatRetention.NONE)
                     .bold(true)
                 .append(" >> ", ComponentBuilder.FormatRetention.NONE)
@@ -183,7 +202,7 @@ public final class SMPBotPlugin extends JavaPlugin {
             Matcher matcher = urlPattern.matcher(msg);
             if (matcher.find()) {
                 String url = matcher.group();
-                List<String> msgArray = Arrays.stream(msg.split("\\s+")).toList();
+                List<String> msgArray = List.of(msg.split("\\s+"));
 
                 for (String m : msgArray) {
                     if(m.equals(url)) {
@@ -299,11 +318,15 @@ public final class SMPBotPlugin extends JavaPlugin {
         } catch(NoSuchAlgorithmException err) {
             return true;
         }
-    }
+    }       
 
     public boolean checkConnection(Request req, String hash) {
-        //TODO change IP
-        return URLDecoder.decode(hash, StandardCharsets.UTF_8).matches("^([A-Za-z0-9+/]{4})*([A-Za-z0-9+/]{3}=|[A-Za-z0-9+/]{2}==)?$") /*&& req.getIp().equals("127.0.0.1")*/;
+        try {
+            String correctAddress = InetAddress.getByName("smpbot.duckdns.org").getHostAddress();
+            return URLDecoder.decode(hash, StandardCharsets.UTF_8).matches("^([A-Za-z0-9+/]{4})*([A-Za-z0-9+/]{3}=|[A-Za-z0-9+/]{2}==)?$") && URLDecoder.decode(hash, StandardCharsets.UTF_8).length() >= 30 && req.getIp().equals(correctAddress);
+        } catch (UnknownHostException e) {
+            return false;
+        }
     }
 
     public String createHash(String originalString) throws NoSuchAlgorithmException {

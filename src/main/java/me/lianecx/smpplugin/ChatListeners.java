@@ -1,4 +1,4 @@
-package me.lianecx.smpbotplugin;
+package me.lianecx.smpplugin;
 
 import com.google.gson.*;
 import org.bukkit.event.EventHandler;
@@ -13,21 +13,20 @@ import java.net.URL;
 import java.nio.charset.StandardCharsets;
 
 public class ChatListeners implements Listener  {
-    private static final SMPBotPlugin PLUGIN = SMPBotPlugin.getPlugin();
+    private static final SMPPlugin PLUGIN = SMPPlugin.getPlugin();
 
     public static boolean shouldChat() {
-        if(SMPBotPlugin.getConnJson() == null || SMPBotPlugin.getConnJson().get("chat") == null) return false;
-        return SMPBotPlugin.getConnJson().get("chat").getAsBoolean();
+        if(SMPPlugin.getConnJson() == null || SMPPlugin.getConnJson().get("chat") == null) return false;
+        return SMPPlugin.getConnJson().get("chat").getAsBoolean();
     }
 
     public static void send(String message, int type, String player) {
         if(!shouldChat()) return;
 
         try {
-            //TODO Change IP
-            HttpURLConnection conn = (HttpURLConnection) new URL("http://91.50.83.91:3100/chat").openConnection();
+            HttpURLConnection conn = (HttpURLConnection) new URL("http://smpbot.duckdns.org:3100/chat").openConnection();
 
-            JsonArray types = SMPBotPlugin.getConnJson().get("types").getAsJsonArray();
+            JsonArray types = SMPPlugin.getConnJson().get("types").getAsJsonArray();
             JsonObject typeObject = new JsonObject();
             typeObject.addProperty("type", String.valueOf(type));
             typeObject.addProperty("enabled", true);
@@ -37,9 +36,9 @@ public class ChatListeners implements Listener  {
             chatJson.addProperty("type", type);
             chatJson.addProperty("player", player);
             chatJson.addProperty("message", message);
-            chatJson.add("channel", SMPBotPlugin.getConnJson().get("channel"));
-            chatJson.add("guild", SMPBotPlugin.getConnJson().get("guild"));
-            chatJson.add("ip", SMPBotPlugin.getConnJson().get("ip"));
+            chatJson.add("channel", SMPPlugin.getConnJson().get("channel"));
+            chatJson.add("guild", SMPPlugin.getConnJson().get("guild"));
+            chatJson.add("ip", SMPPlugin.getConnJson().get("ip"));
 
             byte[] out = chatJson.toString().getBytes(StandardCharsets.UTF_8);
             int length = out.length;

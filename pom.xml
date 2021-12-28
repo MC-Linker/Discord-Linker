@@ -5,13 +5,13 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>me.lianecx</groupId>
-    <artifactId>SMPBotPlugin</artifactId>
-    <version>1.0-SNAPSHOT</version>
+    <artifactId>SMP-Plugin</artifactId>
+    <version>1.0</version>
     <packaging>jar</packaging>
 
-    <name>SMPBotPlugin</name>
+    <name>SMP-Plugin</name>
 
-    <description>The official SMPBotPlugin</description>
+    <description>Official plugin for the Minecraft SMP Bot.</description>
     <properties>
         <java.version>16</java.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
