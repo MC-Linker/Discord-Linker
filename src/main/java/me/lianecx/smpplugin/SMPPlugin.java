@@ -13,6 +13,7 @@ import net.md_5.bungee.api.chat.HoverEvent;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.command.CommandException;
+import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.*;
@@ -36,12 +37,14 @@ public final class SMPPlugin extends JavaPlugin {
     private static Express app;
     private static JsonObject connJson;
     private static SMPPlugin plugin;
+    FileConfiguration config = getConfig();
 
     @Override
     public void onEnable() {
         plugin = this;
-        getConfig().options().copyDefaults();
-        saveDefaultConfig();
+        config.addDefault("port", 11111);
+        config.options().copyDefaults(true);
+        saveConfig();
         getServer().getPluginManager().registerEvents(new ChatListeners(), this);
 
         getServer().getScheduler().runTaskAsynchronously(this, () -> {
@@ -299,7 +302,7 @@ public final class SMPPlugin extends JavaPlugin {
         //GET localhost:11111/
         app.get("/", (req, res) -> res.send("To invite the Minecraft SMP Bot, open this link: https://top.gg/bot/712759741528408064"));
 
-        int port = 11111;
+        int port = config.getInt("port") != 0 ? config.getInt("port") : 11111;
         app.listen(() -> getLogger().info("Listening on port " + port), port);
 
         return app;
