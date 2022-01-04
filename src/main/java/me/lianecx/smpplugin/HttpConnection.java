@@ -59,8 +59,7 @@ public class HttpConnection {
 
     public static void checkVersion() {
         try {
-            //TODO change link
-            HttpURLConnection conn = (HttpURLConnection) new URL("http://localhost:"+BOT_PORT+"/version").openConnection();
+            HttpURLConnection conn = (HttpURLConnection) new URL("http://smpbot.duckdns.org:"+BOT_PORT+"/version").openConnection();
             InputStream inputStream = conn.getInputStream();
             String latestVersion = new BufferedReader(new InputStreamReader(inputStream)).lines().collect(Collectors.joining("\n"));
             if(!latestVersion.equals(PLUGIN_VERSION)) SMPPlugin.getPlugin().getLogger().info(ChatColor.AQUA + "Please update to the latest SMP-Plugin version (" + latestVersion + ") for a bug-free and feature-rich experience.");
