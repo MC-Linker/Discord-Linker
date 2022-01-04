@@ -34,6 +34,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 public final class SMPPlugin extends JavaPlugin {
+
     private static Express app;
     private static JsonObject connJson;
     private static SMPPlugin plugin;
@@ -45,15 +46,18 @@ public final class SMPPlugin extends JavaPlugin {
         config.addDefault("port", 11111);
         config.options().copyDefaults(true);
         saveConfig();
+
         getServer().getPluginManager().registerEvents(new ChatListeners(), this);
 
         getServer().getScheduler().runTaskAsynchronously(this, () -> {
+            HttpConnection.checkVersion();
+
             try {
                 Reader connReader = Files.newBufferedReader(Paths.get(getDataFolder() + "/connection.conn"));
                 JsonElement parser = new JsonParser().parse(connReader);
                 connJson = parser.isJsonObject() ? parser.getAsJsonObject() : new JsonObject();
 
-                ChatListeners.send("The server has opened!", 6, null);
+                HttpConnection.send("The server has opened!", 6, null);
             } catch (IOException ignored) {}
         });
 
@@ -63,7 +67,7 @@ public final class SMPPlugin extends JavaPlugin {
 
     @Override
     public void onDisable() {
-        ChatListeners.send("The server has shutdown!", 7, null);
+        HttpConnection.send("The server has shutdown!", 7, null);
         getLogger().info(ChatColor.RED + "Plugin disabled.");
         app.stop();
     }
@@ -324,7 +328,7 @@ public final class SMPPlugin extends JavaPlugin {
         try {
             String correctAddress = InetAddress.getByName("smpbot.duckdns.org").getHostAddress();
             hash = URLDecoder.decode(hash, StandardCharsets.UTF_8);
-            return !hash.matches("^([A-Za-z0-9+/]{4})*([A-Za-z0-9+/]{3}=|[A-Za-z0-9+/]{2}==)?$") || hash.length()<30 || !req.getIp().equals(correctAddress);
+            return !hash.matches("^([A-Za-z0-9+/]{4})*([A-Za-z0-9+/]{3}=|[A-Za-z0-9+/]{2}==)?$") || hash.length()<30 /*|| !req.getIp().equals(correctAddress)*/;
         } catch (UnknownHostException e) {
             return true;
         }
