@@ -6,7 +6,7 @@
 
     <groupId>me.lianecx</groupId>
     <artifactId>SMP-Plugin</artifactId>
-    <version>1.2</version>
+    <version>1.3</version>
     <packaging>jar</packaging>
 
     <name>SMP-Plugin</name>
@@ -70,10 +70,6 @@
             <id>sonatype</id>
             <url>https://oss.sonatype.org/content/groups/public/</url>
         </repository>
-        <repository>
-            <id>dmulloy2-repo</id>
-            <url>https://repo.dmulloy2.net/repository/public/</url>
-        </repository>
     </repositories>
 
     <dependencies>
@@ -87,6 +83,11 @@
             <groupId>com.github.Simonwep</groupId>
             <artifactId>java-express</artifactId>
             <version>0.1.1</version>
+        </dependency>
+        <dependency>
+            <groupId>org.spigotmc</groupId>
+            <artifactId>spigot</artifactId>
+            <version>1.17.1-R0.1-SNAPSHOT</version>
         </dependency>
     </dependencies>
 </project>

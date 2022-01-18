@@ -27,6 +27,7 @@ public class HttpConnection {
         try {
             HttpURLConnection conn = (HttpURLConnection) new URL("http://smpbot.duckdns.org:"+BOT_PORT+"/chat").openConnection();
 
+            //Check if type exists in connJson
             JsonArray types = SMPPlugin.getConnJson().get("types").getAsJsonArray();
             JsonObject typeObject = new JsonObject();
             typeObject.addProperty("type", String.valueOf(type));

@@ -10,6 +10,9 @@ import net.md_5.bungee.api.chat.BaseComponent;
 import net.md_5.bungee.api.chat.ClickEvent;
 import net.md_5.bungee.api.chat.ComponentBuilder;
 import net.md_5.bungee.api.chat.HoverEvent;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.core.Logger;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.command.CommandException;
@@ -33,11 +36,13 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+
 public final class SMPPlugin extends JavaPlugin {
 
     private static Express app;
     private static JsonObject connJson;
     private static SMPPlugin plugin;
+    private static ConsoleLogger cmdLogger = new ConsoleLogger();
     FileConfiguration config = getConfig();
 
     @Override
@@ -60,6 +65,9 @@ public final class SMPPlugin extends JavaPlugin {
                 HttpConnection.send("The server has opened!", 6, null);
             } catch (IOException ignored) {}
         });
+
+        Logger log = (Logger) LogManager.getRootLogger();
+        log.addAppender(cmdLogger);
 
         app = loadExpress();
         getLogger().info(ChatColor.GREEN + "Plugin enabled.");
@@ -170,9 +178,17 @@ public final class SMPPlugin extends JavaPlugin {
             }
 
             try {
-                getServer().getScheduler().runTask(this, () ->
-                        getServer().dispatchCommand(Bukkit.getConsoleSender(), URLDecoder.decode(req.getQuery("cmd"), StandardCharsets.UTF_8)));
-                res.send("Success");
+                getServer().getScheduler().runTask(this, () -> {
+                    cmdLogger.startLogging();
+                    getServer().dispatchCommand(Bukkit.getConsoleSender(), URLDecoder.decode(req.getQuery("cmd"), StandardCharsets.UTF_8));
+                    cmdLogger.stopLogging();
+                    try {
+                        res.send(cmdLogger.getData().get(0).replaceAll("§", "&"));
+                    } catch(IndexOutOfBoundsException err) {
+                        res.send("Could not fetch respond message! Please restart your server.");
+                    }
+                    cmdLogger.clearData();
+                });
             } catch(CommandException | IllegalArgumentException err) {
                 res.setStatus(Status._500);
                 res.send(err.toString());
@@ -328,6 +344,7 @@ public final class SMPPlugin extends JavaPlugin {
         try {
             String correctAddress = InetAddress.getByName("smpbot.duckdns.org").getHostAddress();
             hash = URLDecoder.decode(hash, StandardCharsets.UTF_8);
+            //TODO add bool
             return !hash.matches("^([A-Za-z0-9+/]{4})*([A-Za-z0-9+/]{3}=|[A-Za-z0-9+/]{2}==)?$") || hash.length()<30 /*|| !req.getIp().equals(correctAddress)*/;
         } catch (UnknownHostException e) {
             return true;
