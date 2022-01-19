@@ -171,7 +171,7 @@ public final class SMPPlugin extends JavaPlugin {
 
         //GET localhost:11111/command/?hash=hash&cmd=ban+Lianecx
         app.get("/command/", (req, res) -> {
-            if(wrongHash(req.getQuery("hash"))) {
+            if (wrongHash(req.getQuery("hash"))) {
                 res.setStatus(Status._400);
                 res.send("Wrong hash");
                 return;
@@ -184,20 +184,17 @@ public final class SMPPlugin extends JavaPlugin {
                     cmdLogger.stopLogging();
                     try {
                         res.send(cmdLogger.getData().get(0).replaceAll("§", "&"));
-                    } catch(IndexOutOfBoundsException err) {
-                        res.send("Could not fetch respond message! Please restart your server.");
+                    } catch (IndexOutOfBoundsException err) {
+                        res.send("Could not fetch response message! Please restart your server. This commonly happens after using `/reload`");
                     }
                     cmdLogger.clearData();
                 });
-            } catch(CommandException | IllegalArgumentException err) {
+            } catch (CommandException | IllegalArgumentException err) {
                 res.setStatus(Status._500);
                 res.send(err.toString());
             }
-        });
-
-        //GET localhost:11111/chat/?hash=hash"&msg=bruhhhhh&username=Lianecx
-        app.get("/chat/", (req, res) -> {
-            if(wrongHash(req.getQuery("hash"))) {
+        }).get("/chat/", (req, res) -> {
+            if (wrongHash(req.getQuery("hash"))) {
                 res.setStatus(Status._400);
                 res.send("Wrong hash");
                 return;
@@ -209,13 +206,13 @@ public final class SMPPlugin extends JavaPlugin {
             username = URLDecoder.decode(username, StandardCharsets.UTF_8);
 
             ComponentBuilder messageBuilder = new ComponentBuilder("Discord")
-                .bold(true)
-                .color(net.md_5.bungee.api.ChatColor.BLUE)
-                .event(new ClickEvent(ClickEvent.Action.OPEN_URL, "https://top.gg/bot/712759741528408064"))
-                .event(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new ComponentBuilder("Message sent using \u00A76Minecraft SMP-Bot").create()))
-                .append(" | " + username, ComponentBuilder.FormatRetention.NONE)
                     .bold(true)
-                .append(" >> ", ComponentBuilder.FormatRetention.NONE)
+                    .color(net.md_5.bungee.api.ChatColor.BLUE)
+                    .event(new ClickEvent(ClickEvent.Action.OPEN_URL, "https://top.gg/bot/712759741528408064"))
+                    .event(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new ComponentBuilder("Message sent using \u00A76Minecraft SMP-Bot").create()))
+                    .append(" | " + username, ComponentBuilder.FormatRetention.NONE)
+                    .bold(true)
+                    .append(" >> ", ComponentBuilder.FormatRetention.NONE)
                     .color(net.md_5.bungee.api.ChatColor.DARK_GRAY);
 
             Pattern urlPattern = Pattern.compile("((http://|https://)?(\\S*)?(([a-zA-Z0-9-]){2,}\\.){1,4}([a-zA-Z]){2,6}(/([a-zA-Z-_/.0-9#:?=&;,]*)?)?)");
@@ -225,10 +222,10 @@ public final class SMPPlugin extends JavaPlugin {
                 List<String> msgArray = List.of(msg.split("\\s+"));
 
                 for (String m : msgArray) {
-                    if(m.equals(url)) {
+                    if (m.equals(url)) {
                         messageBuilder.append(m + " ", ComponentBuilder.FormatRetention.NONE)
-                            .event(new ClickEvent(ClickEvent.Action.OPEN_URL, m))
-                            .underlined(true);
+                                .event(new ClickEvent(ClickEvent.Action.OPEN_URL, m))
+                                .underlined(true);
                     } else messageBuilder.append(m + " ", ComponentBuilder.FormatRetention.NONE);
                 }
             } else messageBuilder.append(msg, ComponentBuilder.FormatRetention.NONE);
@@ -237,6 +234,8 @@ public final class SMPPlugin extends JavaPlugin {
             getServer().spigot().broadcast(messageComponent);
             res.send("Success");
         });
+
+        //GET localhost:11111/chat/?hash=hash"&msg=bruhhhhh&username=Lianecx
 
         //GET localhost:11111/disconnect/?hash=hash
         app.get("/disconnect/", (req, res) -> {
@@ -344,8 +343,7 @@ public final class SMPPlugin extends JavaPlugin {
         try {
             String correctAddress = InetAddress.getByName("smpbot.duckdns.org").getHostAddress();
             hash = URLDecoder.decode(hash, StandardCharsets.UTF_8);
-            //TODO add bool
-            return !hash.matches("^([A-Za-z0-9+/]{4})*([A-Za-z0-9+/]{3}=|[A-Za-z0-9+/]{2}==)?$") || hash.length()<30 /*|| !req.getIp().equals(correctAddress)*/;
+            return !hash.matches("^([A-Za-z0-9+/]{4})*([A-Za-z0-9+/]{3}=|[A-Za-z0-9+/]{2}==)?$") || hash.length()<30 || !req.getIp().equals(correctAddress);
         } catch (UnknownHostException e) {
             return true;
         }
