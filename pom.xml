@@ -6,7 +6,7 @@
 
     <groupId>me.lianecx</groupId>
     <artifactId>SMP-Plugin</artifactId>
-    <version>1.3</version>
+    <version>1.3.1</version>
     <packaging>jar</packaging>
 
     <name>SMP-Plugin</name>

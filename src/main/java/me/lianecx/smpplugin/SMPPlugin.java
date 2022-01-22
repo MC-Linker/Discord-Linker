@@ -4,13 +4,12 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import express.Express;
-import express.http.request.Request;
 import express.utils.Status;
 import net.md_5.bungee.api.chat.BaseComponent;
 import net.md_5.bungee.api.chat.ClickEvent;
 import net.md_5.bungee.api.chat.ComponentBuilder;
 import net.md_5.bungee.api.chat.HoverEvent;
-
+import org.apache.commons.lang.RandomStringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.core.Logger;
 import org.bukkit.Bukkit;
@@ -43,6 +42,7 @@ public final class SMPPlugin extends JavaPlugin {
     private static JsonObject connJson;
     private static SMPPlugin plugin;
     private static ConsoleLogger cmdLogger = new ConsoleLogger();
+    private static String verifyCode = null;
     FileConfiguration config = getConfig();
 
     @Override
@@ -90,9 +90,9 @@ public final class SMPPlugin extends JavaPlugin {
     public Express loadExpress() {
         Express app = new Express();
 
-        //GET localhost:11111/file/get/?hash=hash&path=/path/to/file
+        //GET localhost:11111/file/get/?path=/path/to/file
         app.get("/file/get/", (req, res) -> {
-            if(wrongHash(req.getQuery("hash"))) {
+            if(wrongHash(req.getAuthorization().get(0).getData())) {
                 res.setStatus(Status._400);
                 res.send("Wrong hash");
                 return;
@@ -111,11 +111,11 @@ public final class SMPPlugin extends JavaPlugin {
             }
         });
 
-        /*POST localhost:11111/file/put/?hash=hash
+        /*POST localhost:11111/file/put/
             { fileStreamToFile }
          */
         app.post("/file/put/", (req, res) -> {
-            if(wrongHash(req.getQuery("hash"))) {
+            if(wrongHash(req.getAuthorization().get(0).getData())) {
                 res.setStatus(Status._400);
                 res.send("Wrong hash");
                 return;
@@ -131,9 +131,9 @@ public final class SMPPlugin extends JavaPlugin {
             }
         });
 
-        //GET localhost:11111/file/find/?hash=hash&file=level.dat&path=/path/to/file&depth=4
+        //GET localhost:11111/file/find/?file=level.dat&path=/path/to/file&depth=4
         app.get("/file/find/", (req, res) -> {
-            if(wrongHash(req.getQuery("hash"))) {
+            if(wrongHash(req.getAuthorization().get(0).getData())) {
                 res.setStatus(Status._400);
                 res.send("Wrong hash");
                 return;
@@ -153,25 +153,19 @@ public final class SMPPlugin extends JavaPlugin {
             }
         });
 
-        /*POST localhost:11111/log/
-            {
-                "message": "some message"
-            }
-         */
-        app.post("/log/", (req, res) -> {
-            JsonObject parser = new JsonParser().parse(new InputStreamReader(req.getBody())).getAsJsonObject();
-            if(wrongConnection(req, parser.get("hash").getAsString())) {
-                res.setStatus(Status._400);
-                res.send("Wrong hash-format or IP");
-                return;
-            }
-            getLogger().info(parser.get("message").getAsString());
+        //GET localhost:11111/verify/
+        app.get("/verify/", (req, res) -> {
+            verifyCode = RandomStringUtils.randomAlphanumeric(6);
+            getLogger().info("Verification Code: " + verifyCode);
+
+            getServer().getScheduler().runTaskLater(this, () -> verifyCode = null, 3600);
+
             res.send("Success");
         });
 
-        //GET localhost:11111/command/?hash=hash&cmd=ban+Lianecx
+        //GET localhost:11111/command/?cmd=ban+Lianecx
         app.get("/command/", (req, res) -> {
-            if (wrongHash(req.getQuery("hash"))) {
+            if (wrongHash(req.getAuthorization().get(0).getData())) {
                 res.setStatus(Status._400);
                 res.send("Wrong hash");
                 return;
@@ -193,8 +187,11 @@ public final class SMPPlugin extends JavaPlugin {
                 res.setStatus(Status._500);
                 res.send(err.toString());
             }
-        }).get("/chat/", (req, res) -> {
-            if (wrongHash(req.getQuery("hash"))) {
+        });
+
+        //GET localhost:11111/chat/?msg=Ayoo&username=Lianecx
+        app.get("/chat/", (req, res) -> {
+            if (wrongHash(req.getAuthorization().get(0).getData())) {
                 res.setStatus(Status._400);
                 res.send("Wrong hash");
                 return;
@@ -235,11 +232,9 @@ public final class SMPPlugin extends JavaPlugin {
             res.send("Success");
         });
 
-        //GET localhost:11111/chat/?hash=hash"&msg=bruhhhhh&username=Lianecx
-
-        //GET localhost:11111/disconnect/?hash=hash
+        //GET localhost:11111/disconnect/
         app.get("/disconnect/", (req, res) -> {
-            if(wrongHash(req.getQuery("hash"))) {
+            if(wrongHash(req.getAuthorization().get(0).getData())) {
                 res.setStatus(Status._400);
                 res.send("Wrong hash");
                 return;
@@ -275,16 +270,25 @@ public final class SMPPlugin extends JavaPlugin {
         app.post("/connect/", (req, res) -> {
             getLogger().info("Connection request...");
             JsonObject parser = new JsonParser().parse(new InputStreamReader(req.getBody())).getAsJsonObject();
-            if(wrongConnection(req, parser.get("hash").getAsString())) {
+            String code = req.getAuthorization().get(0).getData();
+            String hash = req.getAuthorization().get(1).getData();
+
+            if(wrongConnection(req.getIp(), hash)) {
                 getLogger().info("Connection unsuccessful");
                 res.setStatus(Status._400);
                 res.send("Wrong hash-format or IP");
+                return;
+            } else if(!req.hasAuthorization() || !code.equals(verifyCode)) {
+                getLogger().info("Connection unsuccessful");
+                res.setStatus(Status._401);
+                res.send("Wrong authorization");
+                verifyCode = null;
                 return;
             }
 
             try {
                 connJson = new JsonObject();
-                connJson.addProperty("hash", createHash(parser.get("hash").getAsString()));
+                connJson.addProperty("hash", createHash(hash));
                 connJson.add("chat", parser.get("chat"));
                 connJson.add("guild", parser.get("guild"));
                 connJson.add("ip", parser.get("ip"));
@@ -305,7 +309,7 @@ public final class SMPPlugin extends JavaPlugin {
                     botConnJson.add("types", parser.get("types").getAsJsonArray());
                     botConnJson.add("channel", parser.get("channel"));
                 }
-                botConnJson.add("hash", parser.get("hash"));
+                botConnJson.addProperty("hash", hash);
                 botConnJson.addProperty("version", getServer().getBukkitVersion());
                 botConnJson.addProperty("path", URLEncoder.encode(getServer().getWorlds().get(0).getWorldFolder().getCanonicalPath().replaceAll("\\\\", "/"), StandardCharsets.UTF_8));
 
@@ -315,6 +319,8 @@ public final class SMPPlugin extends JavaPlugin {
                 getLogger().info("Connection unsuccessful");
                 res.setStatus(Status._500);
                 res.send(err.toString());
+            } finally {
+                verifyCode = null;
             }
         });
 
@@ -339,11 +345,12 @@ public final class SMPPlugin extends JavaPlugin {
         }
     }       
 
-    public boolean wrongConnection(Request req, String hash) {
+    public boolean wrongConnection(String Ip, String hash) {
         try {
-            String correctAddress = InetAddress.getByName("smpbot.duckdns.org").getHostAddress();
+            String correctIp = InetAddress.getByName("smpbot.duckdns.org").getHostAddress();
             hash = URLDecoder.decode(hash, StandardCharsets.UTF_8);
-            return !hash.matches("^([A-Za-z0-9+/]{4})*([A-Za-z0-9+/]{3}=|[A-Za-z0-9+/]{2}==)?$") || hash.length()<30 || !req.getIp().equals(correctAddress);
+            //TODO DONT FORGET
+            return !hash.matches("^([A-Za-z0-9+/]{4})*([A-Za-z0-9+/]{3}=|[A-Za-z0-9+/]{2}==)?$") || hash.length()<30 /*|| !Ip.equals(correctIp)*/;
         } catch (UnknownHostException e) {
             return true;
         }
