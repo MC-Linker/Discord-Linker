@@ -9,6 +9,7 @@ import net.md_5.bungee.api.chat.BaseComponent;
 import net.md_5.bungee.api.chat.ClickEvent;
 import net.md_5.bungee.api.chat.ComponentBuilder;
 import net.md_5.bungee.api.chat.HoverEvent;
+import net.md_5.bungee.api.chat.hover.content.Text;
 import org.apache.commons.lang.RandomStringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.core.Logger;
@@ -143,9 +144,9 @@ public final class SMPPlugin extends JavaPlugin {
                 Path path = Paths.get(URLDecoder.decode(req.getQuery("path"), StandardCharsets.UTF_8));
 
                 List<Path> searchFiles = Files.walk(path, Integer.parseInt(req.getQuery("depth")))
-                    .filter(Files::isRegularFile)
-                    .filter(file -> file.getFileName().toString().equalsIgnoreCase(req.getQuery("file")))
-                    .collect(Collectors.toList());
+                        .filter(Files::isRegularFile)
+                        .filter(file -> file.getFileName().toString().equalsIgnoreCase(req.getQuery("file")))
+                        .toList();
                 res.send(searchFiles.get(0).toFile().getCanonicalPath());
             } catch (IOException err) {
                 res.setStatus(Status._500);
@@ -206,7 +207,7 @@ public final class SMPPlugin extends JavaPlugin {
                     .bold(true)
                     .color(net.md_5.bungee.api.ChatColor.BLUE)
                     .event(new ClickEvent(ClickEvent.Action.OPEN_URL, "https://top.gg/bot/712759741528408064"))
-                    .event(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new ComponentBuilder("Message sent using \u00A76Minecraft SMP-Bot").create()))
+                    .event(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new Text("Message sent using \u00A76Minecraft SMP-Bot")))
                     .append(" | " + username, ComponentBuilder.FormatRetention.NONE)
                     .bold(true)
                     .append(" >> ", ComponentBuilder.FormatRetention.NONE)
@@ -254,17 +255,8 @@ public final class SMPPlugin extends JavaPlugin {
 
         /*POST localhost:11111/connect/
             {
-                "hash": hash,
-                "chat": true,
-                "guild": guildId,
-                ["channel"]:channelId,
-                ["types"]: [
-                      {
-                        "type": 0,
-                        "enabled": true
-                      },
-                      ...
-                 ]
+                "ip": ip,
+                "guild": guildId
             }
          */
         app.post("/connect/", (req, res) -> {
@@ -289,26 +281,15 @@ public final class SMPPlugin extends JavaPlugin {
             try {
                 connJson = new JsonObject();
                 connJson.addProperty("hash", createHash(hash));
-                connJson.add("chat", parser.get("chat"));
+                connJson.addProperty("chat", false);
                 connJson.add("guild", parser.get("guild"));
                 connJson.add("ip", parser.get("ip"));
-                if(parser.get("chat").getAsBoolean()) {
-                    connJson.add("types", parser.get("types").getAsJsonArray());
-                    connJson.add("channel", parser.get("channel"));
-                }
-
-                FileWriter writer = new FileWriter(getDataFolder() + "/connection.conn");
-                writer.write(connJson.toString());
-                writer.close();
+                updateConn();
 
                 JsonObject botConnJson = new JsonObject();
-                botConnJson.add("chat", parser.get("chat"));
+                botConnJson.addProperty("chat", false);
                 botConnJson.add("guild", parser.get("guild"));
                 botConnJson.add("ip", parser.get("ip"));
-                if(parser.get("chat").getAsBoolean()) {
-                    botConnJson.add("types", parser.get("types").getAsJsonArray());
-                    botConnJson.add("channel", parser.get("channel"));
-                }
                 botConnJson.addProperty("hash", hash);
                 botConnJson.addProperty("version", getServer().getBukkitVersion());
                 botConnJson.addProperty("path", URLEncoder.encode(getServer().getWorlds().get(0).getWorldFolder().getCanonicalPath().replaceAll("\\\\", "/"), StandardCharsets.UTF_8));
@@ -324,6 +305,57 @@ public final class SMPPlugin extends JavaPlugin {
             }
         });
 
+        /*POST localhost:11111/connect/
+            {
+                "ip": ip,
+                "guild": guildId,
+                "channel":channelId,
+                "types": [
+                      {
+                        "type": 0,
+                        "enabled": true
+                      },
+                      ...
+                 ]
+            }
+         */
+        app.post("/channel/", (req, res) -> {
+            JsonObject parser = new JsonParser().parse(new InputStreamReader(req.getBody())).getAsJsonObject();
+            String hash = req.getAuthorization().get(0).getData();
+
+            if(wrongHash(hash)) {
+                res.setStatus(Status._400);
+                res.send("Wrong hash");
+                return;
+            }
+
+            try {
+                connJson = new JsonObject();
+                connJson.addProperty("hash", createHash(hash));
+                connJson.addProperty("chat", true);
+                connJson.add("guild", parser.get("guild"));
+                connJson.add("ip", parser.get("ip"));
+                connJson.add("types", parser.get("types").getAsJsonArray());
+                connJson.add("channel", parser.get("channel"));
+                updateConn();
+
+                JsonObject botConnJson = new JsonObject();
+                botConnJson.addProperty("chat", true);
+                botConnJson.add("guild", parser.get("guild"));
+                botConnJson.add("ip", parser.get("ip"));
+                botConnJson.add("types", parser.get("types").getAsJsonArray());
+                botConnJson.add("channel", parser.get("channel"));
+                botConnJson.addProperty("hash", hash);
+                botConnJson.addProperty("version", getServer().getBukkitVersion());
+                botConnJson.addProperty("path", URLEncoder.encode(getServer().getWorlds().get(0).getWorldFolder().getCanonicalPath().replaceAll("\\\\", "/"), StandardCharsets.UTF_8));
+
+                res.send(botConnJson.toString());
+            } catch (IOException | NoSuchAlgorithmException err) {
+                res.setStatus(Status._500);
+                res.send(err.toString());
+            }
+        });
+
         //GET localhost:11111/
         app.get("/", (req, res) -> res.send("To invite the Minecraft SMP Bot, open this link: https://top.gg/bot/712759741528408064"));
 
@@ -333,12 +365,16 @@ public final class SMPPlugin extends JavaPlugin {
         return app;
     }
 
+    private void updateConn() throws IOException {
+        FileWriter writer = new FileWriter(getDataFolder() + "/connection.conn");
+        writer.write(connJson.toString());
+        writer.close();
+    }
+
     public boolean wrongHash(String hash) {
         try {
             if(connJson.get("hash") == null) return true;
             String correctHash = connJson.get("hash").getAsString();
-
-            hash = URLEncoder.encode(hash, StandardCharsets.UTF_8);
             return !correctHash.equals(createHash(hash));
         } catch(NoSuchAlgorithmException err) {
             return true;
@@ -348,9 +384,7 @@ public final class SMPPlugin extends JavaPlugin {
     public boolean wrongConnection(String Ip, String hash) {
         try {
             String correctIp = InetAddress.getByName("smpbot.duckdns.org").getHostAddress();
-            hash = URLDecoder.decode(hash, StandardCharsets.UTF_8);
-            //TODO DONT FORGET
-            return !hash.matches("^([A-Za-z0-9+/]{4})*([A-Za-z0-9+/]{3}=|[A-Za-z0-9+/]{2}==)?$") || hash.length()<30 /*|| !Ip.equals(correctIp)*/;
+            return !hash.matches("^([A-Za-z0-9+/]{4})*([A-Za-z0-9+/]{3}=|[A-Za-z0-9+/]{2}==)?$") || hash.length()<30 || !Ip.equals(correctIp);
         } catch (UnknownHostException e) {
             return true;
         }
