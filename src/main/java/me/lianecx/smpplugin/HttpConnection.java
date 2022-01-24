@@ -9,12 +9,12 @@ import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.util.Properties;
 import java.util.stream.Collectors;
 
 public class HttpConnection {
     private static final int BOT_PORT = 3100;
-    //TODO update version
-    private static final String PLUGIN_VERSION = "1.2";
+    private static final String PLUGIN_VERSION = "1.3.1";
 
     private static boolean shouldChat() {
         if(SMPPlugin.getConnJson() == null || SMPPlugin.getConnJson().get("chat") == null) return false;
