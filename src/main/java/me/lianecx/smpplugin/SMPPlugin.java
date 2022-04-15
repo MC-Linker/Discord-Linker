@@ -18,6 +18,7 @@ import org.bukkit.ChatColor;
 import org.bukkit.command.CommandException;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.scheduler.BukkitRunnable;
 
 import java.io.*;
 import java.net.InetAddress;
@@ -208,8 +209,15 @@ public final class SMPPlugin extends JavaPlugin {
                     .color(net.md_5.bungee.api.ChatColor.BLUE)
                     .event(new ClickEvent(ClickEvent.Action.OPEN_URL, "https://top.gg/bot/712759741528408064"))
                     .event(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new Text("Message sent using \u00A76Minecraft SMP-Bot")))
-                    .append(" | " + username, ComponentBuilder.FormatRetention.NONE)
+
+                    .append(" | ", ComponentBuilder.FormatRetention.NONE)
+                    .color(net.md_5.bungee.api.ChatColor.DARK_GRAY)
                     .bold(true)
+
+                    .append(username, ComponentBuilder.FormatRetention.NONE)
+                    .bold(true)
+                    .color(net.md_5.bungee.api.ChatColor.GRAY)
+
                     .append(" >> ", ComponentBuilder.FormatRetention.NONE)
                     .color(net.md_5.bungee.api.ChatColor.DARK_GRAY);
 
