@@ -2,14 +2,12 @@ package me.lianecx.smpplugin;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
-import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 
 import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
-import java.util.Properties;
 import java.util.stream.Collectors;
 
 public class HttpConnection {

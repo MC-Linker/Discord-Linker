@@ -1,5 +1,6 @@
 package me.lianecx.smpplugin;
 
+import com.google.common.collect.Lists;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
@@ -9,16 +10,15 @@ import net.md_5.bungee.api.chat.BaseComponent;
 import net.md_5.bungee.api.chat.ClickEvent;
 import net.md_5.bungee.api.chat.ComponentBuilder;
 import net.md_5.bungee.api.chat.HoverEvent;
-import net.md_5.bungee.api.chat.hover.content.Text;
 import org.apache.commons.lang.RandomStringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.core.Logger;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
+import org.bukkit.Material;
 import org.bukkit.command.CommandException;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
-import org.bukkit.scheduler.BukkitRunnable;
 
 import java.io.*;
 import java.net.InetAddress;
@@ -95,19 +95,19 @@ public final class SMPPlugin extends JavaPlugin {
         //GET localhost:11111/file/get/?path=/path/to/file
         app.get("/file/get/", (req, res) -> {
             if(wrongHash(req.getAuthorization().get(0).getData())) {
-                res.setStatus(Status._400);
+                res.setStatus(Status._401);
                 res.send("Wrong hash");
                 return;
             }
 
             try {
-                Path file = Paths.get(URLDecoder.decode(req.getQuery("path"), StandardCharsets.UTF_8));
+                Path file = Paths.get(URLDecoder.decode(req.getQuery("path"), "utf-8"));
 
                 if(!res.sendAttachment(file)) {
                     res.setStatus(Status._500);
                     res.send("Invalid Path");
                 }
-            } catch (InvalidPathException err) {
+            } catch (InvalidPathException | UnsupportedEncodingException err) {
                 res.setStatus(Status._500);
                 res.send(err.toString());
             }
@@ -118,14 +118,21 @@ public final class SMPPlugin extends JavaPlugin {
          */
         app.post("/file/put/", (req, res) -> {
             if(wrongHash(req.getAuthorization().get(0).getData())) {
-                res.setStatus(Status._400);
+                res.setStatus(Status._401);
                 res.send("Wrong hash");
                 return;
             }
 
             try {
-                FileOutputStream outputStream = new FileOutputStream(URLDecoder.decode(req.getQuery("path"), StandardCharsets.UTF_8));
-                req.getBody().transferTo(outputStream);
+                FileOutputStream outputStream = new FileOutputStream(URLDecoder.decode(req.getQuery("path"), "utf-8"));
+
+                //Transfer body (inputStream) to outputStream
+                byte[] buf = new byte[8192];
+                int length;
+                while ((length = req.getBody().read(buf)) > 0) {
+                    outputStream.write(buf, 0, length);
+                }
+
                 res.send("Success");
             } catch (InvalidPathException | IOException err) {
                 res.setStatus(Status._500);
@@ -136,18 +143,18 @@ public final class SMPPlugin extends JavaPlugin {
         //GET localhost:11111/file/find/?file=level.dat&path=/path/to/file&depth=4
         app.get("/file/find/", (req, res) -> {
             if(wrongHash(req.getAuthorization().get(0).getData())) {
-                res.setStatus(Status._400);
+                res.setStatus(Status._401);
                 res.send("Wrong hash");
                 return;
             }
 
             try {
-                Path path = Paths.get(URLDecoder.decode(req.getQuery("path"), StandardCharsets.UTF_8));
+                Path path = Paths.get(URLDecoder.decode(req.getQuery("path"), "utf-8"));
 
                 List<Path> searchFiles = Files.walk(path, Integer.parseInt(req.getQuery("depth")))
                         .filter(Files::isRegularFile)
                         .filter(file -> file.getFileName().toString().equalsIgnoreCase(req.getQuery("file")))
-                        .toList();
+                        .collect(Collectors.toList());
                 res.send(searchFiles.get(0).toFile().getCanonicalPath());
             } catch (IOException err) {
                 res.setStatus(Status._500);
@@ -168,24 +175,32 @@ public final class SMPPlugin extends JavaPlugin {
         //GET localhost:11111/command/?cmd=ban+Lianecx
         app.get("/command/", (req, res) -> {
             if (wrongHash(req.getAuthorization().get(0).getData())) {
-                res.setStatus(Status._400);
+                res.setStatus(Status._401);
                 res.send("Wrong hash");
                 return;
             }
 
             try {
                 getServer().getScheduler().runTask(this, () -> {
-                    cmdLogger.startLogging();
-                    getServer().dispatchCommand(Bukkit.getConsoleSender(), URLDecoder.decode(req.getQuery("cmd"), StandardCharsets.UTF_8));
-                    cmdLogger.stopLogging();
                     try {
-                        res.send(cmdLogger.getData().get(0).replaceAll("§", "&"));
+                        cmdLogger.startLogging();
+                        getServer().dispatchCommand(Bukkit.getConsoleSender(), URLDecoder.decode(req.getQuery("cmd"), "utf-8"));
+                        cmdLogger.stopLogging();
+                    } catch(UnsupportedEncodingException err) {
+                        res.setStatus(Status._500);
+                        res.send(err.toString());
+                        return;
+                    }
+
+                    try {
+                        res.send(ChatColor.stripColor(cmdLogger.getData().get(0)));
                     } catch (IndexOutOfBoundsException err) {
+                        res.setStatus(Status._500);
                         res.send("Could not fetch response message! Please restart your server. This commonly happens after using `/reload`");
                     }
                     cmdLogger.clearData();
                 });
-            } catch (CommandException | IllegalArgumentException err) {
+            } catch (IllegalArgumentException | CommandException err) {
                 res.setStatus(Status._500);
                 res.send(err.toString());
             }
@@ -194,21 +209,27 @@ public final class SMPPlugin extends JavaPlugin {
         //GET localhost:11111/chat/?msg=Ayoo&username=Lianecx
         app.get("/chat/", (req, res) -> {
             if (wrongHash(req.getAuthorization().get(0).getData())) {
-                res.setStatus(Status._400);
+                res.setStatus(Status._401);
                 res.send("Wrong hash");
                 return;
             }
 
             String msg = req.getQuery("msg");
             String username = req.getQuery("username");
-            msg = URLDecoder.decode(msg, StandardCharsets.UTF_8);
-            username = URLDecoder.decode(username, StandardCharsets.UTF_8);
+            try {
+                msg = URLDecoder.decode(msg, "utf-8");
+                username = URLDecoder.decode(username, "utf-8");
+            } catch (UnsupportedEncodingException err) {
+                res.setStatus(Status._500);
+                res.send(err.toString());
+                return;
+            }
 
             ComponentBuilder messageBuilder = new ComponentBuilder("Discord")
                     .bold(true)
                     .color(net.md_5.bungee.api.ChatColor.BLUE)
                     .event(new ClickEvent(ClickEvent.Action.OPEN_URL, "https://top.gg/bot/712759741528408064"))
-                    .event(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new Text("Message sent using \u00A76Minecraft SMP-Bot")))
+                    .event(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new ComponentBuilder("Message sent using \u00A76Minecraft SMP-Bot").create()))
 
                     .append(" | ", ComponentBuilder.FormatRetention.NONE)
                     .color(net.md_5.bungee.api.ChatColor.DARK_GRAY)
@@ -225,7 +246,7 @@ public final class SMPPlugin extends JavaPlugin {
             Matcher matcher = urlPattern.matcher(msg);
             if (matcher.find()) {
                 String url = matcher.group();
-                List<String> msgArray = List.of(msg.split("\\s+"));
+                List<String> msgArray = Lists.newArrayList(msg.split("\\s+"));
 
                 for (String m : msgArray) {
                     if (m.equals(url)) {
@@ -300,7 +321,7 @@ public final class SMPPlugin extends JavaPlugin {
                 botConnJson.add("ip", parser.get("ip"));
                 botConnJson.addProperty("hash", hash);
                 botConnJson.addProperty("version", getServer().getBukkitVersion());
-                botConnJson.addProperty("path", URLEncoder.encode(getServer().getWorlds().get(0).getWorldFolder().getCanonicalPath().replaceAll("\\\\", "/"), StandardCharsets.UTF_8));
+                botConnJson.addProperty("path", URLEncoder.encode(getServer().getWorlds().get(0).getWorldFolder().getCanonicalPath().replaceAll("\\\\", "/"), "utf-8"));
 
                 res.send(botConnJson.toString());
                 getLogger().info("Successfully connected with discord server. Id: " + parser.get("guild"));
@@ -332,7 +353,7 @@ public final class SMPPlugin extends JavaPlugin {
             String hash = req.getAuthorization().get(0).getData();
 
             if(wrongHash(hash)) {
-                res.setStatus(Status._400);
+                res.setStatus(Status._401);
                 res.send("Wrong hash");
                 return;
             }
@@ -355,7 +376,7 @@ public final class SMPPlugin extends JavaPlugin {
                 botConnJson.add("channel", parser.get("channel"));
                 botConnJson.addProperty("hash", hash);
                 botConnJson.addProperty("version", getServer().getBukkitVersion());
-                botConnJson.addProperty("path", URLEncoder.encode(getServer().getWorlds().get(0).getWorldFolder().getCanonicalPath().replaceAll("\\\\", "/"), StandardCharsets.UTF_8));
+                botConnJson.addProperty("path", URLEncoder.encode(getServer().getWorlds().get(0).getWorldFolder().getCanonicalPath().replaceAll("\\\\", "/"), "utf-8"));
 
                 res.send(botConnJson.toString());
             } catch (IOException | NoSuchAlgorithmException err) {

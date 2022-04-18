@@ -5,19 +5,16 @@ import java.util.List;
 
 import org.apache.logging.log4j.core.LogEvent;
 import org.apache.logging.log4j.core.appender.AbstractAppender;
-import org.apache.logging.log4j.core.config.Property;
-import org.apache.logging.log4j.core.layout.PatternLayout;
 
 public class ConsoleLogger extends AbstractAppender {
     private boolean isLogging;
     private List<String> loggedData;
 
     public ConsoleLogger() {
-
-        super("SMP-PLugin", null, PatternLayout.newBuilder().withPattern("%m%n").build(), true, Property.EMPTY_ARRAY);
+        super("SMP-Plugin", null, null, true);
 
         isLogging = false;
-        loggedData = new ArrayList<String>();
+        loggedData = new ArrayList<>();
     }
 
     public void startLogging() {
@@ -33,7 +30,7 @@ public class ConsoleLogger extends AbstractAppender {
     }
 
     public List<String> getData() {
-        return new ArrayList<String>(loggedData);
+        return new ArrayList<>(loggedData);
     }
 
     public void log(String message) {
