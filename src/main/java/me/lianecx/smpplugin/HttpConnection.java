@@ -12,14 +12,14 @@ import java.util.stream.Collectors;
 
 public class HttpConnection {
     private static final int BOT_PORT = 3100;
-    private static final String PLUGIN_VERSION = "1.3.1";
+    private static final String PLUGIN_VERSION = SMPPlugin.getPlugin().getDescription().getVersion();
 
     private static boolean shouldChat() {
         if(SMPPlugin.getConnJson() == null || SMPPlugin.getConnJson().get("chat") == null) return false;
         return SMPPlugin.getConnJson().get("chat").getAsBoolean();
     }
 
-    public static void send(String message, int type, String player) {
+    public static void send(String message, String type, String player) {
         if(!shouldChat()) return;
 
         try {
@@ -28,14 +28,14 @@ public class HttpConnection {
             //Check if type exists in connJson
             JsonArray types = SMPPlugin.getConnJson().get("types").getAsJsonArray();
             JsonObject typeObject = new JsonObject();
-            typeObject.addProperty("type", String.valueOf(type));
+            typeObject.addProperty("type", type);
             typeObject.addProperty("enabled", true);
             if(!types.contains(typeObject)) return;
 
             JsonObject chatJson = new JsonObject();
             chatJson.addProperty("type", type);
             chatJson.addProperty("player", player);
-            chatJson.addProperty("message", message);
+            chatJson.addProperty("message", ChatColor.stripColor(message));
             chatJson.add("channel", SMPPlugin.getConnJson().get("channel"));
             chatJson.add("guild", SMPPlugin.getConnJson().get("guild"));
             chatJson.add("ip", SMPPlugin.getConnJson().get("ip"));

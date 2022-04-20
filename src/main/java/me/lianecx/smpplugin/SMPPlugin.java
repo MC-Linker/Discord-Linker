@@ -15,7 +15,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.core.Logger;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
-import org.bukkit.Material;
 import org.bukkit.command.CommandException;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -64,7 +63,7 @@ public final class SMPPlugin extends JavaPlugin {
                 JsonElement parser = new JsonParser().parse(connReader);
                 connJson = parser.isJsonObject() ? parser.getAsJsonObject() : new JsonObject();
 
-                HttpConnection.send("The server has opened!", 6, null);
+                HttpConnection.send("The server has opened!", "start", null);
             } catch (IOException ignored) {}
         });
 
@@ -77,7 +76,7 @@ public final class SMPPlugin extends JavaPlugin {
 
     @Override
     public void onDisable() {
-        HttpConnection.send("The server has shutdown!", 7, null);
+        HttpConnection.send("The server has shutdown!", "close", null);
         getLogger().info(ChatColor.RED + "Plugin disabled.");
         app.stop();
     }
@@ -104,10 +103,13 @@ public final class SMPPlugin extends JavaPlugin {
                 Path file = Paths.get(URLDecoder.decode(req.getQuery("path"), "utf-8"));
 
                 if(!res.sendAttachment(file)) {
-                    res.setStatus(Status._500);
+                    res.setStatus(Status._404);
                     res.send("Invalid Path");
                 }
-            } catch (InvalidPathException | UnsupportedEncodingException err) {
+            } catch (InvalidPathException err) {
+                res.setStatus(Status._404);
+                res.send("Invalid Path");
+            } catch (UnsupportedEncodingException err) {
                 res.setStatus(Status._500);
                 res.send(err.toString());
             }
@@ -134,7 +136,10 @@ public final class SMPPlugin extends JavaPlugin {
                 }
 
                 res.send("Success");
-            } catch (InvalidPathException | IOException err) {
+            } catch (InvalidPathException err) {
+                res.setStatus(Status._404);
+                res.send("Invalid Path");
+            } catch(IOException err) {
                 res.setStatus(Status._500);
                 res.send(err.toString());
             }
@@ -156,6 +161,9 @@ public final class SMPPlugin extends JavaPlugin {
                         .filter(file -> file.getFileName().toString().equalsIgnoreCase(req.getQuery("file")))
                         .collect(Collectors.toList());
                 res.send(searchFiles.get(0).toFile().getCanonicalPath());
+            } catch (InvalidPathException err) {
+                res.setStatus(Status._404);
+                res.send("Invalid Path");
             } catch (IOException err) {
                 res.setStatus(Status._500);
                 res.send(err.toString());
@@ -192,11 +200,13 @@ public final class SMPPlugin extends JavaPlugin {
                         return;
                     }
 
+
                     try {
-                        res.send(ChatColor.stripColor(cmdLogger.getData().get(0)));
+                        String data = cmdLogger.getData().get(0);
+                        res.send(ChatColor.stripColor(data));
                     } catch (IndexOutOfBoundsException err) {
-                        res.setStatus(Status._500);
-                        res.send("Could not fetch response message! Please restart your server. This commonly happens after using `/reload`");
+                        res.setStatus(Status._206);
+                        res.send("Could not fetch response message! This commonly happens after using `/reload`.");
                     }
                     cmdLogger.clearData();
                 });
@@ -253,7 +263,9 @@ public final class SMPPlugin extends JavaPlugin {
                         messageBuilder.append(m + " ", ComponentBuilder.FormatRetention.NONE)
                                 .event(new ClickEvent(ClickEvent.Action.OPEN_URL, m))
                                 .underlined(true);
-                    } else messageBuilder.append(m + " ", ComponentBuilder.FormatRetention.NONE);
+                    } else {
+                        messageBuilder.append(m + " ", ComponentBuilder.FormatRetention.NONE);
+                    }
                 }
             } else messageBuilder.append(msg, ComponentBuilder.FormatRetention.NONE);
 
@@ -349,7 +361,6 @@ public final class SMPPlugin extends JavaPlugin {
             }
          */
         app.post("/channel/", (req, res) -> {
-            JsonObject parser = new JsonParser().parse(new InputStreamReader(req.getBody())).getAsJsonObject();
             String hash = req.getAuthorization().get(0).getData();
 
             if(wrongHash(hash)) {
@@ -357,6 +368,8 @@ public final class SMPPlugin extends JavaPlugin {
                 res.send("Wrong hash");
                 return;
             }
+
+            JsonObject parser = new JsonParser().parse(new InputStreamReader(req.getBody())).getAsJsonObject();
 
             try {
                 connJson = new JsonObject();
@@ -414,13 +427,13 @@ public final class SMPPlugin extends JavaPlugin {
         try {
             String correctIp = InetAddress.getByName("smpbot.duckdns.org").getHostAddress();
             return !hash.matches("^([A-Za-z0-9+/]{4})*([A-Za-z0-9+/]{3}=|[A-Za-z0-9+/]{2}==)?$") || hash.length()<30 || !Ip.equals(correctIp);
-        } catch (UnknownHostException e) {
+        } catch (UnknownHostException ignored) {
             return true;
         }
     }
 
     public String createHash(String originalString) throws NoSuchAlgorithmException {
-        final MessageDigest digest = MessageDigest.getInstance("SHA3-256");
+        final MessageDigest digest = MessageDigest.getInstance("SHA-256");
         final byte[] hashBytes = digest.digest(originalString.getBytes(StandardCharsets.UTF_8));
 
         StringBuilder hexString = new StringBuilder(2 * hashBytes.length);
