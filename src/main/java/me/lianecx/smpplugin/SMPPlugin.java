@@ -42,7 +42,7 @@ public final class SMPPlugin extends JavaPlugin {
     private static Express app;
     private static JsonObject connJson;
     private static SMPPlugin plugin;
-    private static ConsoleLogger cmdLogger = new ConsoleLogger();
+    private static final ConsoleLogger cmdLogger = new ConsoleLogger();
     private static String verifyCode = null;
     FileConfiguration config = getConfig();
 
