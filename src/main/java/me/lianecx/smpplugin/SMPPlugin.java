@@ -125,8 +125,7 @@ public final class SMPPlugin extends JavaPlugin {
                 return;
             }
 
-            try {
-                FileOutputStream outputStream = new FileOutputStream(URLDecoder.decode(req.getQuery("path"), "utf-8"));
+            try (FileOutputStream outputStream = new FileOutputStream(URLDecoder.decode(req.getQuery("path"), "utf-8"))) {
 
                 //Transfer body (inputStream) to outputStream
                 byte[] buf = new byte[8192];
@@ -235,15 +234,10 @@ public final class SMPPlugin extends JavaPlugin {
                 return;
             }
 
-            ComponentBuilder messageBuilder = new ComponentBuilder("Discord")
-                    .bold(true)
-                    .color(net.md_5.bungee.api.ChatColor.BLUE)
+            String prefix = ChatColor.translateAlternateColorCodes('&', getConfig().getString("prefix"));
+            ComponentBuilder messageBuilder = new ComponentBuilder(prefix)
                     .event(new ClickEvent(ClickEvent.Action.OPEN_URL, "https://top.gg/bot/712759741528408064"))
                     .event(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new ComponentBuilder("Message sent using \u00A76Minecraft SMP-Bot").create()))
-
-                    .append(" | ", ComponentBuilder.FormatRetention.NONE)
-                    .color(net.md_5.bungee.api.ChatColor.DARK_GRAY)
-                    .bold(true)
 
                     .append(username, ComponentBuilder.FormatRetention.NONE)
                     .bold(true)
