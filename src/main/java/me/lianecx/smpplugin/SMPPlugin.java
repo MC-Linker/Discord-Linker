@@ -17,6 +17,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.command.CommandException;
 import org.bukkit.configuration.file.FileConfiguration;
+import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.*;
@@ -218,7 +219,8 @@ public final class SMPPlugin extends JavaPlugin {
         /*POST localhost:11111/chat/
             {
                 "msg": "Ayoo",
-                "username": "Lianecx
+                "username": "Lianecx,
+                "private": false
             }
          */
         app.post("/chat/", (req, res) -> {
@@ -230,30 +232,37 @@ public final class SMPPlugin extends JavaPlugin {
 
             JsonObject parser = new JsonParser().parse(new InputStreamReader(req.getBody())).getAsJsonObject();
 
-            String msg = parser.get("msg").getAsString();
-            String username = parser.get("username").getAsString();
-
+            String msg;
+            String username;
+            boolean privateMsg;
+            String targetUsername = "";
             try {
-                msg = URLDecoder.decode(msg, "utf-8");
-                username = URLDecoder.decode(username, "utf-8");
-            } catch (UnsupportedEncodingException err) {
-                res.setStatus(Status._500);
-                res.send(err.toString());
+                msg = parser.get("msg").getAsString();
+                username = parser.get("username").getAsString();
+                privateMsg = parser.get("private").getAsBoolean();
+                if(privateMsg) targetUsername = parser.get("target").getAsString();
+            } catch(ClassCastException err) {
+                res.setStatus(Status._400);
+                res.send("Invalid JSON");
                 return;
             }
 
             String prefix = ChatColor.translateAlternateColorCodes('&', getConfig().getString("prefix"));
             ComponentBuilder messageBuilder = new ComponentBuilder(prefix)
                     .event(new ClickEvent(ClickEvent.Action.OPEN_URL, "https://top.gg/bot/712759741528408064"))
-                    .event(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new ComponentBuilder("Message sent using \u00A76Minecraft SMP-Bot").create()))
+                    .event(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new ComponentBuilder("Message sent using \u00A76Minecraft SMP-Bot").create()));
 
-                    .append(username, ComponentBuilder.FormatRetention.NONE)
+            if(privateMsg) {
+                messageBuilder.append(username + " whispers to you: ", ComponentBuilder.FormatRetention.NONE)
+                        .italic(true);
+            } else {
+                messageBuilder.append(username, ComponentBuilder.FormatRetention.NONE)
                     .bold(true)
                     .color(net.md_5.bungee.api.ChatColor.GRAY)
 
                     .append(" >> ", ComponentBuilder.FormatRetention.NONE)
                     .color(net.md_5.bungee.api.ChatColor.DARK_GRAY);
-
+            }
 
             //Make links clickable
             Pattern urlPattern = Pattern.compile("((http://|https://)?(\\S*)?(([a-zA-Z0-9-]){2,}\\.){1,4}([a-zA-Z]){2,6}(/([a-zA-Z-_/.0-9#:?=&;,]*)?)?)");
@@ -269,11 +278,27 @@ public final class SMPPlugin extends JavaPlugin {
                                 .underlined(true);
 
                     } else messageBuilder.append(m + " ", ComponentBuilder.FormatRetention.NONE);
+
+                    //Add italic to the url if its a private one
+                    if(privateMsg) messageBuilder.italic(true);
                 }
-            } else messageBuilder.append(msg, ComponentBuilder.FormatRetention.NONE);
+            } else {
+                messageBuilder.append(msg, ComponentBuilder.FormatRetention.NONE);
+                if(privateMsg) messageBuilder.italic(true);
+            }
 
             BaseComponent[] messageComponent = messageBuilder.create();
-            getServer().spigot().broadcast(messageComponent);
+
+            if(privateMsg) {
+                Player player = getServer().getPlayer(targetUsername);
+                if(player != null) player.spigot().sendMessage(messageComponent);
+                else {
+                    res.setStatus(Status._422);
+                    res.send("Target player does not exist or is not online.");
+                    return;
+                }
+            }
+            else getServer().spigot().broadcast(messageComponent);
 
             res.send("Success");
         });
@@ -281,7 +306,7 @@ public final class SMPPlugin extends JavaPlugin {
         //GET localhost:11111/disconnect/
         app.get("/disconnect/", (req, res) -> {
             if(wrongHash(req.getAuthorization().get(0).getData())) {
-                res.setStatus(Status._400);
+                res.setStatus(Status._401);
                 res.send("Wrong hash");
                 return;
             }
