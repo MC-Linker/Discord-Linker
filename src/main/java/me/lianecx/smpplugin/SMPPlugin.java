@@ -215,16 +215,24 @@ public final class SMPPlugin extends JavaPlugin {
             }
         });
 
-        //GET localhost:11111/chat/?msg=Ayoo&username=Lianecx
-        app.get("/chat/", (req, res) -> {
+        /*POST localhost:11111/chat/
+            {
+                "msg": "Ayoo",
+                "username": "Lianecx
+            }
+         */
+        app.post("/chat/", (req, res) -> {
             if (wrongHash(req.getAuthorization().get(0).getData())) {
                 res.setStatus(Status._401);
                 res.send("Wrong hash");
                 return;
             }
 
-            String msg = req.getQuery("msg");
-            String username = req.getQuery("username");
+            JsonObject parser = new JsonParser().parse(new InputStreamReader(req.getBody())).getAsJsonObject();
+
+            String msg = parser.get("msg").getAsString();
+            String username = parser.get("username").getAsString();
+
             try {
                 msg = URLDecoder.decode(msg, "utf-8");
                 username = URLDecoder.decode(username, "utf-8");
@@ -246,6 +254,8 @@ public final class SMPPlugin extends JavaPlugin {
                     .append(" >> ", ComponentBuilder.FormatRetention.NONE)
                     .color(net.md_5.bungee.api.ChatColor.DARK_GRAY);
 
+
+            //Make links clickable
             Pattern urlPattern = Pattern.compile("((http://|https://)?(\\S*)?(([a-zA-Z0-9-]){2,}\\.){1,4}([a-zA-Z]){2,6}(/([a-zA-Z-_/.0-9#:?=&;,]*)?)?)");
             Matcher matcher = urlPattern.matcher(msg);
             if (matcher.find()) {
@@ -257,14 +267,14 @@ public final class SMPPlugin extends JavaPlugin {
                         messageBuilder.append(m + " ", ComponentBuilder.FormatRetention.NONE)
                                 .event(new ClickEvent(ClickEvent.Action.OPEN_URL, m))
                                 .underlined(true);
-                    } else {
-                        messageBuilder.append(m + " ", ComponentBuilder.FormatRetention.NONE);
-                    }
+
+                    } else messageBuilder.append(m + " ", ComponentBuilder.FormatRetention.NONE);
                 }
             } else messageBuilder.append(msg, ComponentBuilder.FormatRetention.NONE);
 
             BaseComponent[] messageComponent = messageBuilder.create();
             getServer().spigot().broadcast(messageComponent);
+
             res.send("Success");
         });
 
