@@ -14,23 +14,25 @@ public class HttpConnection {
     private static final int BOT_PORT = 3100;
     private static final String PLUGIN_VERSION = SMPPlugin.getPlugin().getDescription().getVersion();
 
-    private static boolean shouldChat() {
+    private static boolean shouldChat(String type) {
         if(SMPPlugin.getConnJson() == null || SMPPlugin.getConnJson().get("chat") == null) return false;
-        return SMPPlugin.getConnJson().get("chat").getAsBoolean();
+        if(!SMPPlugin.getConnJson().get("chat").getAsBoolean()) return false;
+
+        //Check if type exists in connJson
+        JsonArray types = SMPPlugin.getConnJson().get("types").getAsJsonArray();
+
+        JsonObject typeObject = new JsonObject();
+        typeObject.addProperty("type", type);
+        typeObject.addProperty("enabled", true);
+
+        return types.contains(typeObject);
     }
 
     public static void send(String message, String type, String player) {
-        if(!shouldChat()) return;
+        if(!shouldChat(type)) return;
 
         try {
             HttpURLConnection conn = (HttpURLConnection) new URL("http://smpbot.duckdns.org:"+BOT_PORT+"/chat").openConnection();
-
-            //Check if type exists in connJson
-            JsonArray types = SMPPlugin.getConnJson().get("types").getAsJsonArray();
-            JsonObject typeObject = new JsonObject();
-            typeObject.addProperty("type", type);
-            typeObject.addProperty("enabled", true);
-            if(!types.contains(typeObject)) return;
 
             JsonObject chatJson = new JsonObject();
             chatJson.addProperty("type", type);
