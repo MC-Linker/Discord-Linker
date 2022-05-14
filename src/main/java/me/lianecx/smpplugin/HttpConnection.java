@@ -38,7 +38,7 @@ public class HttpConnection {
             chatJson.addProperty("type", type);
             chatJson.addProperty("player", player);
             chatJson.addProperty("message", ChatColor.stripColor(message));
-            chatJson.add("channel", SMPPlugin.getConnJson().get("channel"));
+            chatJson.add("channels", SMPPlugin.getConnJson().get("channels"));
             chatJson.add("guild", SMPPlugin.getConnJson().get("guild"));
             chatJson.add("ip", SMPPlugin.getConnJson().get("ip"));
 

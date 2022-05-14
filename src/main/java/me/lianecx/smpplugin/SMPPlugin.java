@@ -1,6 +1,7 @@
 package me.lianecx.smpplugin;
 
 import com.google.common.collect.Lists;
+import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
@@ -401,26 +402,31 @@ public final class SMPPlugin extends JavaPlugin {
             JsonObject parser = new JsonParser().parse(new InputStreamReader(req.getBody())).getAsJsonObject();
 
             try {
+                //Save channels from connJson and add new channel
+                JsonArray channels = connJson.getAsJsonArray("channels");
+                channels.add(parser.get("channel"));
+
+                //Create new connJson
                 connJson = new JsonObject();
                 connJson.addProperty("hash", createHash(hash));
                 connJson.addProperty("chat", true);
                 connJson.add("guild", parser.get("guild"));
                 connJson.add("ip", parser.get("ip"));
                 connJson.add("types", parser.get("types").getAsJsonArray());
-                connJson.add("channel", parser.get("channel"));
+                connJson.add("channels", channels);
                 updateConn();
 
-                JsonObject botConnJson = new JsonObject();
-                botConnJson.addProperty("chat", true);
-                botConnJson.add("guild", parser.get("guild"));
-                botConnJson.add("ip", parser.get("ip"));
-                botConnJson.add("types", parser.get("types").getAsJsonArray());
-                botConnJson.add("channel", parser.get("channel"));
-                botConnJson.addProperty("hash", hash);
-                botConnJson.addProperty("version", getServer().getBukkitVersion());
-                botConnJson.addProperty("path", URLEncoder.encode(getServer().getWorlds().get(0).getWorldFolder().getCanonicalPath().replaceAll("\\\\", "/"), "utf-8"));
+                JsonObject respondJson = new JsonObject();
+                respondJson.addProperty("chat", true);
+                respondJson.add("guild", parser.get("guild"));
+                respondJson.add("ip", parser.get("ip"));
+                respondJson.add("types", parser.get("types").getAsJsonArray());
+                respondJson.add("channel", parser.get("channel"));
+                respondJson.addProperty("hash", hash);
+                respondJson.addProperty("version", getServer().getBukkitVersion());
+                respondJson.addProperty("path", URLEncoder.encode(getServer().getWorlds().get(0).getWorldFolder().getCanonicalPath().replaceAll("\\\\", "/"), "utf-8"));
 
-                res.send(botConnJson.toString());
+                res.send(respondJson.toString());
             } catch (IOException | NoSuchAlgorithmException err) {
                 res.setStatus(Status._500);
                 res.send(err.toString());
