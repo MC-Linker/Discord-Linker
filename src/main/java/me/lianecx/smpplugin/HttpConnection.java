@@ -2,6 +2,7 @@ package me.lianecx.smpplugin;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
+import com.google.gson.JsonPrimitive;
 import org.bukkit.ChatColor;
 
 import java.io.*;
@@ -21,11 +22,8 @@ public class HttpConnection {
         //Check if type exists in connJson
         JsonArray types = SMPPlugin.getConnJson().get("types").getAsJsonArray();
 
-        JsonObject typeObject = new JsonObject();
-        typeObject.addProperty("type", type);
-        typeObject.addProperty("enabled", true);
-
-        return types.contains(typeObject);
+        JsonPrimitive typeElement = new JsonPrimitive(type);
+        return types.contains(typeElement);
     }
 
     public static void send(String message, String type, String player) {
