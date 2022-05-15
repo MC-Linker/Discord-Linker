@@ -376,21 +376,17 @@ public final class SMPPlugin extends JavaPlugin {
             }
         });
 
-        /*POST localhost:11111/connect/
+        /*POST localhost:11111/channel/
             {
                 "ip": ip,
                 "guild": guildId,
-                "channel":channelId,
-                "types": [
-                      {
-                        "type": 0,
-                        "enabled": true
-                      },
-                      ...
-                 ]
+                "channel": {
+                    channelId,
+                    "types": ["chat", "close"]
+                }
             }
          */
-        app.post("/channel/", (req, res) -> {
+        app.post("/channel/:method/", (req, res) -> {
             String hash = req.getAuthorization().get(0).getData();
 
             if(wrongHash(hash)) {
@@ -404,12 +400,18 @@ public final class SMPPlugin extends JavaPlugin {
             try {
                 //Save channels from connJson and add new channel
                 JsonArray channels = connJson.getAsJsonArray("channels");
-                channels.add(parser.get("channel"));
+                if(req.getParam("method").equals("add")) channels.add(parser.get("channel"));
+                else if(req.getParam("method").equals("remove")) channels.remove(parser.get("channel"));
+                else {
+                    res.setStatus(Status._400);
+                    res.send("Invalid method parameter");
+                    return;
+                }
 
                 //Create new connJson
                 connJson = new JsonObject();
                 connJson.addProperty("hash", createHash(hash));
-                connJson.addProperty("chat", true);
+                connJson.addProperty("chat", channels.size() != 0);
                 connJson.add("guild", parser.get("guild"));
                 connJson.add("ip", parser.get("ip"));
                 connJson.add("types", parser.get("types").getAsJsonArray());
