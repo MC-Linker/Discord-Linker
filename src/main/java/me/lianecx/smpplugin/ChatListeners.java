@@ -1,5 +1,6 @@
 package me.lianecx.smpplugin;
 
+import org.bukkit.command.ConsoleCommandSender;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.PlayerDeathEvent;
@@ -11,7 +12,7 @@ public class ChatListeners implements Listener  {
     private static final SMPPlugin PLUGIN = SMPPlugin.getPlugin();
 
     @EventHandler
-    public void onChatmessage(AsyncPlayerChatEvent event) {
+    public void onChatMessage(AsyncPlayerChatEvent event) {
         PLUGIN.getServer().getScheduler().runTaskAsynchronously(PLUGIN, () ->
             HttpConnection.send(event.getMessage(), "chat", event.getPlayer().getName()));
     }
@@ -43,12 +44,15 @@ public class ChatListeners implements Listener  {
     @EventHandler
     public void onPlayerCommand(PlayerCommandPreprocessEvent event) {
         PLUGIN.getServer().getScheduler().runTaskAsynchronously(PLUGIN, () ->
-            HttpConnection.send(event.getMessage(), "command", event.getPlayer().getName()));
+            HttpConnection.send(event.getMessage(), "player_command", event.getPlayer().getName()));
     }
 
     @EventHandler
-    public void onServerCommand(ServerCommandEvent event) {
-        PLUGIN.getServer().getScheduler().runTaskAsynchronously(PLUGIN, () ->
-            HttpConnection.send(event.getCommand(), "command", event.getSender().getName()));
+    public void onConsoleCommand(ServerCommandEvent event) {
+        PLUGIN.getServer().getScheduler().runTaskAsynchronously(PLUGIN, () -> {
+            //Command sender either from the console or a command block
+            String commandType = event.getSender() instanceof ConsoleCommandSender ? "console_command" : "block_command";
+            HttpConnection.send(event.getCommand(), commandType, event.getSender().getName());
+        });
     }
 }
