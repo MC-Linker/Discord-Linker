@@ -1,6 +1,7 @@
 package me.lianecx.smpplugin;
 
 import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
 import org.bukkit.ChatColor;
@@ -15,19 +16,26 @@ public class HttpConnection {
     private static final int BOT_PORT = 3100;
     private static final String PLUGIN_VERSION = SMPPlugin.getPlugin().getDescription().getVersion();
 
-    private static boolean shouldChat(String type) {
+    private static boolean shouldChat() {
         if(SMPPlugin.getConnJson() == null || SMPPlugin.getConnJson().get("chat") == null) return false;
-        if(!SMPPlugin.getConnJson().get("chat").getAsBoolean()) return false;
+        return SMPPlugin.getConnJson().get("chat").getAsBoolean();
+    }
 
-        //Check if type exists in connJson
-        JsonArray types = SMPPlugin.getConnJson().get("types").getAsJsonArray();
+    private static JsonArray getChannels(String type) {
+        if(!shouldChat()) return null;
 
-        JsonPrimitive typeElement = new JsonPrimitive(type);
-        return types.contains(typeElement);
+        JsonArray channels = new JsonArray();
+        for (JsonElement channel : SMPPlugin.getConnJson().getAsJsonArray("channels")) {
+            JsonArray types = channel.getAsJsonObject().getAsJsonArray("types");
+            if(types.contains(new JsonPrimitive(type))) channels.add(channel);
+        }
+
+        return channels;
     }
 
     public static void send(String message, String type, String player) {
-        if(!shouldChat(type)) return;
+        JsonArray channels = getChannels(type);
+        if(channels == null || channels.size() == 0) return;
 
         try {
             HttpURLConnection conn = (HttpURLConnection) new URL("http://smpbot.duckdns.org:"+BOT_PORT+"/chat").openConnection();
@@ -36,7 +44,7 @@ public class HttpConnection {
             chatJson.addProperty("type", type);
             chatJson.addProperty("player", player);
             chatJson.addProperty("message", ChatColor.stripColor(message));
-            chatJson.add("channels", SMPPlugin.getConnJson().get("channels"));
+            chatJson.add("channels", channels);
             chatJson.add("guild", SMPPlugin.getConnJson().get("guild"));
             chatJson.add("ip", SMPPlugin.getConnJson().get("ip"));
 
