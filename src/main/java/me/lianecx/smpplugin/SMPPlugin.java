@@ -280,7 +280,7 @@ public final class SMPPlugin extends JavaPlugin {
 
                     } else messageBuilder.append(m + " ", ComponentBuilder.FormatRetention.NONE);
 
-                    //Add italic to the url if its a private one
+                    //Add italic to the url if it's a private message
                     if(privateMsg) messageBuilder.italic(true);
                 }
             } else {
@@ -298,8 +298,9 @@ public final class SMPPlugin extends JavaPlugin {
                     res.send("Target player does not exist or is not online.");
                     return;
                 }
+            } else {
+                getServer().spigot().broadcast(messageComponent);
             }
-            else getServer().spigot().broadcast(messageComponent);
 
             res.send("Success");
         });
@@ -399,9 +400,22 @@ public final class SMPPlugin extends JavaPlugin {
 
             try {
                 //Save channels from connJson and add new channel
-                JsonArray channels = connJson.getAsJsonArray("channels");
-                if(req.getParam("method").equals("add")) channels.add(parser.get("channel"));
-                else if(req.getParam("method").equals("remove")) channels.remove(parser.get("channel"));
+                JsonArray channels;
+                if(connJson != null && connJson.get("channels") != null) channels = connJson.getAsJsonArray("channels");
+                else channels = new JsonArray();
+
+                if(req.getParam("method").equals("add")) {
+                    //Find channel with same id and remove
+                    for (int i = 0; i<channels.size(); i++) {
+                        JsonObject channel = channels.get(i).getAsJsonObject();
+                        if(channel.get("id").equals(parser.getAsJsonObject("channel").get("id"))) {
+                            channels.remove(i);
+                        }
+                    }
+
+                    //Add new channel
+                    channels.add(parser.get("channel"));
+                } else if(req.getParam("method").equals("remove")) channels.remove(parser.get("channel"));
                 else {
                     res.setStatus(Status._400);
                     res.send("Invalid method parameter");
@@ -414,7 +428,6 @@ public final class SMPPlugin extends JavaPlugin {
                 connJson.addProperty("chat", channels.size() != 0);
                 connJson.add("guild", parser.get("guild"));
                 connJson.add("ip", parser.get("ip"));
-                connJson.add("types", parser.get("types").getAsJsonArray());
                 connJson.add("channels", channels);
                 updateConn();
 
@@ -422,8 +435,7 @@ public final class SMPPlugin extends JavaPlugin {
                 respondJson.addProperty("chat", true);
                 respondJson.add("guild", parser.get("guild"));
                 respondJson.add("ip", parser.get("ip"));
-                respondJson.add("types", parser.get("types").getAsJsonArray());
-                respondJson.add("channel", parser.get("channel"));
+                respondJson.add("channels", channels);
                 respondJson.addProperty("hash", hash);
                 respondJson.addProperty("version", getServer().getBukkitVersion());
                 respondJson.addProperty("path", URLEncoder.encode(getServer().getWorlds().get(0).getWorldFolder().getCanonicalPath().replaceAll("\\\\", "/"), "utf-8"));
