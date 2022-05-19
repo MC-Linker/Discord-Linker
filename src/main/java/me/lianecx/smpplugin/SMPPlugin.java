@@ -404,19 +404,18 @@ public final class SMPPlugin extends JavaPlugin {
                 if(connJson != null && connJson.get("channels") != null) channels = connJson.getAsJsonArray("channels");
                 else channels = new JsonArray();
 
-                if(req.getParam("method").equals("add")) {
-                    //Find channel with same id and remove
-                    for (int i = 0; i<channels.size(); i++) {
-                        JsonObject channel = channels.get(i).getAsJsonObject();
-                        if(channel.get("id").equals(parser.getAsJsonObject("channel").get("id"))) {
-                            channels.remove(i);
-                        }
+                //Find channel with same id and remove
+                for (int i = 0; i<channels.size(); i++) {
+                    JsonObject channel = channels.get(i).getAsJsonObject();
+                    if(channel.get("id").equals(parser.get("channel"))) {
+                        channels.remove(i);
                     }
+                }
 
-                    //Add new channel
-                    channels.add(parser.get("channel"));
-                } else if(req.getParam("method").equals("remove")) channels.remove(parser.get("channel"));
-                else {
+                //Add new channel if method equals to add
+                if(req.getParam("method").equals("add")) channels.add(parser.get("channel"));
+                else if(!req.getParam("method").equals("remove")){
+                    //If neither add nor remove
                     res.setStatus(Status._400);
                     res.send("Invalid method parameter");
                     return;
