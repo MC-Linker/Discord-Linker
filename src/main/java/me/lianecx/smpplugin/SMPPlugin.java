@@ -1,10 +1,7 @@
 package me.lianecx.smpplugin;
 
 import com.google.common.collect.Lists;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
+import com.google.gson.*;
 import express.Express;
 import express.utils.Status;
 import net.md_5.bungee.api.chat.BaseComponent;
@@ -400,15 +397,15 @@ public final class SMPPlugin extends JavaPlugin {
 
             try {
                 //Save channels from connJson and add new channel
-                JsonArray channels;
-                if(connJson != null && connJson.get("channels") != null) channels = connJson.getAsJsonArray("channels");
-                else channels = new JsonArray();
+                JsonArray oldChannels = new JsonArray();
+                if(connJson != null && connJson.get("channels") != null) oldChannels = connJson.getAsJsonArray("channels");
 
-                //Find channel with same id and remove
-                for (int i = 0; i<channels.size(); i++) {
-                    JsonObject channel = channels.get(i).getAsJsonObject();
-                    if(channel.get("id").equals(parser.get("channel"))) {
-                        channels.remove(i);
+                JsonArray channels = new JsonArray();
+                //Remove duplicates
+                for (int i = 0; i<oldChannels.size(); i++) {
+                    JsonObject channel = oldChannels.get(i).getAsJsonObject();
+                    if(!channel.get("id").equals(parser.getAsJsonObject("channel").get("id"))) {
+                        channels.add(new JsonPrimitive(i));
                     }
                 }
 
@@ -469,7 +466,7 @@ public final class SMPPlugin extends JavaPlugin {
         } catch(NoSuchAlgorithmException err) {
             return true;
         }
-    }       
+    }
 
     public boolean wrongConnection(String Ip, String hash) {
         try {
