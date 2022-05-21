@@ -49,10 +49,13 @@ public final class SMPPlugin extends JavaPlugin {
     public void onEnable() {
         plugin = this;
         config.addDefault("port", 11111);
+        config.addDefault("prefix", "&l&9Discord &8| ");
         config.options().copyDefaults(true);
         saveConfig();
 
         getServer().getPluginManager().registerEvents(new ChatListeners(), this);
+        getCommand("smp").setExecutor(new SMPCommand());
+        getCommand("smp").setTabCompleter(new SMPTabCompleter());
 
         getServer().getScheduler().runTaskAsynchronously(this, () -> {
             HttpConnection.checkVersion();
@@ -85,6 +88,10 @@ public final class SMPPlugin extends JavaPlugin {
     }
     public static SMPPlugin getPlugin() {
         return plugin;
+    }
+
+    public static Express getApp() {
+        return app;
     }
 
     public Express loadExpress() {

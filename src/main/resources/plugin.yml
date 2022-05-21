@@ -5,3 +5,7 @@ api-version: 1.13
 authors: [ Lianecx ]
 description: Official plugin for the Minecraft SMP Bot.
 prefix: SMP-Plugin
+commands:
+  smp:
+    description: "Settings for the SMP-Plugin"
+    usage: "/smp reload|port|prefix"
