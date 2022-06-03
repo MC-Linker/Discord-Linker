@@ -193,31 +193,56 @@ public final class SMPPlugin extends JavaPlugin {
                 return;
             }
 
+            JsonObject responseJson = new JsonObject();
+
             try {
                 getServer().getScheduler().runTask(this, () -> {
                     try {
                         cmdLogger.startLogging();
                         getServer().dispatchCommand(Bukkit.getConsoleSender(), URLDecoder.decode(req.getQuery("cmd"), "utf-8"));
-                        cmdLogger.stopLogging();
                     } catch(UnsupportedEncodingException err) {
+                        responseJson.addProperty("message", err.toString());
                         res.setStatus(Status._500);
-                        res.send(err.toString());
+                        res.send(responseJson.toString());
                         return;
+                    } finally {
+                        cmdLogger.stopLogging();
                     }
-
 
                     try {
                         String data = cmdLogger.getData().get(0);
-                        res.send(ChatColor.stripColor(data));
+
+                        //cmdLogger returns weirdly encoded chars (probably ASCII) which is why ChatColor.stripColor does not work on the returned string.
+                        //Color codes are stripped successfully with this regex, but other non-english chars like € or © are not displayed correctly (�) after sending them to Discord.
+                        //Anyone can feel free to try to solve this problem
+                        // If you do so, please increase this counter as a warning for the next person:
+
+                        // totalHoursWastedHere = 11
+                        String colorCodeRegex = "(?i)\\x7F([\\dA-FK-OR])";
+
+                        //Get first color used in string
+                        ChatColor firstColor = null;
+                        Pattern pattern = Pattern.compile(colorCodeRegex);
+                        Matcher matcher = pattern.matcher(data);
+                        if(matcher.find()) firstColor = ChatColor.getByChar(matcher.group(1));
+
+                        responseJson.addProperty("message", data.replaceAll(colorCodeRegex, ""));
+                        if(firstColor != null) responseJson.addProperty("color", firstColor.getChar());
+
+                        res.send(responseJson.toString());
                     } catch (IndexOutOfBoundsException err) {
                         res.setStatus(Status._206);
-                        res.send("Could not fetch response message! This commonly happens after using `/reload`.");
+                        responseJson.addProperty("message", err.toString());
+
+                        res.send(responseJson.toString());
+                    } finally {
+                        cmdLogger.clearData();
                     }
-                    cmdLogger.clearData();
                 });
             } catch (IllegalArgumentException | CommandException err) {
                 res.setStatus(Status._500);
-                res.send(err.toString());
+                responseJson.addProperty("message", err.toString());
+                res.send(responseJson.toString());
             }
         });
 
