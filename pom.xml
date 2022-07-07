@@ -9,7 +9,7 @@
     <version>2.0</version>
     <packaging>jar</packaging>
 
-    <name>SMP-Plugin</name>
+    <name>Discord-Linker</name>
 
     <description>Official plugin for the MC Linker Discord Bot.</description>
     <properties>
