@@ -1,14 +1,13 @@
-
 View minecraft stats, advancements and inventories of every member in Discord!
 
 # DESCRIPTION
-Look at the Minecraft server stats, advancements and inventories of any member in Discord: When you killed the ender dragon, how many raids you have won or even how long your friend played on the server, this plugin can show it all. Also supports two-way chat with Minecraft.
+Moderate and connect your Minecraft server with Discord! This plugin allows you to view minecraft stats, advancements, and even inventories of any member in Discord! Also supports a powerful two-way chat with Minecraft, command execution and many other helpful features.
 
 # SETUP
-+ Invite the Discord bot "MC Linker" using [this link](https://top.gg/bot/712759741528408064)
-+ After you installed the plugin, execute `/connect plugin YOUR.SERVER.IP` in Discord
++ Invite the "MC Linker" Discord bot using [this link](https://top.gg/bot/712759741528408064)
++ After you installed the plugin, execute `/connect plugin <your server ip>` in Discord
 + Follow the instructions sent in DM
-+ After connecting you can also execute `/chatchannel CHANNEL` in Discord if you want to connect the Minecraft chat with Discord
++ After connecting you can also execute `/chatchannel <channel>` in Discord if you want to connect the Minecraft chat with Discord
 
 # ADDITIONAL INFO
 + For a list of all bot commands execute `/help` in Discord
@@ -19,7 +18,6 @@ Look at the Minecraft server stats, advancements and inventories of any member i
 + If you receive the error: `Address already in use` in the server console follow the instructions of the next point.
 + If you receive the error: `Plugin does not respond` by the Discord bot although your server is online, follow these steps:
 	+ Register or port forward an additional port (if supported from your server host)
-	+ Enter that port in the plugin’s `config.yml`.
-	+ Execute `reload confirm` in your server console
+	+ Execute `/linker port <port>` in Minecraft.
 	+ Execute `/connect plugin YOUR.SERVER.IP config_port` in Discord and make sure to specify the correct port from the config.yml
 + More help => [Support Server](https://discord.gg/rX36kZUGNK)
