@@ -1,11 +1,11 @@
-name: SMP-Plugin
+name: Discord-Linker
 version: ${project.version}
-main: me.lianecx.smpplugin.SMPPlugin
+main: me.lianecx.discordlinker.DiscordLinker
 api-version: 1.13
 authors: [ Lianecx ]
-description: Official plugin for the Minecraft SMP Bot.
-prefix: SMP-Plugin
+description: Official plugin for the MC Linker Discord Bot.
+prefix: Discord-Linker
 commands:
-  smp:
-    description: "Settings for the SMP-Plugin"
-    usage: "/smp reload|port|prefix"
+  linker:
+    description: "Settings of the Discord-Linker"
+    usage: "/linker reload|port|prefix"

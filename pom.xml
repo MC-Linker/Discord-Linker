@@ -5,13 +5,13 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>me.lianecx</groupId>
-    <artifactId>SMP-Plugin</artifactId>
-    <version>1.4.1</version>
+    <artifactId>Discord-Linker</artifactId>
+    <version>2.0</version>
     <packaging>jar</packaging>
 
     <name>SMP-Plugin</name>
 
-    <description>Official plugin for the Minecraft SMP Bot.</description>
+    <description>Official plugin for the MC Linker Discord Bot.</description>
     <properties>
         <java.version>8</java.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>

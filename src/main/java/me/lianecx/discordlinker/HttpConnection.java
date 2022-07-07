@@ -1,4 +1,4 @@
-package me.lianecx.smpplugin;
+package me.lianecx.discordlinker;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
@@ -14,18 +14,18 @@ import java.util.stream.Collectors;
 
 public class HttpConnection {
     private static final int BOT_PORT = 3100;
-    private static final String PLUGIN_VERSION = SMPPlugin.getPlugin().getDescription().getVersion();
+    private static final String PLUGIN_VERSION = DiscordLinker.getPlugin().getDescription().getVersion();
 
     private static boolean shouldChat() {
-        if(SMPPlugin.getConnJson() == null || SMPPlugin.getConnJson().get("chat") == null) return false;
-        return SMPPlugin.getConnJson().get("chat").getAsBoolean();
+        if(DiscordLinker.getConnJson() == null || DiscordLinker.getConnJson().get("chat") == null) return false;
+        return DiscordLinker.getConnJson().get("chat").getAsBoolean();
     }
 
     private static JsonArray getChannels(String type) {
         if(!shouldChat()) return null;
 
         JsonArray channels = new JsonArray();
-        for (JsonElement channel : SMPPlugin.getConnJson().getAsJsonArray("channels")) {
+        for (JsonElement channel : DiscordLinker.getConnJson().getAsJsonArray("channels")) {
             JsonArray types = channel.getAsJsonObject().getAsJsonArray("types");
             if(types.contains(new JsonPrimitive(type))) channels.add(channel);
         }
@@ -45,8 +45,8 @@ public class HttpConnection {
             chatJson.addProperty("player", player);
             chatJson.addProperty("message", ChatColor.stripColor(message));
             chatJson.add("channels", channels);
-            chatJson.add("guild", SMPPlugin.getConnJson().get("guild"));
-            chatJson.add("ip", SMPPlugin.getConnJson().get("ip"));
+            chatJson.add("guild", DiscordLinker.getConnJson().get("guild"));
+            chatJson.add("ip", DiscordLinker.getConnJson().get("ip"));
 
             byte[] out = chatJson.toString().getBytes(StandardCharsets.UTF_8);
             int length = out.length;
@@ -69,7 +69,7 @@ public class HttpConnection {
             HttpURLConnection conn = (HttpURLConnection) new URL("http://smpbot.duckdns.org:"+BOT_PORT+"/version").openConnection();
             InputStream inputStream = conn.getInputStream();
             String latestVersion = new BufferedReader(new InputStreamReader(inputStream)).lines().collect(Collectors.joining("\n"));
-            if(!latestVersion.equals(PLUGIN_VERSION)) SMPPlugin.getPlugin().getLogger().info(ChatColor.AQUA + "Please update to the latest SMP-Plugin version (" + latestVersion + ") for a bug-free and feature-rich experience.");
+            if(!latestVersion.equals(PLUGIN_VERSION)) DiscordLinker.getPlugin().getLogger().info(ChatColor.AQUA + "Please update to the latest SMP-Plugin version (" + latestVersion + ") for a bug-free and feature-rich experience.");
 
         } catch (IOException ignored) {}
     }

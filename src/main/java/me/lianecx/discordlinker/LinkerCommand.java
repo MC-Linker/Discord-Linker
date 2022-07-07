@@ -1,6 +1,5 @@
-package me.lianecx.smpplugin;
+package me.lianecx.discordlinker;
 
-import express.Express;
 import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -9,9 +8,9 @@ import org.bukkit.entity.Player;
 
 import java.util.Arrays;
 
-public class SMPCommand implements CommandExecutor {
+public class LinkerCommand implements CommandExecutor {
 
-    SMPPlugin PLUGIN = SMPPlugin.getPlugin();
+    DiscordLinker PLUGIN = DiscordLinker.getPlugin();
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if(args.length == 0) return false;
@@ -69,7 +68,7 @@ public class SMPCommand implements CommandExecutor {
     }
 
     public void restartServer(int port) {
-        SMPPlugin.getApp().stop();
-        SMPPlugin.getApp().listen(() -> PLUGIN.getLogger().info("Listening on port " + port), port);
+        DiscordLinker.getApp().stop();
+        DiscordLinker.getApp().listen(() -> PLUGIN.getLogger().info("Listening on port " + port), port);
     }
 }

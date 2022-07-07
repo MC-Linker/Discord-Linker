@@ -1,4 +1,4 @@
-package me.lianecx.smpplugin;
+package me.lianecx.discordlinker;
 
 import com.google.common.collect.Lists;
 import com.google.gson.*;
@@ -30,18 +30,17 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.Arrays;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 
-public final class SMPPlugin extends JavaPlugin {
+public final class DiscordLinker extends JavaPlugin {
 
     private static Express app;
     private static JsonObject connJson;
-    private static SMPPlugin plugin;
+    private static DiscordLinker plugin;
     private static final ConsoleLogger cmdLogger = new ConsoleLogger();
     private static String verifyCode = null;
     FileConfiguration config = getConfig();
@@ -55,8 +54,8 @@ public final class SMPPlugin extends JavaPlugin {
         saveConfig();
 
         getServer().getPluginManager().registerEvents(new ChatListeners(), this);
-        getCommand("smp").setExecutor(new SMPCommand());
-        getCommand("smp").setTabCompleter(new SMPTabCompleter());
+        getCommand("linker").setExecutor(new LinkerCommand());
+        getCommand("linker").setTabCompleter(new LinkerTabCompleter());
 
         getServer().getScheduler().runTaskAsynchronously(this, () -> {
             HttpConnection.checkVersion();
@@ -87,7 +86,7 @@ public final class SMPPlugin extends JavaPlugin {
     public static JsonObject getConnJson() {
         return connJson;
     }
-    public static SMPPlugin getPlugin() {
+    public static DiscordLinker getPlugin() {
         return plugin;
     }
 

@@ -1,4 +1,4 @@
-package me.lianecx.smpplugin;
+package me.lianecx.discordlinker;
 
 import org.bukkit.command.ConsoleCommandSender;
 import org.bukkit.event.EventHandler;
@@ -10,7 +10,7 @@ import org.bukkit.event.server.ServerCommandEvent;
 
 public class ChatListeners implements Listener  {
 
-    private static final SMPPlugin PLUGIN = SMPPlugin.getPlugin();
+    private static final DiscordLinker PLUGIN = DiscordLinker.getPlugin();
 
     @EventHandler(ignoreCancelled = true, priority = EventPriority.HIGH)
     public void onChatMessage(AsyncPlayerChatEvent event) {

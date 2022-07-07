@@ -1,4 +1,4 @@
-package me.lianecx.smpplugin;
+package me.lianecx.discordlinker;
 
 import java.util.ArrayList;
 import java.util.List;
