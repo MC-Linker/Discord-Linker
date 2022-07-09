@@ -226,7 +226,7 @@ public final class DiscordLinker extends JavaPlugin {
                         Matcher matcher = pattern.matcher(data);
                         if(matcher.find()) firstColor = ChatColor.getByChar(matcher.group(1));
 
-                        responseJson.addProperty("message", data.replaceAll(colorCodeRegex, ""));
+                        responseJson.addProperty("message", matcher.replaceAll(""));
                         if(firstColor != null) responseJson.addProperty("color", firstColor.getChar());
 
                         res.send(responseJson.toString());
