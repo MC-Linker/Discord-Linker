@@ -433,11 +433,10 @@ public final class DiscordLinker extends JavaPlugin {
                 if(connJson != null && connJson.get("channels") != null) oldChannels = connJson.getAsJsonArray("channels");
 
                 JsonArray channels = new JsonArray();
-                //Remove duplicates
-                for (int i = 0; i<oldChannels.size(); i++) {
-                    JsonObject channel = oldChannels.get(i).getAsJsonObject();
-                    if(!channel.get("id").equals(parser.getAsJsonObject("channel").get("id"))) {
-                        channels.add(new JsonPrimitive(i));
+                //Remove duplicates and fill new channel array
+                for (JsonElement channel : oldChannels) {
+                    if(!channel.getAsJsonObject().get("id").equals(parser.getAsJsonObject("channel").get("id"))) {
+                        channels.add(channel);
                     }
                 }
 
@@ -476,7 +475,7 @@ public final class DiscordLinker extends JavaPlugin {
         });
 
         //GET localhost:11111/
-        app.get("/", (req, res) -> res.send("To invite the Minecraft SMP Bot, open this link: https://top.gg/bot/712759741528408064"));
+        app.get("/", (req, res) -> res.send("To invite MC Linker, open this link: https://top.gg/bot/712759741528408064"));
 
         int port = config.getInt("port") != 0 ? config.getInt("port") : 11111;
         app.listen(() -> getLogger().info("Listening on port " + port), port);
@@ -484,7 +483,7 @@ public final class DiscordLinker extends JavaPlugin {
         return app;
     }
 
-    private void updateConn() throws IOException {
+    public void updateConn() throws IOException {
         FileWriter writer = new FileWriter(getDataFolder() + "/connection.conn");
         writer.write(connJson.toString());
         writer.close();

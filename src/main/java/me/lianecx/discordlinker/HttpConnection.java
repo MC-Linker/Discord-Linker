@@ -24,13 +24,23 @@ public class HttpConnection {
     private static JsonArray getChannels(String type) {
         if(!shouldChat()) return null;
 
-        JsonArray channels = new JsonArray();
-        for (JsonElement channel : DiscordLinker.getConnJson().getAsJsonArray("channels")) {
-            JsonArray types = channel.getAsJsonObject().getAsJsonArray("types");
-            if(types.contains(new JsonPrimitive(type))) channels.add(channel);
+        JsonArray allChannels = DiscordLinker.getConnJson().getAsJsonArray("channels");
+        JsonArray filteredChannels = new JsonArray();
+        for (JsonElement channel : allChannels) {
+            try {
+                JsonArray types = channel.getAsJsonObject().getAsJsonArray("types");
+                if(types.contains(new JsonPrimitive(type))) filteredChannels.add(channel);
+            } catch(Exception err) {
+                //If channel is corrupted, remove
+                allChannels.remove(channel);
+
+                try {
+                    DiscordLinker.getPlugin().updateConn();
+                } catch (IOException ignored) {}
+            }
         }
 
-        return channels;
+        return filteredChannels;
     }
 
     public static void send(String message, String type, String player) {
