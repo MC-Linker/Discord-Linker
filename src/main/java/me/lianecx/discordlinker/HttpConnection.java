@@ -79,7 +79,7 @@ public class HttpConnection {
             HttpURLConnection conn = (HttpURLConnection) new URL("http://smpbot.duckdns.org:"+BOT_PORT+"/version").openConnection();
             InputStream inputStream = conn.getInputStream();
             String latestVersion = new BufferedReader(new InputStreamReader(inputStream)).lines().collect(Collectors.joining("\n"));
-            if(!latestVersion.equals(PLUGIN_VERSION)) DiscordLinker.getPlugin().getLogger().info(ChatColor.AQUA + "Please update to the latest SMP-Plugin version (" + latestVersion + ") for a bug-free and feature-rich experience.");
+            if(!latestVersion.equals(PLUGIN_VERSION)) DiscordLinker.getPlugin().getLogger().info(ChatColor.AQUA + "Please update to the latest Discord-Linker version (" + latestVersion + ") for a bug-free and feature-rich experience.");
 
         } catch (IOException ignored) {}
     }
