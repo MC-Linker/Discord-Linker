@@ -1,4 +1,5 @@
-View minecraft stats, advancements and inventories of every member in Discord!
+View minecraft stats, advancements and inventories in Discord! Also includes moderation tools, minecraft commands and much more.
+
 
 # DESCRIPTION
 Moderate and connect your Minecraft server with Discord! This plugin allows you to view minecraft stats, advancements, and even inventories of any member in Discord! Also supports a powerful two-way chat with Minecraft, command execution and many other helpful features.
