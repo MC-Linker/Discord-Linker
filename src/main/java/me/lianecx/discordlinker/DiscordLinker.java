@@ -43,6 +43,7 @@ public final class DiscordLinker extends JavaPlugin {
     private static DiscordLinker plugin;
     private static final ConsoleLogger cmdLogger = new ConsoleLogger();
     private static String verifyCode = null;
+    private static final Gson gson = new Gson();
     FileConfiguration config = getConfig();
 
     @Override
@@ -151,7 +152,7 @@ public final class DiscordLinker extends JavaPlugin {
         });
 
         //GET localhost:11111/file/find/?file=level.dat&path=/path/to/file&depth=4
-        app.get("/file/find/", (req, res) -> {
+        app.get("/file/list/", (req, res) -> {
             if(wrongHash(req.getAuthorization().get(0).getData())) {
                 res.setStatus(Status._401);
                 res.send("Wrong hash");
@@ -159,19 +160,24 @@ public final class DiscordLinker extends JavaPlugin {
             }
 
             try {
-                Path path = Paths.get(URLDecoder.decode(req.getQuery("path"), "utf-8"));
+                Path folder = Paths.get(URLDecoder.decode(req.getQuery("folder"), "utf-8"));
 
-                List<Path> searchFiles = Files.walk(path, Integer.parseInt(req.getQuery("depth")))
-                        .filter(Files::isRegularFile)
-                        .filter(file -> file.getFileName().toString().equalsIgnoreCase(req.getQuery("file")))
-                        .collect(Collectors.toList());
-                res.send(searchFiles.get(0).toFile().getCanonicalPath());
+                JsonArray content = new JsonArray();
+                Files.list(folder)
+                        .map(path -> {
+                            JsonObject object = new JsonObject();
+                            object.addProperty("name", path.toFile().getName());
+                            object.addProperty("isDirectory", path.toFile().isDirectory());
+                            return object;
+                        })
+                        .forEach(content::add);
+
+                res.send(content.toString());
             } catch (InvalidPathException err) {
                 res.setStatus(Status._404);
                 res.send("Invalid Path");
             } catch (IOException err) {
-                res.setStatus(Status._500);
-                res.send(err.toString());
+                res.send("[]");
             }
         });
 
@@ -472,6 +478,19 @@ public final class DiscordLinker extends JavaPlugin {
                 res.setStatus(Status._500);
                 res.send(err.toString());
             }
+        });
+
+        app.get("/players/", (req, res) -> {
+            if(wrongHash(req.getAuthorization().get(0).getData())) {
+                res.setStatus(Status._401);
+                res.send("Wrong hash");
+                return;
+            }
+
+            List<String> onlinePlayers = getServer().getOnlinePlayers().stream()
+                    .map(Player::getName)
+                    .collect(Collectors.toList());
+            res.send(gson.toJson(onlinePlayers));
         });
 
         //GET localhost:11111/
