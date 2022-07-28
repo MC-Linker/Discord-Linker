@@ -20,5 +20,5 @@ Moderate and connect your Minecraft server with Discord! This plugin allows you 
 + If you receive the error: `Plugin does not respond` by the Discord bot although your server is online, follow these steps:
 	+ Register or port forward an additional port (if supported from your server host)
 	+ Execute `/linker port <port>` in Minecraft and make sure to specify the newly registered/forwarded port
-	+ Execute `/connect plugin <your server ip> <port>` with the same port
+	+ Execute `/connect plugin <your server ip> <port>` in Discord with the same port
 + More help => [Support Server](https://discord.gg/rX36kZUGNK)
