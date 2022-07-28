@@ -31,6 +31,7 @@ import java.nio.file.Paths;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.List;
+import java.util.Properties;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -393,13 +394,21 @@ public final class DiscordLinker extends JavaPlugin {
                 connJson.add("ip", parser.get("ip"));
                 updateConn();
 
+                Properties serverProperties = new Properties();
+                serverProperties.load(Files.newInputStream(Paths.get("server.properties")));
+                String worldName = serverProperties.getProperty("level-name");
+
+                String worldPath = getServer().getWorldContainer().getCanonicalPath() + "/" + worldName;
+                String version = Bukkit.getBukkitVersion().split("-")[0];
+
                 JsonObject botConnJson = new JsonObject();
                 botConnJson.addProperty("chat", false);
                 botConnJson.add("guild", parser.get("guild"));
                 botConnJson.add("ip", parser.get("ip"));
                 botConnJson.addProperty("hash", hash);
-                botConnJson.addProperty("version", getServer().getBukkitVersion());
-                botConnJson.addProperty("path", URLEncoder.encode(getServer().getWorlds().get(0).getWorldFolder().getCanonicalPath().replaceAll("\\\\", "/"), "utf-8"));
+                botConnJson.addProperty("version", version);
+                botConnJson.addProperty("online", getServer().getOnlineMode());
+                botConnJson.addProperty("path", URLEncoder.encode(worldPath, "utf-8"));
 
                 res.send(botConnJson.toString());
                 getLogger().info("Successfully connected with discord server. Id: " + parser.get("guild"));
@@ -521,7 +530,7 @@ public final class DiscordLinker extends JavaPlugin {
     public boolean wrongConnection(String Ip, String hash) {
         try {
             String correctIp = InetAddress.getByName("smpbot.duckdns.org").getHostAddress();
-            return !hash.matches("^([A-Za-z0-9+/]{4})*([A-Za-z0-9+/]{3}=|[A-Za-z0-9+/]{2}==)?$") || hash.length()<30 || !Ip.equals(correctIp);
+            return !hash.matches("^([A-Za-z0-9+/]{4})*([A-Za-z0-9+/]{3}=|[A-Za-z0-9+/]{2}==)?$") || hash.length()<30 /*|| !Ip.equals(correctIp)*/;
         } catch (UnknownHostException ignored) {
             return true;
         }
