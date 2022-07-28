@@ -394,21 +394,14 @@ public final class DiscordLinker extends JavaPlugin {
                 connJson.add("ip", parser.get("ip"));
                 updateConn();
 
-                Properties serverProperties = new Properties();
-                serverProperties.load(Files.newInputStream(Paths.get("server.properties")));
-                String worldName = serverProperties.getProperty("level-name");
-
-                String worldPath = getServer().getWorldContainer().getCanonicalPath() + "/" + worldName;
-                String version = Bukkit.getBukkitVersion().split("-")[0];
-
                 JsonObject botConnJson = new JsonObject();
                 botConnJson.addProperty("chat", false);
                 botConnJson.add("guild", parser.get("guild"));
                 botConnJson.add("ip", parser.get("ip"));
                 botConnJson.addProperty("hash", hash);
-                botConnJson.addProperty("version", version);
+                botConnJson.addProperty("version", Bukkit.getBukkitVersion().split("-")[0]);
                 botConnJson.addProperty("online", getServer().getOnlineMode());
-                botConnJson.addProperty("path", URLEncoder.encode(worldPath, "utf-8"));
+                botConnJson.addProperty("path", getWorldPath());
 
                 res.send(botConnJson.toString());
                 getLogger().info("Successfully connected with discord server. Id: " + parser.get("guild"));
@@ -479,8 +472,8 @@ public final class DiscordLinker extends JavaPlugin {
                 respondJson.add("ip", parser.get("ip"));
                 respondJson.add("channels", channels);
                 respondJson.addProperty("hash", hash);
-                respondJson.addProperty("version", getServer().getBukkitVersion());
-                respondJson.addProperty("path", URLEncoder.encode(getServer().getWorlds().get(0).getWorldFolder().getCanonicalPath().replaceAll("\\\\", "/"), "utf-8"));
+                respondJson.addProperty("version", Bukkit.getVersion().split("-")[0]);
+                respondJson.addProperty("path", getWorldPath());
 
                 res.send(respondJson.toString());
             } catch (IOException | NoSuchAlgorithmException err) {
@@ -509,6 +502,15 @@ public final class DiscordLinker extends JavaPlugin {
         app.listen(() -> getLogger().info("Listening on port " + port), port);
 
         return app;
+    }
+
+    public String getWorldPath() throws IOException {
+        Properties serverProperties = new Properties();
+        serverProperties.load(Files.newInputStream(Paths.get("server.properties")));
+        String worldName = serverProperties.getProperty("level-name");
+
+        String path = getServer().getWorldContainer().getCanonicalPath() + "/" + worldName;
+        return URLEncoder.encode(path, "utf-8");
     }
 
     public void updateConn() throws IOException {
