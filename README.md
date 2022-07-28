@@ -6,7 +6,7 @@ Moderate and connect your Minecraft server with Discord! This plugin allows you 
 
 # SETUP
 + Invite the "MC Linker" Discord bot using [this link](https://top.gg/bot/712759741528408064)
-+ After you installed the plugin, execute `/connect plugin <your server ip>` in Discord
++ After you've added the plugin, execute `/connect plugin <your server ip>` in Discord
 + Follow the instructions sent in DM
 + After connecting you can also execute `/chatchannel <channel>` in Discord if you want to connect the Minecraft chat with Discord
 
