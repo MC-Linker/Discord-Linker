@@ -530,7 +530,7 @@ public final class DiscordLinker extends JavaPlugin {
     public boolean wrongConnection(String Ip, String hash) {
         try {
             String correctIp = InetAddress.getByName("smpbot.duckdns.org").getHostAddress();
-            return !hash.matches("^([A-Za-z0-9+/]{4})*([A-Za-z0-9+/]{3}=|[A-Za-z0-9+/]{2}==)?$") || hash.length()<30 /*|| !Ip.equals(correctIp)*/;
+            return !hash.matches("^([A-Za-z0-9+/]{4})*([A-Za-z0-9+/]{3}=|[A-Za-z0-9+/]{2}==)?$") || hash.length()<30 || !Ip.equals(correctIp);
         } catch (UnknownHostException ignored) {
             return true;
         }
