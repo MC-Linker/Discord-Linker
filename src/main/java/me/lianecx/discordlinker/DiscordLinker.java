@@ -472,6 +472,7 @@ public final class DiscordLinker extends JavaPlugin {
                 respondJson.add("ip", parser.get("ip"));
                 respondJson.add("channels", channels);
                 respondJson.addProperty("hash", hash);
+                respondJson.addProperty("online", getServer().getOnlineMode());
                 respondJson.addProperty("version", Bukkit.getVersion().split("-")[0]);
                 respondJson.addProperty("path", getWorldPath());
 
