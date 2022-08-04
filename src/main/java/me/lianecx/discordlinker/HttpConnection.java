@@ -48,7 +48,7 @@ public class HttpConnection {
         if(channels == null || channels.size() == 0) return;
 
         try {
-            HttpURLConnection conn = (HttpURLConnection) new URL("http://smpbot.duckdns.org:"+BOT_PORT+"/chat").openConnection();
+            HttpURLConnection conn = (HttpURLConnection) new URL("http://79.205.25.149:"+BOT_PORT+"/chat").openConnection();
 
             JsonObject chatJson = new JsonObject();
             chatJson.addProperty("type", type);

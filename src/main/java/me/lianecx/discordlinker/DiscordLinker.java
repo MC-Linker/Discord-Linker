@@ -152,7 +152,7 @@ public final class DiscordLinker extends JavaPlugin {
             }
         });
 
-        //GET localhost:11111/file/find/?file=level.dat&path=/path/to/file&depth=4
+        //GET localhost:11111/file/list/?folder="/world/"
         app.get("/file/list/", (req, res) -> {
             if(wrongHash(req.getAuthorization().get(0).getData())) {
                 res.setStatus(Status._401);
