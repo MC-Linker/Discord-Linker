@@ -1,8 +1,5 @@
 package me.lianecx.discordlinker;
 
-import de.themoep.minedown.MineDown;
-import net.md_5.bungee.api.chat.BaseComponent;
-import net.md_5.bungee.api.chat.ComponentBuilder;
 import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -53,18 +50,16 @@ public class LinkerCommand implements CommandExecutor {
             case "private_message":
             case "message":
                 //Join all arguments except first one
-                args = Arrays.copyOfRange(args, 1, args.length);
-                String message = String.join(" ", args);
+                String message = String.join(" ", Arrays.copyOfRange(args, 1, args.length));
 
-                PLUGIN.getConfig().set(args[0], message);
+                PLUGIN.getConfig().set(message, message);
                 PLUGIN.saveConfig();
 
-                BaseComponent[] messageComponent = new ComponentBuilder("Successfully set the " + args[0] + " to ")
-                    .color(net.md_5.bungee.api.ChatColor.GREEN)
-                    .append(MineDown.parse(message), ComponentBuilder.FormatRetention.NONE)
-                    .create();
-
-                sender.spigot().sendMessage(messageComponent);
+                sender.sendMessage(
+                        ChatColor.GREEN + "Successfully set " + args[0] + " to " +
+                        ChatColor.RESET + ChatColor.translateAlternateColorCodes('&', message) +
+                        ChatColor.GREEN + "."
+                );
                 break;
         }
 
