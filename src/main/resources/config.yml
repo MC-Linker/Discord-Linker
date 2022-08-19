@@ -1,2 +1,8 @@
+# The port the plugin should listen on.
+# If you change this, make sure to specify it in the `/connect plugin <ip> <port>` bot command
 port: 11111
-prefix: "&l&9Discord &8| "
+
+# The formatting of chat message that are sent from discord to minecraft
+message: "[[&l&9Discord](open_url=https://top.gg/bot/712759741528408064)](hover=Message sent using &6MC-Linker) &8| &l&8%username% &8>> &r%message%"
+# The formatting of chat message that are sent from discord to minecraft using `/message`
+private_message: "[[&l&9Discord](open_url=https://top.gg/bot/712759741528408064)](hover=Message sent using &6MC-Linker) &8| &o%username% whispers to you: %message%"
