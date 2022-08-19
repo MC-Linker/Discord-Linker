@@ -1,13 +1,10 @@
 package me.lianecx.discordlinker;
 
-import com.google.common.collect.Lists;
 import com.google.gson.*;
+import de.themoep.minedown.MineDown;
 import express.Express;
 import express.utils.Status;
 import net.md_5.bungee.api.chat.BaseComponent;
-import net.md_5.bungee.api.chat.ClickEvent;
-import net.md_5.bungee.api.chat.ComponentBuilder;
-import net.md_5.bungee.api.chat.HoverEvent;
 import org.apache.commons.lang.RandomStringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.core.Logger;
@@ -284,57 +281,26 @@ public final class DiscordLinker extends JavaPlugin {
                 return;
             }
 
-            String prefix = ChatColor.translateAlternateColorCodes('&', getConfig().getString("prefix"));
-            ComponentBuilder messageBuilder = new ComponentBuilder(prefix)
-                    .event(new ClickEvent(ClickEvent.Action.OPEN_URL, "https://top.gg/bot/712759741528408064"))
-                    .event(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new ComponentBuilder("Message sent using \u00A76MC-Linker").create()));
+            //Convert links to markdown
+//            String urlRegex = "^(?:(https?)://)?([-\\w_.]{2,}\\.[a-z]{2,4})(/\\S*)?$";
+//            msg = msg.replaceAll(urlRegex, "[" + "$0" + "]($0)");
 
-            if(privateMsg) {
-                messageBuilder.append(username + " whispers to you: ", ComponentBuilder.FormatRetention.NONE)
-                        .italic(true);
-            } else {
-                messageBuilder.append(username, ComponentBuilder.FormatRetention.NONE)
-                    .bold(true)
-                    .color(net.md_5.bungee.api.ChatColor.GRAY)
+            //Convert *italic* and _italic_ to ##italic##
+            msg = msg.replaceAll("_(.+)_", "##$1##");
+            msg = msg.replaceAll("\\*(.+)\\*", "##$1##");
 
-                    .append(" >> ", ComponentBuilder.FormatRetention.NONE)
-                    .color(net.md_5.bungee.api.ChatColor.DARK_GRAY);
-            }
-
-            //Make links clickable
-            String urlRegex = "((http://|https://)?(\\S*)?(([a-zA-Z0-9-]){2,}\\.){1,4}([a-zA-Z]){2,6}(/([a-zA-Z-_/.0-9#:?=&;,]*)?)?)";
-            Pattern urlPattern = Pattern.compile(urlRegex);
-            Matcher matcher = urlPattern.matcher(msg);
-            if (matcher.find()) {
-                String url = matcher.group();
-                List<String> msgArray = Lists.newArrayList(msg.split("\\s+"));
-
-                for (String m : msgArray) {
-                    if (m.equals(url)) {
-                        messageBuilder.append(m + " ", ComponentBuilder.FormatRetention.NONE)
-                                .event(new ClickEvent(ClickEvent.Action.OPEN_URL, m))
-                                .underlined(true);
-
-                    } else messageBuilder.append(m + " ", ComponentBuilder.FormatRetention.NONE);
-
-                    //Add italic to the url if it's a private message
-                    if(privateMsg) messageBuilder.italic(true);
-                }
-            } else {
-                messageBuilder.append(msg, ComponentBuilder.FormatRetention.NONE);
-                if(privateMsg) messageBuilder.italic(true);
-            }
-
-            BaseComponent[] messageComponent = messageBuilder.create();
+            String chatMessage = getConfig().getString(privateMsg ? "message" : "private_message");
+            BaseComponent[] messageComponent = MineDown.parse(chatMessage, "msg", msg, "username", username);
 
             if(privateMsg) {
                 Player player = getServer().getPlayer(targetUsername);
-                if(player != null) player.spigot().sendMessage(messageComponent);
-                else {
+                if(player == null) {
                     res.setStatus(Status._422);
                     res.send("Target player does not exist or is not online.");
                     return;
                 }
+
+                player.spigot().sendMessage(messageComponent);
             } else {
                 getServer().spigot().broadcast(messageComponent);
             }
