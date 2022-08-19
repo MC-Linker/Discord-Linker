@@ -8,4 +8,4 @@ prefix: Discord-Linker
 commands:
   linker:
     description: "Settings of the Discord-Linker"
-    usage: "/linker reload|port|prefix"
+    usage: "/linker reload|port|message|private_message"

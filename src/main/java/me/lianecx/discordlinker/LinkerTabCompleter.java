@@ -15,7 +15,8 @@ public class LinkerTabCompleter implements TabCompleter {
         if(args.length == 1) {
             suggestions.add("reload");
             suggestions.add("port");
-            suggestions.add("prefix");
+            suggestions.add("message");
+            suggestions.add("private_message");
         }
 
         return suggestions;
