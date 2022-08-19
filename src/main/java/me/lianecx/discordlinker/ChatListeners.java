@@ -1,5 +1,6 @@
 package me.lianecx.discordlinker;
 
+import org.bukkit.ChatColor;
 import org.bukkit.command.ConsoleCommandSender;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -14,8 +15,11 @@ public class ChatListeners implements Listener  {
 
     @EventHandler(ignoreCancelled = true, priority = EventPriority.HIGH)
     public void onChatMessage(AsyncPlayerChatEvent event) {
+        //Remove color codes
+        String replacedMessage = ChatColor.stripColor(event.getMessage().replaceAll("(?i)&[0-9A-FK-OR]", ""));
+
         PLUGIN.getServer().getScheduler().runTaskAsynchronously(PLUGIN, () ->
-            HttpConnection.send(event.getMessage(), "chat", event.getPlayer().getName()));
+            HttpConnection.send(replacedMessage, "chat", event.getPlayer().getName()));
     }
 
     @EventHandler(ignoreCancelled = true, priority = EventPriority.HIGH)
