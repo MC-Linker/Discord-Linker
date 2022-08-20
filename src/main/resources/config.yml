@@ -4,5 +4,5 @@ port: 11111
 
 # The formatting of chat message that are sent from discord to minecraft
 message: "&l&9Discord &8| &l&7%username% &8>> &r%message%"
-# The formatting of chat message that are sent from discord to minecraft using `/message`
+# The formatting of private chat message that are sent from discord to minecraft using `/message`
 private_message: "&l&9Discord &8| &o&7%username% whispers to you: %message%"

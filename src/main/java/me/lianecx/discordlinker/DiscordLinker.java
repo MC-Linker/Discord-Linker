@@ -1,10 +1,11 @@
 package me.lianecx.discordlinker;
 
 import com.google.gson.*;
-import de.themoep.minedown.MineDown;
 import express.Express;
 import express.utils.Status;
 import net.md_5.bungee.api.chat.BaseComponent;
+import net.md_5.bungee.api.chat.ClickEvent;
+import net.md_5.bungee.api.chat.ComponentBuilder;
 import org.apache.commons.lang.RandomStringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.core.Logger;
@@ -48,7 +49,8 @@ public final class DiscordLinker extends JavaPlugin {
     public void onEnable() {
         plugin = this;
         config.addDefault("port", 11111);
-        config.addDefault("prefix", "&l&9Discord &8| ");
+        config.addDefault("message", "&l&9Discord &8| &l&7%username% &8>> &r%message%");
+        config.addDefault("private_message", "&l&9Discord &8| &o&7%username% whispers to you: %message%");
         config.options().copyDefaults(true);
         saveConfig();
 
@@ -281,16 +283,36 @@ public final class DiscordLinker extends JavaPlugin {
                 return;
             }
 
-            //Convert links to markdown
-//            String urlRegex = "^(?:(https?)://)?([-\\w_.]{2,}\\.[a-z]{2,4})(/\\S*)?$";
-//            msg = msg.replaceAll(urlRegex, "[" + "$0" + "]($0)");
+            //Format **bold**
+            msg = msg.replaceAll("\\*\\*(.+)\\*\\*", "&l$1&r");
+            //Format __underline__
+            msg = msg.replaceAll("__(.+)__", "&n$1&r");
+            //Format *italic* and _italic_
+            msg = msg.replaceAll("_(.+)_|\\*(.+)\\*", "&o$1$2&r");
+            //Format ~~strikethrough~~
+            msg = msg.replaceAll("~~(.+)~~", "&m$1&r");
+            //Format ??obfuscated??
+            msg = msg.replaceAll("\\?\\?(.+)\\?\\?", "&k$1&r");
+            //Format `code` and ```code```
+            msg = msg.replaceAll("```(.+)```|`(.+)`", "&7&n$1$2&r");
+            //Format '> quotes'
+            msg = msg.replaceAll("^>+ (.+)", "&7| $1&r");
+            //Format ||spoilers||
+            msg = msg.replaceAll("\\|\\|(.+)\\|\\|", "&8$1&r");
 
-            //Convert *italic* and _italic_ to ##italic##
-            msg = msg.replaceAll("_(.+)_", "##$1##");
-            msg = msg.replaceAll("\\*(.+)\\*", "##$1##");
+            String chatMessage = getConfig().getString(privateMsg ? "private_message" : "message");
+            chatMessage = chatMessage.replaceAll("%message%", msg);
+            chatMessage = chatMessage.replaceAll("%username%", username);
 
-            String chatMessage = getConfig().getString(privateMsg ? "message" : "private_message");
-            BaseComponent[] messageComponent = MineDown.parse(chatMessage, "msg", msg, "username", username);
+            //Make links clickable
+            String urlRegex = "(?:(https?)://)?([-\\w_.]{2,}\\.[a-z]{2,4})(/\\S*)?";
+            ComponentBuilder chatBuilder = new ComponentBuilder("");
+            for(String word : chatMessage.split(" ")) {
+                chatBuilder.append(word + " ", ComponentBuilder.FormatRetention.NONE);
+                if(word.matches(urlRegex)) chatBuilder.event(new ClickEvent(ClickEvent.Action.OPEN_URL, word));
+            }
+
+            BaseComponent[] messageComponent = new ComponentBuilder(chatMessage).create();
 
             if(privateMsg) {
                 Player player = getServer().getPlayer(targetUsername);
