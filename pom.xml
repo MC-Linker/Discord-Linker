@@ -72,10 +72,6 @@
             <id>sonatype</id>
             <url>https://oss.sonatype.org/content/groups/public/</url>
         </repository>
-        <repository>
-            <id>minebench-repo</id>
-            <url>https://repo.minebench.de/</url>
-        </repository>
     </repositories>
 
     <dependencies>
@@ -94,12 +90,6 @@
             <groupId>com.github.Simonwep</groupId>
             <artifactId>java-express</artifactId>
             <version>0.1.1</version>
-        </dependency>
-        <dependency>
-            <groupId>de.themoep</groupId>
-            <artifactId>minedown</artifactId>
-            <version>1.7.1-SNAPSHOT</version>
-            <scope>compile</scope>
         </dependency>
     </dependencies>
 </project>
