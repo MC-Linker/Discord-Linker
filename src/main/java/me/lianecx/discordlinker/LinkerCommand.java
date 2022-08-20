@@ -29,6 +29,11 @@ public class LinkerCommand implements CommandExecutor {
                 sender.sendMessage(ChatColor.GREEN + "Successfully reloaded config.");
                 break;
             case "port":
+                if(args.length == 1) {
+                    sender.sendMessage(ChatColor.GREEN + "The current port is " + PLUGIN.getConfig().getInt("port") + ".");
+                    return true;
+                }
+
                 int newPort;
                 try {
                     newPort = Integer.parseInt(args[1]);
@@ -49,10 +54,15 @@ public class LinkerCommand implements CommandExecutor {
                 break;
             case "private_message":
             case "message":
+                if(args.length == 1) {
+                    sender.sendMessage(ChatColor.GREEN + "The current " + args[0] + " is " + PLUGIN.getConfig().getString(args[0]) + ".");
+                    return true;
+                }
+
                 //Join all arguments except first one
                 String message = String.join(" ", Arrays.copyOfRange(args, 1, args.length));
 
-                PLUGIN.getConfig().set(message, message);
+                PLUGIN.getConfig().set(args[0], message);
                 PLUGIN.saveConfig();
 
                 sender.sendMessage(
