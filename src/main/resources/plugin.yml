@@ -9,3 +9,18 @@ commands:
   linker:
     description: "Settings of the Discord-Linker"
     usage: "/linker reload|port|message|private_message"
+    permission: "discordlinker.linker"
+    permission-message: "You do not have permission to use this command."
+permissions:
+  discordlinker.linker:
+    description: "Allows the user to use the /linker command"
+    default: op
+    children:
+      discordlinker.linker.reload:
+        description: "Allows the user to use the /linker reload command"
+      discordlinker.linker.port:
+        description: "Allows the user to use the /linker port command"
+      discordlinker.linker.message:
+        description: "Allows the user to use the /linker message command"
+      discordlinker.linker.private_message:
+        description: "Allows the user to use the /linker private_message command"
