@@ -3,7 +3,6 @@ package me.lianecx.discordlinker;
 import com.google.gson.*;
 import express.Express;
 import express.utils.Status;
-import net.md_5.bungee.api.chat.BaseComponent;
 import net.md_5.bungee.api.chat.ClickEvent;
 import net.md_5.bungee.api.chat.ComponentBuilder;
 import org.apache.commons.lang.RandomStringUtils;
@@ -49,7 +48,7 @@ public final class DiscordLinker extends JavaPlugin {
     public void onEnable() {
         plugin = this;
         config.addDefault("port", 11111);
-        config.addDefault("message", "&l&9Discord &8| &l&7%username% &8>> &r%message%");
+        config.addDefault("message", "&l&9Discord &8| &l&7%username% &8>>&r %message%");
         config.addDefault("private_message", "&l&9Discord &8| &o&7%username% whispers to you: %message%");
         config.options().copyDefaults(true);
         saveConfig();
@@ -284,35 +283,64 @@ public final class DiscordLinker extends JavaPlugin {
             }
 
             //Format **bold**
-            msg = msg.replaceAll("\\*\\*(.+)\\*\\*", "&l$1&r");
+            msg = msg.replaceAll("\\*\\*(.+?)\\*\\*", "&l$1&r");
             //Format __underline__
-            msg = msg.replaceAll("__(.+)__", "&n$1&r");
+            msg = msg.replaceAll("__(.+?)__", "&n$1&r");
             //Format *italic* and _italic_
-            msg = msg.replaceAll("_(.+)_|\\*(.+)\\*", "&o$1$2&r");
+            msg = msg.replaceAll("_(.+?)_|\\*(.+?)\\*", "&o$1$2&r");
             //Format ~~strikethrough~~
-            msg = msg.replaceAll("~~(.+)~~", "&m$1&r");
+            msg = msg.replaceAll("~~(.+?)~~", "&m$1&r");
             //Format ??obfuscated??
-            msg = msg.replaceAll("\\?\\?(.+)\\?\\?", "&k$1&r");
-            //Format `code` and ```code```
-            msg = msg.replaceAll("```(.+)```|`(.+)`", "&7&n$1$2&r");
-            //Format '> quotes'
-            msg = msg.replaceAll("^>+ (.+)", "&7| $1&r");
+            msg = msg.replaceAll("\\?\\?(.+?)\\?\\?", "&k$1&r");
+            //Format inline and multiline `code` blocks
+            msg = msg.replaceAll("(?s)```[^\\n]*\\n(.+)```|```(.+)```", "&7&n$1$2&r");
+            msg = msg.replaceAll("`(.+?)`", "&7&n$1&r");
             //Format ||spoilers||
-            msg = msg.replaceAll("\\|\\|(.+)\\|\\|", "&8$1&r");
+            msg = msg.replaceAll("\\|\\|(.+?)\\|\\|", "&8$1&r");
+            //Format '> quotes'
+            msg = msg.replaceAll(">+ (.+)", "&7| $1&r");
 
+            //Get config string and replace placeholders
             String chatMessage = getConfig().getString(privateMsg ? "private_message" : "message");
             chatMessage = chatMessage.replaceAll("%message%", msg);
             chatMessage = chatMessage.replaceAll("%username%", username);
 
-            //Make links clickable
-            String urlRegex = "(?:(https?)://)?([-\\w_.]{2,}\\.[a-z]{2,4})(/\\S*)?";
-            ComponentBuilder chatBuilder = new ComponentBuilder("");
-            for(String word : chatMessage.split(" ")) {
-                chatBuilder.append(word + " ", ComponentBuilder.FormatRetention.NONE);
-                if(word.matches(urlRegex)) chatBuilder.event(new ClickEvent(ClickEvent.Action.OPEN_URL, word));
-            }
+            //Translate color codes
+            chatMessage = ChatColor.translateAlternateColorCodes('&', chatMessage);
 
-            BaseComponent[] messageComponent = new ComponentBuilder(chatMessage).create();
+            //Make links clickable
+            String urlRegex = "https?://[-\\w_.]{2,}\\.[a-z]{2,4}/\\S*?";
+            String mdUrlRegex = "(?i)\\[([^]]+)]\\((" + urlRegex + ")\\)";
+            Pattern mdUrlPattern = Pattern.compile(mdUrlRegex);
+
+            ComponentBuilder chatBuilder = new ComponentBuilder("");
+
+            StringBuilder tempMessage = new StringBuilder();
+            for(String word : chatMessage.split(" ")) {
+                if(word.matches(urlRegex)) {
+                    if(tempMessage.length() != 0) chatBuilder.append(tempMessage.toString(), ComponentBuilder.FormatRetention.NONE);
+                    tempMessage.setLength(0); //Clear tempMessage
+
+                    chatBuilder.append(word);
+                    chatBuilder.event(new ClickEvent(ClickEvent.Action.OPEN_URL, word));
+                    chatBuilder.underlined(true);
+                    tempMessage.append(" ");
+                } else if(word.matches(mdUrlRegex)) {
+                    if(tempMessage.length() != 0) chatBuilder.append(tempMessage.toString(), ComponentBuilder.FormatRetention.NONE);
+                    tempMessage.setLength(0); //Clear tempMessage
+
+                    Matcher matcher = mdUrlPattern.matcher(word);
+                    matcher.find();
+
+                    chatBuilder.append(matcher.group(1));
+                    chatBuilder.event(new ClickEvent(ClickEvent.Action.OPEN_URL, matcher.group(2)));
+                    chatBuilder.underlined(true);
+                    tempMessage.append(" ");
+                } else {
+                    tempMessage.append(word).append(" ");
+                }
+            }
+            if(tempMessage.length() != 0) chatBuilder.append(tempMessage.toString(), ComponentBuilder.FormatRetention.NONE);
 
             if(privateMsg) {
                 Player player = getServer().getPlayer(targetUsername);
@@ -322,9 +350,9 @@ public final class DiscordLinker extends JavaPlugin {
                     return;
                 }
 
-                player.spigot().sendMessage(messageComponent);
+                player.spigot().sendMessage(chatBuilder.create());
             } else {
-                getServer().spigot().broadcast(messageComponent);
+                getServer().spigot().broadcast(chatBuilder.create());
             }
 
             res.send("Success");
