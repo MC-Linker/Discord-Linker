@@ -14,6 +14,7 @@ import java.util.stream.Collectors;
 
 public class HttpConnection {
     private static final int BOT_PORT = 3100;
+    private static final String BOT_URL = "http://smpbot.duckdns.org:" + BOT_PORT;
     private static final String PLUGIN_VERSION = DiscordLinker.getPlugin().getDescription().getVersion();
 
     private static boolean shouldChat() {
@@ -48,7 +49,7 @@ public class HttpConnection {
         if(channels == null || channels.size() == 0) return;
 
         try {
-            HttpURLConnection conn = (HttpURLConnection) new URL("http://smpbot.duckdns.org:"+BOT_PORT+"/chat").openConnection();
+            HttpURLConnection conn = (HttpURLConnection) new URL(BOT_URL + "/chat").openConnection();
 
             JsonObject chatJson = new JsonObject();
             chatJson.addProperty("type", type);
@@ -76,7 +77,7 @@ public class HttpConnection {
 
     public static void checkVersion() {
         try {
-            HttpURLConnection conn = (HttpURLConnection) new URL("http://smpbot.duckdns.org:"+BOT_PORT+"/version").openConnection();
+            HttpURLConnection conn = (HttpURLConnection) new URL(BOT_URL + "/version").openConnection();
             InputStream inputStream = conn.getInputStream();
             String latestVersion = new BufferedReader(new InputStreamReader(inputStream)).lines().collect(Collectors.joining("\n"));
             if(!latestVersion.equals(PLUGIN_VERSION)) DiscordLinker.getPlugin().getLogger().info(ChatColor.AQUA + "Please update to the latest Discord-Linker version (" + latestVersion + ") for a bug-free and feature-rich experience.");
