@@ -387,8 +387,8 @@ public final class DiscordLinker extends JavaPlugin {
         app.post("/connect/", (req, res) -> {
             getLogger().info("Connection request...");
             JsonObject parser = new JsonParser().parse(new InputStreamReader(req.getBody())).getAsJsonObject();
-            String code = req.getAuthorization().get(0).getData();
-            String hash = req.getAuthorization().get(1).getData();
+            String hash = req.getAuthorization().get(0).getData();
+            String code = req.getAuthorization().get(1).getData();
 
             if(wrongConnection(req.getIp(), hash)) {
                 getLogger().info("Connection unsuccessful");
