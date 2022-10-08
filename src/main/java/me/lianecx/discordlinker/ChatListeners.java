@@ -36,6 +36,9 @@ public class ChatListeners implements Listener  {
 
     @EventHandler(ignoreCancelled = true, priority = EventPriority.HIGH)
     public void onAdvancement(PlayerAdvancementDoneEvent event) {
+        //Dont process recipes
+        if(event.getAdvancement().getKey().toString().startsWith("minecraft:recipes/")) return;
+
         PLUGIN.getServer().getScheduler().runTaskAsynchronously(PLUGIN, () ->
             HttpConnection.send(event.getAdvancement().getKey().toString(), "advancement", event.getPlayer().getName()));
     }
