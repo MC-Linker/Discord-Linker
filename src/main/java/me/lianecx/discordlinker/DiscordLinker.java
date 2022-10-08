@@ -490,7 +490,7 @@ public final class DiscordLinker extends JavaPlugin {
                 connJson.add("channels", channels);
                 updateConn();
 
-                res.send(success.toString());
+                res.send(channels.toString());
             } catch (IOException err) {
                 res.setStatus(Status._500);
                 JsonObject errror = new JsonObject();
