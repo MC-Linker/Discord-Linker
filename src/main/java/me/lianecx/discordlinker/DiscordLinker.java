@@ -332,6 +332,7 @@ public final class DiscordLinker extends JavaPlugin {
                     tempMessage.setLength(0); //Clear tempMessage
 
                     Matcher matcher = mdUrlPattern.matcher(word);
+                    //noinspection ResultOfMethodCallIgnored
                     matcher.find();
 
                     chatBuilder.append(matcher.group(1));
