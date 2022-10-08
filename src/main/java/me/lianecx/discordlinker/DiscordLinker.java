@@ -60,12 +60,11 @@ public final class DiscordLinker extends JavaPlugin {
         getServer().getScheduler().runTaskAsynchronously(this, () -> {
             HttpConnection.checkVersion();
 
-            try {
-                Reader connReader = Files.newBufferedReader(Paths.get(getDataFolder() + "/connection.conn"));
+            try (Reader connReader = Files.newBufferedReader(Paths.get(getDataFolder() + "/connection.conn"))) {
                 JsonElement parser = new JsonParser().parse(connReader);
                 connJson = parser.isJsonObject() ? parser.getAsJsonObject() : new JsonObject();
 
-                HttpConnection.send("The server has opened!", "start", null);
+                HttpConnection.send("", "start", null);
             } catch (IOException ignored) {}
         });
 
@@ -78,7 +77,7 @@ public final class DiscordLinker extends JavaPlugin {
 
     @Override
     public void onDisable() {
-        HttpConnection.send("The server has shutdown!", "close", null);
+        HttpConnection.send("", "close", null);
         getLogger().info(ChatColor.RED + "Plugin disabled.");
         getServer().getScheduler().cancelTasks(this);
         app.stop();
