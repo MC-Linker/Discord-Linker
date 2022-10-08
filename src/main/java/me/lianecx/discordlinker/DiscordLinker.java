@@ -80,6 +80,7 @@ public final class DiscordLinker extends JavaPlugin {
     public void onDisable() {
         HttpConnection.send("The server has shutdown!", "close", null);
         getLogger().info(ChatColor.RED + "Plugin disabled.");
+        getServer().getScheduler().cancelTasks(this);
         app.stop();
     }
 
