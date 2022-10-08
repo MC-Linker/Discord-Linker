@@ -72,7 +72,7 @@ public final class DiscordLinker extends JavaPlugin {
         Logger log = (Logger) LogManager.getRootLogger();
         log.addAppender(cmdLogger);
 
-        app = loadExpress();
+        app = startServer();
         getLogger().info(ChatColor.GREEN + "Plugin enabled.");
     }
 
@@ -95,14 +95,24 @@ public final class DiscordLinker extends JavaPlugin {
         return app;
     }
 
-    public Express loadExpress() {
+    public Express startServer() {
+        JsonObject invalidHash = new JsonObject();
+        invalidHash.addProperty("message", "Invalid Hash");
+        JsonObject invalidPath = new JsonObject();
+        invalidPath.addProperty("message", "Invalid Path");
+        JsonObject invalidJson = new JsonObject();
+        invalidJson.addProperty("message", "Invalid JSON");
+
+        JsonObject success = new JsonObject();
+        success.addProperty("message", "Success");
+
         Express app = new Express();
 
         //GET localhost:11111/file/get/?path=/path/to/file
         app.get("/file/get/", (req, res) -> {
             if(wrongHash(req.getAuthorization().get(0).getData())) {
                 res.setStatus(Status._401);
-                res.send("Wrong hash");
+                res.send(invalidHash.toString());
                 return;
             }
 
@@ -111,14 +121,16 @@ public final class DiscordLinker extends JavaPlugin {
 
                 if(!res.sendAttachment(file)) {
                     res.setStatus(Status._404);
-                    res.send("Invalid Path");
+                    res.send(invalidPath.toString());
                 }
             } catch (InvalidPathException err) {
                 res.setStatus(Status._404);
-                res.send("Invalid Path");
+                res.send(invalidPath.toString());
             } catch (UnsupportedEncodingException err) {
                 res.setStatus(Status._500);
-                res.send(err.toString());
+                JsonObject error = new JsonObject();
+                error.addProperty("message", err.toString());
+                res.send(error.toString());
             }
         });
 
@@ -128,7 +140,7 @@ public final class DiscordLinker extends JavaPlugin {
         app.post("/file/put/", (req, res) -> {
             if(wrongHash(req.getAuthorization().get(0).getData())) {
                 res.setStatus(Status._401);
-                res.send("Wrong hash");
+                res.send(invalidHash.toString());
                 return;
             }
 
@@ -141,10 +153,10 @@ public final class DiscordLinker extends JavaPlugin {
                     outputStream.write(buf, 0, length);
                 }
 
-                res.send("Success");
+                res.send(success.toString());
             } catch (InvalidPathException err) {
                 res.setStatus(Status._404);
-                res.send("Invalid Path");
+                res.send(invalidPath.toString());
             } catch(IOException err) {
                 res.setStatus(Status._500);
                 res.send(err.toString());
@@ -155,7 +167,7 @@ public final class DiscordLinker extends JavaPlugin {
         app.get("/file/list/", (req, res) -> {
             if(wrongHash(req.getAuthorization().get(0).getData())) {
                 res.setStatus(Status._401);
-                res.send("Wrong hash");
+                res.send(invalidHash.toString());
                 return;
             }
 
@@ -176,7 +188,7 @@ public final class DiscordLinker extends JavaPlugin {
                 res.send(content.toString());
             } catch (InvalidPathException err) {
                 res.setStatus(Status._404);
-                res.send("Invalid Path");
+                res.send(invalidPath.toString());
             } catch (IOException err) {
                 res.send("[]");
             }
@@ -185,7 +197,7 @@ public final class DiscordLinker extends JavaPlugin {
         //GET localhost:11111/verify/
         app.get("/verify/", (req, res) -> {
             verifyCode = RandomStringUtils.randomAlphanumeric(6);
-            getLogger().info("Verification Code: " + verifyCode);
+            getLogger().info(ChatColor.YELLOW + "Verification Code: " + verifyCode);
 
             getServer().getScheduler().runTaskLater(this, () -> verifyCode = null, 3600);
 
@@ -196,61 +208,51 @@ public final class DiscordLinker extends JavaPlugin {
         app.get("/command/", (req, res) -> {
             if (wrongHash(req.getAuthorization().get(0).getData())) {
                 res.setStatus(Status._401);
-                res.send("Wrong hash");
+                res.send(invalidHash.toString());
                 return;
             }
 
             JsonObject responseJson = new JsonObject();
 
-            try {
-                getServer().getScheduler().runTask(this, () -> {
-                    try {
-                        cmdLogger.startLogging();
-                        getServer().dispatchCommand(Bukkit.getConsoleSender(), URLDecoder.decode(req.getQuery("cmd"), "utf-8"));
-                    } catch(UnsupportedEncodingException err) {
-                        responseJson.addProperty("message", err.toString());
-                        res.setStatus(Status._500);
-                        res.send(responseJson.toString());
-                        return;
-                    } finally {
-                        cmdLogger.stopLogging();
-                    }
+            getServer().getScheduler().runTask(this, () -> {
+                try {
+                    cmdLogger.startLogging();
+                    getServer().dispatchCommand(Bukkit.getConsoleSender(), URLDecoder.decode(req.getQuery("cmd"), "utf-8"));
+                } catch(UnsupportedEncodingException err) {
+                    responseJson.addProperty("message", err.toString());
+                    res.setStatus(Status._500);
+                    res.send(responseJson.toString());
+                    return;
+                } catch (IllegalArgumentException | CommandException err) {
+                    res.setStatus(Status._500);
+                    responseJson.addProperty("message", err.toString());
+                    res.send(responseJson.toString());
+                } finally {
+                    cmdLogger.stopLogging();
+                }
 
-                    try {
-                        String data = String.join("\n", cmdLogger.getData());
+                String data = String.join("\n", cmdLogger.getData());
 
-                        //cmdLogger returns weirdly encoded chars (probably ASCII) which is why ChatColor.stripColor does not work on the returned string.
-                        //Color codes are stripped successfully with this regex, but other non-english chars like € or © are not displayed correctly (�) after sending them to Discord.
-                        //Anyone can feel free to try to solve this problem
-                        // If you do so, please increase this counter as a warning for the next person:
+                //cmdLogger returns weirdly encoded chars (probably ASCII) which is why ChatColor.stripColor does not work on the returned string.
+                //Color codes are stripped successfully with this regex, but other non-english chars like € or © are not displayed correctly (�) after sending them to Discord.
+                //Anyone can feel free to try to solve this problem
+                // If you do so, please increase this counter as a warning for the next person:
 
-                        // totalHoursWastedHere = 11
-                        String colorCodeRegex = "(?i)\\x7F([\\dA-FK-OR])";
+                // totalHoursWastedHere = 11
+                String colorCodeRegex = "(?i)\\x7F([\\dA-FK-OR])";
 
-                        //Get first color used in string
-                        ChatColor firstColor = null;
-                        Pattern pattern = Pattern.compile(colorCodeRegex);
-                        Matcher matcher = pattern.matcher(data);
-                        if(matcher.find()) firstColor = ChatColor.getByChar(matcher.group(1));
+                //Get first color used in string
+                ChatColor firstColor = null;
+                Pattern pattern = Pattern.compile(colorCodeRegex);
+                Matcher matcher = pattern.matcher(data);
+                if(matcher.find()) firstColor = ChatColor.getByChar(matcher.group(1));
 
-                        responseJson.addProperty("message", matcher.replaceAll(""));
-                        if(firstColor != null) responseJson.addProperty("color", firstColor.getChar());
+                responseJson.addProperty("message", matcher.replaceAll(""));
+                if(firstColor != null) responseJson.addProperty("color", firstColor.getChar());
 
-                        res.send(responseJson.toString());
-                    } catch (IndexOutOfBoundsException err) {
-                        res.setStatus(Status._206);
-                        responseJson.addProperty("message", err.toString());
-
-                        res.send(responseJson.toString());
-                    } finally {
-                        cmdLogger.clearData();
-                    }
-                });
-            } catch (IllegalArgumentException | CommandException err) {
-                res.setStatus(Status._500);
-                responseJson.addProperty("message", err.toString());
                 res.send(responseJson.toString());
-            }
+                cmdLogger.clearData();
+            });
         });
 
         /*POST localhost:11111/chat/
@@ -263,7 +265,7 @@ public final class DiscordLinker extends JavaPlugin {
         app.post("/chat/", (req, res) -> {
             if (wrongHash(req.getAuthorization().get(0).getData())) {
                 res.setStatus(Status._401);
-                res.send("Wrong hash");
+                res.send(invalidHash.toString());
                 return;
             }
 
@@ -280,7 +282,7 @@ public final class DiscordLinker extends JavaPlugin {
                 if(privateMsg) targetUsername = parser.get("target").getAsString();
             } catch(ClassCastException err) {
                 res.setStatus(Status._400);
-                res.send("Invalid JSON");
+                res.send(invalidJson.toString());
                 return;
             }
 
@@ -349,7 +351,9 @@ public final class DiscordLinker extends JavaPlugin {
                 Player player = getServer().getPlayer(targetUsername);
                 if(player == null) {
                     res.setStatus(Status._422);
-                    res.send("Target player does not exist or is not online.");
+                    JsonObject invalidPlayer = new JsonObject();
+                    invalidPlayer.addProperty("message", "Target player does not exist or is not online");
+                    res.send(invalidPlayer.toString());
                     return;
                 }
 
@@ -358,14 +362,14 @@ public final class DiscordLinker extends JavaPlugin {
                 getServer().spigot().broadcast(chatBuilder.create());
             }
 
-            res.send("Success");
+            res.send(success.toString());
         });
 
         //GET localhost:11111/disconnect/
         app.get("/disconnect/", (req, res) -> {
             if(wrongHash(req.getAuthorization().get(0).getData())) {
                 res.setStatus(Status._401);
-                res.send("Wrong hash");
+                res.send(invalidHash.toString());
                 return;
             }
 
@@ -374,17 +378,19 @@ public final class DiscordLinker extends JavaPlugin {
             boolean deleted = connection.delete();
             if(deleted) {
                 getLogger().info("Disconnected from discord...");
-                res.send("Success");
+                res.send(success.toString());
             } else {
                 res.setStatus(Status._500);
-                res.send("Could not delete file");
+                JsonObject error = new JsonObject();
+                error.addProperty("message", "Could not delete connection file");
+                res.send(error.toString());
             }
         });
 
         /*POST localhost:11111/connect/
             {
                 "ip": ip,
-                "guild": guildId
+                "id": guildId
             }
          */
         app.post("/connect/", (req, res) -> {
@@ -396,13 +402,18 @@ public final class DiscordLinker extends JavaPlugin {
             if(wrongConnection(req.getIp(), hash)) {
                 getLogger().info("Connection unsuccessful");
                 res.setStatus(Status._400);
-                res.send("Wrong hash-format or IP");
+
+                JsonObject invalidConnection = new JsonObject();
+                invalidConnection.addProperty("message", "Invalid connection");
+                res.send(invalidConnection.toString());
                 return;
             } else if(!req.hasAuthorization() || !code.equals(verifyCode)) {
                 getLogger().info("Connection unsuccessful");
                 res.setStatus(Status._401);
-                res.send("Wrong authorization");
-                verifyCode = null;
+
+                JsonObject invalidCode = new JsonObject();
+                invalidCode.addProperty("message", "Invalid verification");
+                res.send(invalidCode.toString());
                 return;
             }
 
@@ -410,21 +421,22 @@ public final class DiscordLinker extends JavaPlugin {
                 connJson = new JsonObject();
                 connJson.addProperty("hash", createHash(hash));
                 connJson.addProperty("chat", false);
-                connJson.add("guild", parser.get("guild"));
+                connJson.add("id", parser.get("id"));
                 connJson.add("ip", parser.get("ip"));
                 updateConn();
 
+                getLogger().info("Successfully connected with discord server. ID: " + parser.get("id"));
+
                 JsonObject botConnJson = new JsonObject();
-                botConnJson.addProperty("chat", false);
-                botConnJson.add("guild", parser.get("guild"));
-                botConnJson.add("ip", parser.get("ip"));
                 botConnJson.addProperty("hash", hash);
+                botConnJson.addProperty("chat", false);
+                botConnJson.add("id", parser.get("id"));
+                botConnJson.add("ip", parser.get("ip"));
                 botConnJson.addProperty("version", Bukkit.getBukkitVersion().split("-")[0]);
                 botConnJson.addProperty("online", getServer().getOnlineMode());
                 botConnJson.addProperty("path", getWorldPath());
 
                 res.send(botConnJson.toString());
-                getLogger().info("Successfully connected with discord server. Id: " + parser.get("guild"));
             } catch (IOException | NoSuchAlgorithmException err) {
                 getLogger().info("Connection unsuccessful");
                 res.setStatus(Status._500);
@@ -434,14 +446,10 @@ public final class DiscordLinker extends JavaPlugin {
             }
         });
 
-        /*POST localhost:11111/channel/
+        /*POST localhost:11111/channel/?method=add
             {
-                "ip": ip,
-                "guild": guildId,
-                "channel": {
-                    channelId,
-                    "types": ["chat", "close"]
-                }
+                "id": channelId,
+                "types": ["chat", "close"]
             }
          */
         app.post("/channel/:method/", (req, res) -> {
@@ -449,7 +457,7 @@ public final class DiscordLinker extends JavaPlugin {
 
             if(wrongHash(hash)) {
                 res.setStatus(Status._401);
-                res.send("Wrong hash");
+                res.send(invalidHash.toString());
                 return;
             }
 
@@ -463,56 +471,44 @@ public final class DiscordLinker extends JavaPlugin {
                 JsonArray channels = new JsonArray();
                 //Remove duplicates and fill new channel array
                 for (JsonElement channel : oldChannels) {
-                    if(!channel.getAsJsonObject().get("id").equals(parser.getAsJsonObject("channel").get("id"))) {
-                        channels.add(channel);
-                    }
+                    if(channel.getAsJsonObject().get("id").equals(parser.get("id"))) continue;
+                    channels.add(channel);
                 }
 
                 //Add new channel if method equals to add
                 if(req.getParam("method").equals("add")) channels.add(parser.get("channel"));
-                else if(!req.getParam("method").equals("remove")){
-                    //If neither add nor remove
+                else if(!req.getParam("method").equals("remove")) {
                     res.setStatus(Status._400);
-                    res.send("Invalid method parameter");
+                    JsonObject invalidParam = new JsonObject();
+                    invalidParam.addProperty("message", "Invalid method parameter");
+                    res.send(invalidParam.toString());
                     return;
                 }
 
                 //Create new connJson
-                connJson = new JsonObject();
-                connJson.addProperty("hash", createHash(hash));
                 connJson.addProperty("chat", channels.size() != 0);
-                connJson.add("guild", parser.get("guild"));
-                connJson.add("ip", parser.get("ip"));
                 connJson.add("channels", channels);
                 updateConn();
 
-                JsonObject respondJson = new JsonObject();
-                respondJson.addProperty("chat", true);
-                respondJson.add("guild", parser.get("guild"));
-                respondJson.add("ip", parser.get("ip"));
-                respondJson.add("channels", channels);
-                respondJson.addProperty("hash", hash);
-                respondJson.addProperty("online", getServer().getOnlineMode());
-                respondJson.addProperty("version", Bukkit.getVersion().split("-")[0]);
-                respondJson.addProperty("path", getWorldPath());
-
-                res.send(respondJson.toString());
-            } catch (IOException | NoSuchAlgorithmException err) {
+                res.send(success.toString());
+            } catch (IOException err) {
                 res.setStatus(Status._500);
-                res.send(err.toString());
+                JsonObject errror = new JsonObject();
+                errror.addProperty("message", err.toString());
+                res.send(errror.toString());
             }
         });
 
         app.get("/players/", (req, res) -> {
             if(wrongHash(req.getAuthorization().get(0).getData())) {
                 res.setStatus(Status._401);
-                res.send("Wrong hash");
+                res.send(invalidHash.toString());
                 return;
             }
 
             List<String> onlinePlayers = getServer().getOnlinePlayers().stream()
-                    .map(Player::getName)
-                    .collect(Collectors.toList());
+                .map(Player::getName)
+                .collect(Collectors.toList());
             res.send(gson.toJson(onlinePlayers));
         });
 

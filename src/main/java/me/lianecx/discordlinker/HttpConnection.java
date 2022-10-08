@@ -56,7 +56,7 @@ public class HttpConnection {
             chatJson.addProperty("player", player);
             chatJson.addProperty("message", ChatColor.stripColor(message));
             chatJson.add("channels", channels);
-            chatJson.add("guild", DiscordLinker.getConnJson().get("guild"));
+            chatJson.add("id", DiscordLinker.getConnJson().get("id"));
             chatJson.add("ip", DiscordLinker.getConnJson().get("ip"));
 
             byte[] out = chatJson.toString().getBytes(StandardCharsets.UTF_8);

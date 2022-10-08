@@ -46,9 +46,9 @@ public class LinkerCommand implements CommandExecutor {
 
                 restartServer(newPort);
                 sender.sendMessage(
-                        ChatColor.GREEN + "Successfully set port to " +
-                        ChatColor.DARK_AQUA + newPort +
-                        ChatColor.GREEN + "."
+                    ChatColor.GREEN + "Successfully set port to " +
+                    ChatColor.DARK_AQUA + newPort +
+                    ChatColor.GREEN + "."
                 );
                 break;
             case "private_message":
@@ -65,9 +65,9 @@ public class LinkerCommand implements CommandExecutor {
                 PLUGIN.saveConfig();
 
                 sender.sendMessage(
-                        ChatColor.GREEN + "Successfully set " + args[0] + " to " +
-                        ChatColor.RESET + ChatColor.translateAlternateColorCodes('&', message) +
-                        ChatColor.GREEN + "."
+                    ChatColor.GREEN + "Successfully set " + args[0] + " to " +
+                    ChatColor.RESET + ChatColor.translateAlternateColorCodes('&', message) +
+                    ChatColor.GREEN + "."
                 );
                 break;
         }

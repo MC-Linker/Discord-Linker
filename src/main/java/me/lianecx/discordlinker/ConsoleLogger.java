@@ -8,10 +8,10 @@ import org.apache.logging.log4j.core.appender.AbstractAppender;
 
 public class ConsoleLogger extends AbstractAppender {
     private boolean isLogging;
-    private List<String> loggedData;
+    private final List<String> loggedData;
 
     public ConsoleLogger() {
-        super("SMP-Plugin", null, null, true);
+        super("SMP-Plugin", null, null, true, null);
 
         isLogging = false;
         loggedData = new ArrayList<>();
@@ -34,9 +34,7 @@ public class ConsoleLogger extends AbstractAppender {
     }
 
     public void log(String message) {
-        if (isLogging) {
-            loggedData.add(message);
-        }
+        if (isLogging) loggedData.add(message);
     }
 
     @Override
