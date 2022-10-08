@@ -32,6 +32,7 @@ import java.util.Properties;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 
 public final class DiscordLinker extends JavaPlugin {
@@ -162,14 +163,15 @@ public final class DiscordLinker extends JavaPlugin {
                 Path folder = Paths.get(URLDecoder.decode(req.getQuery("folder"), "utf-8"));
 
                 JsonArray content = new JsonArray();
-                Files.list(folder)
-                        .map(path -> {
-                            JsonObject object = new JsonObject();
-                            object.addProperty("name", path.toFile().getName());
-                            object.addProperty("isDirectory", path.toFile().isDirectory());
-                            return object;
-                        })
-                        .forEach(content::add);
+                Stream<Path> stream = Files.list(folder);
+                stream.map(path -> {
+                    JsonObject object = new JsonObject();
+                    object.addProperty("name", path.toFile().getName());
+                    object.addProperty("isDirectory", path.toFile().isDirectory());
+                    return object;
+                })
+                .forEach(content::add);
+                stream.close();
 
                 res.send(content.toString());
             } catch (InvalidPathException err) {
