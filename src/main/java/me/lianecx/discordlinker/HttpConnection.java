@@ -1,9 +1,6 @@
 package me.lianecx.discordlinker;
 
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonPrimitive;
+import com.google.gson.*;
 import org.bukkit.ChatColor;
 
 import java.io.*;
@@ -63,15 +60,12 @@ public class HttpConnection {
             int length = out.length;
 
             conn.setRequestMethod("POST");
-            conn.setRequestProperty("Content-type", "application/json");
-            conn.setRequestProperty("Accept", "application/json");
-            conn.setDoOutput(true);
             conn.setFixedLengthStreamingMode(length);
 
             OutputStream outputStream = conn.getOutputStream();
             outputStream.write(out);
 
-            conn.getInputStream();
+            if(conn.getResponseCode() == 403) DiscordLinker.getPlugin().disconnect();
         } catch(IOException ignored) {}
     }
 

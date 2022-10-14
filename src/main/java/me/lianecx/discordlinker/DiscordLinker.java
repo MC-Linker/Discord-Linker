@@ -370,9 +370,7 @@ public final class DiscordLinker extends JavaPlugin {
                 return;
             }
 
-            connJson = new JsonObject();
-            File connection = new File(getDataFolder() + "/connection.conn");
-            boolean deleted = connection.delete();
+            boolean deleted = this.disconnect();
             if(deleted) {
                 getLogger().info("Disconnected from discord...");
                 res.send(success.toString());
@@ -516,6 +514,12 @@ public final class DiscordLinker extends JavaPlugin {
         app.listen(() -> getLogger().info("Listening on port " + port), port);
 
         return app;
+    }
+
+    public boolean disconnect() {
+        connJson = new JsonObject();
+        File connection = new File(getDataFolder() + "/connection.conn");
+        return connection.delete();
     }
 
     public String getWorldPath() throws IOException {
