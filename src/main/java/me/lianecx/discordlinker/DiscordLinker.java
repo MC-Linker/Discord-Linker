@@ -154,9 +154,6 @@ public final class DiscordLinker extends JavaPlugin {
                 }
 
                 res.send(success.toString());
-            } catch (InvalidPathException err) {
-                res.setStatus(Status._404);
-                res.send(invalidPath.toString());
             } catch(IOException err) {
                 res.setStatus(Status._500);
                 res.send(err.toString());
