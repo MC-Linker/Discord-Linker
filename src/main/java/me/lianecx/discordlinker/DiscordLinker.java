@@ -102,6 +102,8 @@ public final class DiscordLinker extends JavaPlugin {
         invalidPath.addProperty("message", "Invalid Path");
         JsonObject invalidJson = new JsonObject();
         invalidJson.addProperty("message", "Invalid JSON");
+        JsonObject invalidConnection = new JsonObject();
+        invalidConnection.addProperty("message", "Invalid connection");
 
         JsonObject success = new JsonObject();
         success.addProperty("message", "Success");
@@ -193,12 +195,17 @@ public final class DiscordLinker extends JavaPlugin {
 
         //GET localhost:11111/verify/
         app.get("/verify/", (req, res) -> {
+            if(wrongIp(req.getIp())) {
+                res.setStatus(Status._401);
+                res.send(invalidConnection.toString());
+                return;
+            }
+
             verifyCode = RandomStringUtils.randomAlphanumeric(6);
             getLogger().info(ChatColor.YELLOW + "Verification Code: " + verifyCode);
 
             getServer().getScheduler().runTaskLater(this, () -> verifyCode = null, 3600);
-
-            res.send("Success");
+            res.send(success.toString());
         });
 
         //GET localhost:11111/command/?cmd=ban+Lianecx
@@ -397,9 +404,6 @@ public final class DiscordLinker extends JavaPlugin {
             if(wrongConnection(req.getIp(), hash)) {
                 getLogger().info("Connection unsuccessful");
                 res.setStatus(Status._400);
-
-                JsonObject invalidConnection = new JsonObject();
-                invalidConnection.addProperty("message", "Invalid connection");
                 res.send(invalidConnection.toString());
                 return;
             } else if(!req.hasAuthorization() || !code.equals(verifyCode)) {
@@ -548,9 +552,13 @@ public final class DiscordLinker extends JavaPlugin {
     }
 
     public boolean wrongConnection(String Ip, String hash) {
+        return wrongIp(Ip) || !hash.matches("^([A-Za-z0-9+/]{4})*([A-Za-z0-9+/]{3}=|[A-Za-z0-9+/]{2}==)?$") || hash.length()<30;
+    }
+
+    public boolean wrongIp(String Ip) {
         try {
             String correctIp = InetAddress.getByName("smpbot.duckdns.org").getHostAddress();
-            return !hash.matches("^([A-Za-z0-9+/]{4})*([A-Za-z0-9+/]{3}=|[A-Za-z0-9+/]{2}==)?$") || hash.length()<30 || !Ip.equals(correctIp);
+            return !Ip.equals(correctIp);
         } catch (UnknownHostException ignored) {
             return true;
         }
