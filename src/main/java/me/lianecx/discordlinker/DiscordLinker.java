@@ -111,7 +111,7 @@ public final class DiscordLinker extends JavaPlugin {
         Express app = new Express();
 
         //GET localhost:11111/file/get/?path=/path/to/file
-        app.get("/file/get/", (req, res) -> {
+        app.get("/file/get", (req, res) -> {
             if(wrongHash(req.getAuthorization().get(0).getData())) {
                 res.setStatus(Status._401);
                 res.send(invalidHash.toString());
@@ -136,10 +136,11 @@ public final class DiscordLinker extends JavaPlugin {
             }
         });
 
-        /*POST localhost:11111/file/put/
-            { fileStreamToFile }
-         */
-        app.post("/file/put/", (req, res) -> {
+        // POST localhost:11111/file/put/
+        // { fileStreamToFile }
+
+
+        app.post("/file/put", (req, res) -> {
             if(wrongHash(req.getAuthorization().get(0).getData())) {
                 res.setStatus(Status._401);
                 res.send(invalidHash.toString());
@@ -163,7 +164,7 @@ public final class DiscordLinker extends JavaPlugin {
         });
 
         //GET localhost:11111/file/list/?folder="/world/"
-        app.get("/file/list/", (req, res) -> {
+        app.get("/file/list", (req, res) -> {
             if(wrongHash(req.getAuthorization().get(0).getData())) {
                 res.setStatus(Status._401);
                 res.send(invalidHash.toString());
@@ -194,7 +195,7 @@ public final class DiscordLinker extends JavaPlugin {
         });
 
         //GET localhost:11111/verify/
-        app.get("/verify/", (req, res) -> {
+        app.get("/verify", (req, res) -> {
             if(wrongIp(req.getIp())) {
                 res.setStatus(Status._401);
                 res.send(invalidConnection.toString());
@@ -209,7 +210,7 @@ public final class DiscordLinker extends JavaPlugin {
         });
 
         //GET localhost:11111/command/?cmd=ban+Lianecx
-        app.get("/command/", (req, res) -> {
+        app.get("/command", (req, res) -> {
             if (wrongHash(req.getAuthorization().get(0).getData())) {
                 res.setStatus(Status._401);
                 res.send(invalidHash.toString());
@@ -259,14 +260,14 @@ public final class DiscordLinker extends JavaPlugin {
             });
         });
 
-        /*POST localhost:11111/chat/
-            {
-                "msg": "Ayoo",
-                "username": "Lianecx,
-                "private": false
-            }
-         */
-        app.post("/chat/", (req, res) -> {
+//        POST localhost:11111/chat/
+//            {
+//                "msg": "Ayoo",
+//                "username": "Lianecx,
+//                "private": false
+//            }
+
+        app.post("/chat", (req, res) -> {
             if (wrongHash(req.getAuthorization().get(0).getData())) {
                 res.setStatus(Status._401);
                 res.send(invalidHash.toString());
@@ -370,7 +371,7 @@ public final class DiscordLinker extends JavaPlugin {
         });
 
         //GET localhost:11111/disconnect/
-        app.get("/disconnect/", (req, res) -> {
+        app.get("/disconnect", (req, res) -> {
             if(wrongHash(req.getAuthorization().get(0).getData())) {
                 res.setStatus(Status._401);
                 res.send(invalidHash.toString());
@@ -389,13 +390,13 @@ public final class DiscordLinker extends JavaPlugin {
             }
         });
 
-        /*POST localhost:11111/connect/
-            {
-                "ip": ip,
-                "id": guildId
-            }
-         */
-        app.post("/connect/", (req, res) -> {
+//        POST localhost:11111/connect/
+//            {
+//                "ip": ip,
+//                "id": guildId
+//            }
+
+        app.post("/connect", (req, res) -> {
             getLogger().info("Connection request...");
             JsonObject parser = new JsonParser().parse(new InputStreamReader(req.getBody())).getAsJsonObject();
             String hash = req.getAuthorization().get(0).getData();
@@ -445,13 +446,13 @@ public final class DiscordLinker extends JavaPlugin {
             }
         });
 
-        /*POST localhost:11111/channel/?method=add
-            {
-                "id": channelId,
-                "types": ["chat", "close"]
-            }
-         */
-        app.post("/channel/:method/", (req, res) -> {
+//        POST localhost:11111/channel/?method=add
+//            {
+//                "id": channelId,
+//                "types": ["chat", "close"]
+//            }
+
+        app.post("/channel/:method", (req, res) -> {
             String hash = req.getAuthorization().get(0).getData();
 
             if(wrongHash(hash)) {
@@ -498,7 +499,7 @@ public final class DiscordLinker extends JavaPlugin {
             }
         });
 
-        app.get("/players/", (req, res) -> {
+        app.get("/players", (req, res) -> {
             if(wrongHash(req.getAuthorization().get(0).getData())) {
                 res.setStatus(Status._401);
                 res.send(invalidHash.toString());
