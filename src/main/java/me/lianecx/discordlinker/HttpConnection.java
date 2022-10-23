@@ -15,8 +15,8 @@ public class HttpConnection {
     private static final String PLUGIN_VERSION = DiscordLinker.getPlugin().getDescription().getVersion();
 
     private static boolean shouldChat() {
-        if(DiscordLinker.getConnJson() == null || DiscordLinker.getConnJson().get("chat") == null) return false;
-        return DiscordLinker.getConnJson().get("chat").getAsBoolean();
+        if(DiscordLinker.getConnJson() == null || DiscordLinker.getConnJson().get("channels") == null) return false;
+        return DiscordLinker.getConnJson().get("channels").getAsJsonArray().size() > 0;
     }
 
     private static JsonArray getChannels(String type) {

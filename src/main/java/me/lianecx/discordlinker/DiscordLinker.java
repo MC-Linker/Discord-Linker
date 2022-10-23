@@ -420,7 +420,7 @@ public final class DiscordLinker extends JavaPlugin {
             try {
                 connJson = new JsonObject();
                 connJson.addProperty("hash", createHash(hash));
-                connJson.addProperty("chat", false);
+                connJson.add("channels", new JsonArray());
                 connJson.add("id", parser.get("id"));
                 connJson.add("ip", parser.get("ip"));
                 updateConn();
@@ -429,10 +429,9 @@ public final class DiscordLinker extends JavaPlugin {
 
                 JsonObject botConnJson = new JsonObject();
                 botConnJson.addProperty("hash", hash);
-                botConnJson.addProperty("chat", false);
                 botConnJson.add("id", parser.get("id"));
                 botConnJson.add("ip", parser.get("ip"));
-                botConnJson.addProperty("version", Bukkit.getBukkitVersion().split("-")[0]);
+                botConnJson.addProperty("version", getServer().getBukkitVersion().split("-")[0]);
                 botConnJson.addProperty("online", getServer().getOnlineMode());
                 botConnJson.addProperty("path", getWorldPath());
 
@@ -486,16 +485,15 @@ public final class DiscordLinker extends JavaPlugin {
                 }
 
                 //Create new connJson
-                connJson.addProperty("chat", channels.size() != 0);
                 connJson.add("channels", channels);
                 updateConn();
 
                 res.send(channels.toString());
             } catch (IOException err) {
                 res.setStatus(Status._500);
-                JsonObject errror = new JsonObject();
-                errror.addProperty("message", err.toString());
-                res.send(errror.toString());
+                JsonObject error = new JsonObject();
+                error.addProperty("message", err.toString());
+                res.send(error.toString());
             }
         });
 
