@@ -221,8 +221,10 @@ public final class DiscordLinker extends JavaPlugin {
 
             getServer().getScheduler().runTask(this, () -> {
                 try {
+                    String cmd = URLDecoder.decode(req.getQuery("cmd"), "utf-8");
+                    getLogger().info(ChatColor.AQUA + "Command from Discord: /" + cmd);
                     cmdLogger.startLogging();
-                    getServer().dispatchCommand(Bukkit.getConsoleSender(), URLDecoder.decode(req.getQuery("cmd"), "utf-8"));
+                    getServer().dispatchCommand(Bukkit.getConsoleSender(), cmd);
                 } catch(UnsupportedEncodingException err) {
                     responseJson.addProperty("message", err.toString());
                     res.setStatus(Status._500);
