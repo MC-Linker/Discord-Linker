@@ -64,8 +64,7 @@ public final class DiscordLinker extends JavaPlugin {
 
                 HttpConnection.send("", "start", null);
             }
-            catch(IOException ignored) {
-            }
+            catch(IOException ignored) {}
         });
 
         Logger log = (Logger) LogManager.getRootLogger();
