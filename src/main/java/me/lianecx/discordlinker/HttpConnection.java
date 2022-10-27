@@ -1,6 +1,9 @@
 package me.lianecx.discordlinker;
 
-import com.google.gson.*;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonPrimitive;
 import org.bukkit.ChatColor;
 
 import java.io.*;
@@ -16,7 +19,7 @@ public class HttpConnection {
 
     private static boolean shouldChat() {
         if(DiscordLinker.getConnJson() == null || DiscordLinker.getConnJson().get("channels") == null) return false;
-        return DiscordLinker.getConnJson().get("channels").getAsJsonArray().size() > 0;
+        return DiscordLinker.getConnJson().getAsJsonArray("channels").size() > 0;
     }
 
     private static JsonArray getChannels(String type) {

@@ -48,9 +48,6 @@ public final class DiscordLinker extends JavaPlugin {
     @Override
     public void onEnable() {
         plugin = this;
-        config.addDefault("port", 11111);
-        config.addDefault("message", "&l&9Discord &8| &l&7%username% &8>>&r %message%");
-        config.addDefault("private_message", "&l&9Discord &8| &o&7%username% whispers to you: %message%");
         config.options().copyDefaults(true);
         saveConfig();
 
@@ -61,12 +58,14 @@ public final class DiscordLinker extends JavaPlugin {
         getServer().getScheduler().runTaskAsynchronously(this, () -> {
             HttpConnection.checkVersion();
 
-            try (Reader connReader = Files.newBufferedReader(Paths.get(getDataFolder() + "/connection.conn"))) {
+            try(Reader connReader = Files.newBufferedReader(Paths.get(getDataFolder() + "/connection.conn"))) {
                 JsonElement parser = new JsonParser().parse(connReader);
                 connJson = parser.isJsonObject() ? parser.getAsJsonObject() : new JsonObject();
 
                 HttpConnection.send("", "start", null);
-            } catch (IOException ignored) {}
+            }
+            catch(IOException ignored) {
+            }
         });
 
         Logger log = (Logger) LogManager.getRootLogger();
@@ -87,6 +86,7 @@ public final class DiscordLinker extends JavaPlugin {
     public static JsonObject getConnJson() {
         return connJson;
     }
+
     public static DiscordLinker getPlugin() {
         return plugin;
     }
@@ -125,10 +125,12 @@ public final class DiscordLinker extends JavaPlugin {
                     res.setStatus(Status._404);
                     res.send(invalidPath.toString());
                 }
-            } catch (InvalidPathException err) {
+            }
+            catch(InvalidPathException err) {
                 res.setStatus(Status._404);
                 res.send(invalidPath.toString());
-            } catch (UnsupportedEncodingException err) {
+            }
+            catch(UnsupportedEncodingException err) {
                 res.setStatus(Status._500);
                 JsonObject error = new JsonObject();
                 error.addProperty("message", err.toString());
@@ -147,17 +149,18 @@ public final class DiscordLinker extends JavaPlugin {
                 return;
             }
 
-            try (FileOutputStream outputStream = new FileOutputStream(URLDecoder.decode(req.getQuery("path"), "utf-8"))) {
+            try(FileOutputStream outputStream = new FileOutputStream(URLDecoder.decode(req.getQuery("path"), "utf-8"))) {
 
                 //Transfer body (inputStream) to outputStream
                 byte[] buf = new byte[8192];
                 int length;
-                while ((length = req.getBody().read(buf)) > 0) {
+                while((length = req.getBody().read(buf)) > 0) {
                     outputStream.write(buf, 0, length);
                 }
 
                 res.send(success.toString());
-            } catch(IOException err) {
+            }
+            catch(IOException err) {
                 res.setStatus(Status._500);
                 res.send(err.toString());
             }
@@ -181,15 +184,16 @@ public final class DiscordLinker extends JavaPlugin {
                     object.addProperty("name", path.toFile().getName());
                     object.addProperty("isDirectory", path.toFile().isDirectory());
                     return object;
-                })
-                .forEach(content::add);
+                }).forEach(content::add);
                 stream.close();
 
                 res.send(content.toString());
-            } catch (InvalidPathException err) {
+            }
+            catch(InvalidPathException err) {
                 res.setStatus(Status._404);
                 res.send(invalidPath.toString());
-            } catch (IOException err) {
+            }
+            catch(IOException err) {
                 res.send("[]");
             }
         });
@@ -211,7 +215,7 @@ public final class DiscordLinker extends JavaPlugin {
 
         //GET localhost:11111/command/?cmd=ban+Lianecx
         app.get("/command", (req, res) -> {
-            if (wrongHash(req.getAuthorization().get(0).getData())) {
+            if(wrongHash(req.getAuthorization().get(0).getData())) {
                 res.setStatus(Status._401);
                 res.send(invalidHash.toString());
                 return;
@@ -225,16 +229,19 @@ public final class DiscordLinker extends JavaPlugin {
                     getLogger().info(ChatColor.AQUA + "Command from Discord: /" + cmd);
                     cmdLogger.startLogging();
                     getServer().dispatchCommand(Bukkit.getConsoleSender(), cmd);
-                } catch(UnsupportedEncodingException err) {
+                }
+                catch(UnsupportedEncodingException err) {
                     responseJson.addProperty("message", err.toString());
                     res.setStatus(Status._500);
                     res.send(responseJson.toString());
                     return;
-                } catch (IllegalArgumentException | CommandException err) {
+                }
+                catch(IllegalArgumentException | CommandException err) {
                     res.setStatus(Status._500);
                     responseJson.addProperty("message", err.toString());
                     res.send(responseJson.toString());
-                } finally {
+                }
+                finally {
                     cmdLogger.stopLogging();
                 }
 
@@ -270,7 +277,7 @@ public final class DiscordLinker extends JavaPlugin {
 //            }
 
         app.post("/chat", (req, res) -> {
-            if (wrongHash(req.getAuthorization().get(0).getData())) {
+            if(wrongHash(req.getAuthorization().get(0).getData())) {
                 res.setStatus(Status._401);
                 res.send(invalidHash.toString());
                 return;
@@ -287,37 +294,40 @@ public final class DiscordLinker extends JavaPlugin {
                 username = parser.get("username").getAsString();
                 privateMsg = parser.get("private").getAsBoolean();
                 if(privateMsg) targetUsername = parser.get("target").getAsString();
-            } catch(ClassCastException err) {
+            }
+            catch(ClassCastException err) {
                 res.setStatus(Status._400);
                 res.send(invalidJson.toString());
                 return;
             }
 
-            //Format **bold**
-            msg = msg.replaceAll("\\*\\*(.+?)\\*\\*", "&l$1&r");
-            //Format __underline__
-            msg = msg.replaceAll("__(.+?)__", "&n$1&r");
-            //Format *italic* and _italic_
-            msg = msg.replaceAll("_(.+?)_|\\*(.+?)\\*", "&o$1$2&r");
-            //Format ~~strikethrough~~
-            msg = msg.replaceAll("~~(.+?)~~", "&m$1&r");
-            //Format ??obfuscated??
-            msg = msg.replaceAll("\\?\\?(.+?)\\?\\?", "&k$1&r");
-            //Format inline and multiline `code` blocks
-            msg = msg.replaceAll("(?s)```[^\\n]*\\n(.+)```|```(.+)```", "&7&n$1$2&r");
-            msg = msg.replaceAll("`(.+?)`", "&7&n$1&r");
-            //Format ||spoilers||
-            msg = msg.replaceAll("\\|\\|(.+?)\\|\\|", "&8$1&r");
-            //Format '> quotes'
-            msg = msg.replaceAll(">+ (.+)", "&7| $1&r");
-
             //Get config string and replace placeholders
             String chatMessage = getConfig().getString(privateMsg ? "private_message" : "message");
             chatMessage = chatMessage.replaceAll("%message%", msg);
-            chatMessage = chatMessage.replaceAll("%username%", username);
+
+            //Format **bold**
+            chatMessage = chatMessage.replaceAll("\\*\\*(.+?)\\*\\*", "&l$1&r");
+            //Format __underline__
+            chatMessage = chatMessage.replaceAll("__(.+?)__", "&n$1&r");
+            //Format *italic* and _italic_
+            chatMessage = chatMessage.replaceAll("_(.+?)_|\\*(.+?)\\*", "&o$1$2&r");
+            //Format ~~strikethrough~~
+            chatMessage = chatMessage.replaceAll("~~(.+?)~~", "&m$1&r");
+            //Format ??obfuscated??
+            chatMessage = chatMessage.replaceAll("\\?\\?(.+?)\\?\\?", "&k$1&r");
+            //Format inline and multiline `code` blocks
+            chatMessage = chatMessage.replaceAll("(?s)```[^\\n]*\\n(.+)```|```(.+)```", "&7&n$1$2&r");
+            chatMessage = chatMessage.replaceAll("`(.+?)`", "&7&n$1&r");
+            //Format ||spoilers||
+            chatMessage = chatMessage.replaceAll("\\|\\|(.+?)\\|\\|", "&8$1&r");
+            //Format '> quotes'
+            chatMessage = chatMessage.replaceAll(">+ (.+)", "&7| $1&r");
 
             //Translate color codes
             chatMessage = ChatColor.translateAlternateColorCodes('&', chatMessage);
+
+            //Insert username
+            chatMessage = chatMessage.replaceAll("%username%", username);
 
             //Make links clickable
             String urlRegex = "https?://[-\\w_.]{2,}\\.[a-z]{2,4}/\\S*?";
@@ -329,15 +339,18 @@ public final class DiscordLinker extends JavaPlugin {
             StringBuilder tempMessage = new StringBuilder();
             for(String word : chatMessage.split(" ")) {
                 if(word.matches(urlRegex)) {
-                    if(tempMessage.length() != 0) chatBuilder.append(tempMessage.toString(), ComponentBuilder.FormatRetention.NONE);
+                    if(tempMessage.length() != 0)
+                        chatBuilder.append(tempMessage.toString(), ComponentBuilder.FormatRetention.NONE);
                     tempMessage.setLength(0); //Clear tempMessage
 
                     chatBuilder.append(word);
                     chatBuilder.event(new ClickEvent(ClickEvent.Action.OPEN_URL, word));
                     chatBuilder.underlined(true);
                     tempMessage.append(" ");
-                } else if(word.matches(mdUrlRegex)) {
-                    if(tempMessage.length() != 0) chatBuilder.append(tempMessage.toString(), ComponentBuilder.FormatRetention.NONE);
+                }
+                else if(word.matches(mdUrlRegex)) {
+                    if(tempMessage.length() != 0)
+                        chatBuilder.append(tempMessage.toString(), ComponentBuilder.FormatRetention.NONE);
                     tempMessage.setLength(0); //Clear tempMessage
 
                     Matcher matcher = mdUrlPattern.matcher(word);
@@ -348,11 +361,13 @@ public final class DiscordLinker extends JavaPlugin {
                     chatBuilder.event(new ClickEvent(ClickEvent.Action.OPEN_URL, matcher.group(2)));
                     chatBuilder.underlined(true);
                     tempMessage.append(" ");
-                } else {
+                }
+                else {
                     tempMessage.append(word).append(" ");
                 }
             }
-            if(tempMessage.length() != 0) chatBuilder.append(tempMessage.toString(), ComponentBuilder.FormatRetention.NONE);
+            if(tempMessage.length() != 0)
+                chatBuilder.append(tempMessage.toString(), ComponentBuilder.FormatRetention.NONE);
 
             if(privateMsg) {
                 Player player = getServer().getPlayer(targetUsername);
@@ -365,7 +380,8 @@ public final class DiscordLinker extends JavaPlugin {
                 }
 
                 player.spigot().sendMessage(chatBuilder.create());
-            } else {
+            }
+            else {
                 getServer().spigot().broadcast(chatBuilder.create());
             }
 
@@ -384,7 +400,8 @@ public final class DiscordLinker extends JavaPlugin {
             if(deleted) {
                 getLogger().info("Disconnected from discord...");
                 res.send(success.toString());
-            } else {
+            }
+            else {
                 res.setStatus(Status._500);
                 JsonObject error = new JsonObject();
                 error.addProperty("message", "Could not delete connection file");
@@ -409,7 +426,8 @@ public final class DiscordLinker extends JavaPlugin {
                 res.setStatus(Status._400);
                 res.send(invalidConnection.toString());
                 return;
-            } else if(!req.hasAuthorization() || !code.equals(verifyCode)) {
+            }
+            else if(!req.hasAuthorization() || !code.equals(verifyCode)) {
                 getLogger().info("Connection unsuccessful");
                 res.setStatus(Status._401);
 
@@ -438,16 +456,18 @@ public final class DiscordLinker extends JavaPlugin {
                 botConnJson.addProperty("path", getWorldPath());
 
                 res.send(botConnJson.toString());
-            } catch (IOException | NoSuchAlgorithmException err) {
+            }
+            catch(IOException | NoSuchAlgorithmException err) {
                 getLogger().info("Connection unsuccessful");
                 res.setStatus(Status._500);
                 res.send(err.toString());
-            } finally {
+            }
+            finally {
                 verifyCode = null;
             }
         });
 
-//        POST localhost:11111/channel/?method=add
+//        POST localhost:11111/channel/add
 //            {
 //                "id": channelId,
 //                "types": ["chat", "close"]
@@ -462,22 +482,23 @@ public final class DiscordLinker extends JavaPlugin {
                 return;
             }
 
-            JsonObject parser = new JsonParser().parse(new InputStreamReader(req.getBody())).getAsJsonObject();
+            JsonObject newChannel = new JsonParser().parse(new InputStreamReader(req.getBody())).getAsJsonObject();
 
             try {
                 //Save channels from connJson and add new channel
                 JsonArray oldChannels = new JsonArray();
-                if(connJson != null && connJson.get("channels") != null) oldChannels = connJson.getAsJsonArray("channels");
+                if(connJson != null && connJson.get("channels") != null)
+                    oldChannels = connJson.getAsJsonArray("channels");
 
                 JsonArray channels = new JsonArray();
                 //Remove duplicates and fill new channel array
-                for (JsonElement channel : oldChannels) {
-                    if(channel.getAsJsonObject().get("id").equals(parser.get("id"))) continue;
-                    channels.add(channel);
+                for(JsonElement oldChannel : oldChannels) {
+                    if(oldChannel.getAsJsonObject().get("id").equals(newChannel.get("id"))) continue;
+                    channels.add(oldChannel);
                 }
 
                 //Add new channel if method equals to add
-                if(req.getParam("method").equals("add")) channels.add(parser.get("channel"));
+                if(req.getParam("method").equals("add")) channels.add(newChannel);
                 else if(!req.getParam("method").equals("remove")) {
                     res.setStatus(Status._400);
                     JsonObject invalidParam = new JsonObject();
@@ -491,7 +512,8 @@ public final class DiscordLinker extends JavaPlugin {
                 updateConn();
 
                 res.send(channels.toString());
-            } catch (IOException err) {
+            }
+            catch(IOException err) {
                 res.setStatus(Status._500);
                 JsonObject error = new JsonObject();
                 error.addProperty("message", err.toString());
@@ -547,13 +569,14 @@ public final class DiscordLinker extends JavaPlugin {
             if(connJson.get("hash") == null) return true;
             String correctHash = connJson.get("hash").getAsString();
             return !correctHash.equals(createHash(hash));
-        } catch(NoSuchAlgorithmException err) {
+        }
+        catch(NoSuchAlgorithmException err) {
             return true;
         }
     }
 
     public boolean wrongConnection(String Ip, String hash) {
-        return wrongIp(Ip) || !hash.matches("^([A-Za-z0-9+/]{4})*([A-Za-z0-9+/]{3}=|[A-Za-z0-9+/]{2}==)?$") || hash.length()<30;
+        return wrongIp(Ip) || !hash.matches("^([A-Za-z0-9+/]{4})*([A-Za-z0-9+/]{3}=|[A-Za-z0-9+/]{2}==)?$") || hash.length() < 30;
     }
 
     public boolean wrongIp(String Ip) {
@@ -570,9 +593,9 @@ public final class DiscordLinker extends JavaPlugin {
         final byte[] hashBytes = digest.digest(originalString.getBytes(StandardCharsets.UTF_8));
 
         StringBuilder hexString = new StringBuilder(2 * hashBytes.length);
-        for (byte hashByte : hashBytes) {
+        for(byte hashByte : hashBytes) {
             String hex = Integer.toHexString(0xff & hashByte);
-            if (hex.length() == 1) hexString.append('0');
+            if(hex.length() == 1) hexString.append('0');
             hexString.append(hex);
         }
 
