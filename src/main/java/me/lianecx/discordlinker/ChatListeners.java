@@ -9,7 +9,7 @@ import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.player.*;
 import org.bukkit.event.server.ServerCommandEvent;
 
-public class ChatListeners implements Listener  {
+public class ChatListeners implements Listener {
 
     private static final DiscordLinker PLUGIN = DiscordLinker.getPlugin();
 
