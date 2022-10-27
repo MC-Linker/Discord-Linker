@@ -49,8 +49,6 @@ public class HttpConnection {
         if(channels == null || channels.size() == 0) return;
 
         try {
-            HttpURLConnection conn = (HttpURLConnection) new URL(BOT_URL + "/chat").openConnection();
-
             JsonObject chatJson = new JsonObject();
             chatJson.addProperty("type", type);
             chatJson.addProperty("player", player);
@@ -58,15 +56,22 @@ public class HttpConnection {
             chatJson.add("channels", channels);
             chatJson.add("id", DiscordLinker.getConnJson().get("id"));
             chatJson.add("ip", DiscordLinker.getConnJson().get("ip"));
+            DiscordLinker.getPlugin().getLogger().info("Sending: " + chatJson);
+
+            HttpURLConnection conn = (HttpURLConnection) new URL(BOT_URL + "/chat").openConnection();
 
             byte[] out = chatJson.toString().getBytes(StandardCharsets.UTF_8);
             int length = out.length;
 
             conn.setRequestMethod("POST");
+            conn.setRequestProperty("Content-type", "application/json");
             conn.setFixedLengthStreamingMode(length);
+            conn.setDoOutput(true);
 
-            OutputStream outputStream = conn.getOutputStream();
-            outputStream.write(out);
+            conn.connect();
+            try(OutputStream os = conn.getOutputStream()) {
+                os.write(out);
+            }
 
             if(conn.getResponseCode() == 403) DiscordLinker.getPlugin().disconnect();
         } catch(IOException ignored) {}
