@@ -2,7 +2,7 @@
 # If you change this, make sure to specify it in the `/connect plugin <ip> <port>` bot command
 port: 11111
 
-# The formatting of chat message that are sent from discord to minecraft
+# The formatting of chat messages that are sent from discord to minecraft
 message: "&l&9Discord &8| &l&7%username% &8>>&r %message%"
-# The formatting of private chat message that are sent from discord to minecraft using `/message`
-private_message: "*&l&9Discord &8| &o&7%username% whispers to you: %message%*"
+# The formatting of private chat messages that are sent from discord to minecraft using `/message`
+private_message: "&9&o&lDiscord &8&o| &7&o%username% whispers to you: %message%"

@@ -300,27 +300,9 @@ public final class DiscordLinker extends JavaPlugin {
                 return;
             }
 
-            //Get config string and replace placeholders
+            //Get config string and insert message
             String chatMessage = getConfig().getString(privateMsg ? "private_message" : "message");
-            chatMessage = chatMessage.replaceAll("%message%", msg);
-
-            //Format **bold**
-            chatMessage = chatMessage.replaceAll("\\*\\*(.+?)\\*\\*", "&l$1&r");
-            //Format __underline__
-            chatMessage = chatMessage.replaceAll("__(.+?)__", "&n$1&r");
-            //Format *italic* and _italic_
-            chatMessage = chatMessage.replaceAll("_(.+?)_|\\*(.+?)\\*", "&o$1$2&r");
-            //Format ~~strikethrough~~
-            chatMessage = chatMessage.replaceAll("~~(.+?)~~", "&m$1&r");
-            //Format ??obfuscated??
-            chatMessage = chatMessage.replaceAll("\\?\\?(.+?)\\?\\?", "&k$1&r");
-            //Format inline and multiline `code` blocks
-            chatMessage = chatMessage.replaceAll("(?s)```[^\\n]*\\n(.+)```|```(.+)```", "&7&n$1$2&r");
-            chatMessage = chatMessage.replaceAll("`(.+?)`", "&7&n$1&r");
-            //Format ||spoilers||
-            chatMessage = chatMessage.replaceAll("\\|\\|(.+?)\\|\\|", "&8$1&r");
-            //Format '> quotes'
-            chatMessage = chatMessage.replaceAll(">+ (.+)", "&7| $1&r");
+            chatMessage = chatMessage.replaceAll("%message%", markdownToColorCodes(msg));
 
             //Translate color codes
             chatMessage = ChatColor.translateAlternateColorCodes('&', chatMessage);
@@ -561,6 +543,28 @@ public final class DiscordLinker extends JavaPlugin {
         FileWriter writer = new FileWriter(getDataFolder() + "/connection.conn");
         writer.write(connJson.toString());
         writer.close();
+    }
+
+    public String markdownToColorCodes(String markdown) {
+        //Format **bold**
+        markdown = markdown.replaceAll("\\*\\*(.+?)\\*\\*", "&l$1&r");
+        //Format __underline__
+        markdown = markdown.replaceAll("__(.+?)__", "&n$1&r");
+        //Format *italic* and _italic_
+        markdown = markdown.replaceAll("_(.+?)_|\\*(.+?)\\*", "&o$1$2&r");
+        //Format ~~strikethrough~~
+        markdown = markdown.replaceAll("~~(.+?)~~", "&m$1&r");
+        //Format ??obfuscated??
+        markdown = markdown.replaceAll("\\?\\?(.+?)\\?\\?", "&k$1&r");
+        //Format inline and multiline `code` blocks
+        markdown = markdown.replaceAll("(?s)```[^\\n]*\\n(.+)```|```(.+)```", "&7&n$1$2&r");
+        markdown = markdown.replaceAll("`(.+?)`", "&7&n$1&r");
+        //Format ||spoilers||
+        markdown = markdown.replaceAll("\\|\\|(.+?)\\|\\|", "&8$1&r");
+        //Format '> quotes'
+        markdown = markdown.replaceAll(">+ (.+)", "&7| $1&r");
+
+        return markdown;
     }
 
     public boolean wrongHash(String hash) {
