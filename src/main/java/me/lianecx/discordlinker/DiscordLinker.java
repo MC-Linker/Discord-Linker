@@ -532,7 +532,7 @@ public final class DiscordLinker extends JavaPlugin {
     }
 
     public boolean disconnect() {
-        connJson = new JsonObject();
+        connJson = null;
         File connection = new File(getDataFolder() + "/connection.conn");
         return connection.delete();
     }
