@@ -204,6 +204,13 @@ public final class DiscordLinker extends JavaPlugin {
                 res.send(invalidConnection.toString());
                 return;
             }
+            else if(connJson != null) {
+                res.setStatus(Status._409);
+                JsonObject alreadyConnected = new JsonObject();
+                alreadyConnected.addProperty("message", "This plugin is already connected");
+                res.send(alreadyConnected.toString());
+                return;
+            }
 
             verifyCode = RandomStringUtils.randomAlphanumeric(6);
             getLogger().info(ChatColor.YELLOW + "Verification Code: " + verifyCode);
