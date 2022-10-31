@@ -56,7 +56,6 @@ public class HttpConnection {
             chatJson.add("channels", channels);
             chatJson.add("id", DiscordLinker.getConnJson().get("id"));
             chatJson.add("ip", DiscordLinker.getConnJson().get("ip"));
-            DiscordLinker.getPlugin().getLogger().info("Sending: " + chatJson);
 
             HttpURLConnection conn = (HttpURLConnection) new URL(BOT_URL + "/chat").openConnection();
 
