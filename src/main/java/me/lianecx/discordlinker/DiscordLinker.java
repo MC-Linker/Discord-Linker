@@ -204,7 +204,8 @@ public final class DiscordLinker extends JavaPlugin {
                 res.send(invalidConnection.toString());
                 return;
             }
-            else if(connJson != null) {
+            //If connJson and connected guild id is not the same as the one in the request, return 409
+            else if(connJson != null && !connJson.get("id").getAsString().equals(req.getQuery("id"))) {
                 res.setStatus(Status._409);
                 JsonObject alreadyConnected = new JsonObject();
                 alreadyConnected.addProperty("message", "This plugin is already connected");
