@@ -6,7 +6,7 @@
 
     <groupId>me.lianecx</groupId>
     <artifactId>Discord-Linker</artifactId>
-    <version>2.3</version>
+    <version>2.3.1</version>
     <packaging>jar</packaging>
 
     <name>Discord-Linker</name>
