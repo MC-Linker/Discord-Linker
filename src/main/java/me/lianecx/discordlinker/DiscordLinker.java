@@ -105,8 +105,6 @@ public final class DiscordLinker extends JavaPlugin {
         invalidConnection.addProperty("message", "Invalid connection");
 
         JsonObject success = new JsonObject();
-        success.addProperty("message", "Success");
-
         Express app = new Express();
 
         //GET localhost:11111/file/get/?path=/path/to/file
@@ -442,7 +440,8 @@ public final class DiscordLinker extends JavaPlugin {
                 botConnJson.add("ip", parser.get("ip"));
                 botConnJson.addProperty("version", getServer().getBukkitVersion().split("-")[0]);
                 botConnJson.addProperty("online", getServer().getOnlineMode());
-                botConnJson.addProperty("path", getWorldPath());
+                botConnJson.addProperty("worldPath", URLEncoder.encode(getWorldPath(), "utf-8"));
+                botConnJson.addProperty("path", URLEncoder.encode(getServer().getWorldContainer().getCanonicalPath(), "utf-8"));
 
                 res.send(botConnJson.toString());
             }
@@ -543,8 +542,7 @@ public final class DiscordLinker extends JavaPlugin {
         serverProperties.load(Files.newInputStream(Paths.get("server.properties")));
         String worldName = serverProperties.getProperty("level-name");
 
-        String path = getServer().getWorldContainer().getCanonicalPath() + "/" + worldName;
-        return URLEncoder.encode(path, "utf-8");
+        return Paths.get(getServer().getWorldContainer().getCanonicalPath(), worldName).toString();
     }
 
     public void updateConn() throws IOException {
