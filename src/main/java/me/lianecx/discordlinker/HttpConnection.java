@@ -4,12 +4,14 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
+import express.http.RequestMethod;
 import org.bukkit.ChatColor;
 
 import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 public class HttpConnection {
@@ -44,36 +46,52 @@ public class HttpConnection {
         return filteredChannels;
     }
 
-    public static void send(String message, String type, String player) {
+    public static void sendChat(String message, String type, String player) {
         JsonArray channels = getChannels(type);
-        if(channels == null || channels.size() == 0) return;
+        if (channels == null || channels.size() == 0) return;
 
+        JsonObject chatJson = new JsonObject();
+        chatJson.addProperty("type", type);
+        chatJson.addProperty("player", player);
+        chatJson.addProperty("message", ChatColor.stripColor(message));
+        chatJson.add("channels", channels);
+        chatJson.add("id", DiscordLinker.getConnJson().get("id"));
+        chatJson.add("ip", DiscordLinker.getConnJson().get("ip"));
+
+        int code = send(RequestMethod.POST, "/chat", chatJson);
+        if (code == 403) DiscordLinker.getPlugin().disconnect();
+    }
+
+    public static void sendVerificationResponse(String code, UUID uuid) {
+        JsonObject verifyJson = new JsonObject();
+        verifyJson.addProperty("code", code);
+        verifyJson.addProperty("uuid", uuid.toString());
+
+        send(RequestMethod.POST, "/verify/response", verifyJson);
+    }
+
+    public static int send(RequestMethod method, String route, JsonObject body) {
         try {
-            JsonObject chatJson = new JsonObject();
-            chatJson.addProperty("type", type);
-            chatJson.addProperty("player", player);
-            chatJson.addProperty("message", ChatColor.stripColor(message));
-            chatJson.add("channels", channels);
-            chatJson.add("id", DiscordLinker.getConnJson().get("id"));
-            chatJson.add("ip", DiscordLinker.getConnJson().get("ip"));
+            HttpURLConnection conn = (HttpURLConnection) new URL(BOT_URL + route).openConnection();
 
-            HttpURLConnection conn = (HttpURLConnection) new URL(BOT_URL + "/chat").openConnection();
-
-            byte[] out = chatJson.toString().getBytes(StandardCharsets.UTF_8);
+            byte[] out = body.toString().getBytes(StandardCharsets.UTF_8);
             int length = out.length;
 
-            conn.setRequestMethod("POST");
+            conn.setRequestMethod(method.getMethod());
             conn.setRequestProperty("Content-type", "application/json");
             conn.setFixedLengthStreamingMode(length);
             conn.setDoOutput(true);
 
             conn.connect();
-            try(OutputStream os = conn.getOutputStream()) {
+            try (OutputStream os = conn.getOutputStream()) {
                 os.write(out);
             }
 
-            if(conn.getResponseCode() == 403) DiscordLinker.getPlugin().disconnect();
-        } catch(IOException ignored) {}
+            return conn.getResponseCode();
+        }
+        catch (IOException ignored) {}
+
+        return 0;
     }
 
     public static void checkVersion() {
@@ -81,8 +99,10 @@ public class HttpConnection {
             HttpURLConnection conn = (HttpURLConnection) new URL(BOT_URL + "/version").openConnection();
             InputStream inputStream = conn.getInputStream();
             String latestVersion = new BufferedReader(new InputStreamReader(inputStream)).lines().collect(Collectors.joining("\n"));
-            if(!latestVersion.equals(PLUGIN_VERSION)) DiscordLinker.getPlugin().getLogger().info(ChatColor.AQUA + "Please update to the latest Discord-Linker version (" + latestVersion + ") for a bug-free and feature-rich experience.");
+            if (!latestVersion.equals(PLUGIN_VERSION))
+                DiscordLinker.getPlugin().getLogger().info(ChatColor.AQUA + "Please update to the latest Discord-Linker version (" + latestVersion + ") for a bug-free and feature-rich experience.");
 
-        } catch (IOException ignored) {}
+        }
+        catch (IOException ignored) {}
     }
 }
