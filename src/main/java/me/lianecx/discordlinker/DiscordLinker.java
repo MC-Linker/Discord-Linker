@@ -114,7 +114,7 @@ public final class DiscordLinker extends JavaPlugin {
 
         //GET localhost:11111/file/get/?path=/path/to/file
         app.get("/file/get", (req, res) -> {
-            if(wrongHash(req.getAuthorization().get(0).getData())) {
+            if(wrongHash(req.getIp(), req.getAuthorization().get(0).getData())) {
                 res.setStatus(Status._401);
                 res.send(invalidHash.toString());
                 return;
@@ -145,7 +145,7 @@ public final class DiscordLinker extends JavaPlugin {
 
 
         app.post("/file/put", (req, res) -> {
-            if(wrongHash(req.getAuthorization().get(0).getData())) {
+            if(wrongHash(req.getIp(), req.getAuthorization().get(0).getData())) {
                 res.setStatus(Status._401);
                 res.send(invalidHash.toString());
                 return;
@@ -170,7 +170,7 @@ public final class DiscordLinker extends JavaPlugin {
 
         //GET localhost:11111/file/list/?folder="/world/"
         app.get("/file/list", (req, res) -> {
-            if(wrongHash(req.getAuthorization().get(0).getData())) {
+            if(wrongHash(req.getIp(), req.getAuthorization().get(0).getData())) {
                 res.setStatus(Status._401);
                 res.send(invalidHash.toString());
                 return;
@@ -226,7 +226,7 @@ public final class DiscordLinker extends JavaPlugin {
 
         //GET localhost:11111/verify/?code=12345&uuid=12345-12345-12345-12345
         app.get("/verify/user", (req, res) -> {
-            if (wrongHash(req.getAuthorization().get(0).getData())) {
+            if(wrongHash(req.getIp(), req.getAuthorization().get(0).getData())) {
                 res.setStatus(Status._401);
                 res.send(invalidHash.toString());
                 return;
@@ -238,7 +238,7 @@ public final class DiscordLinker extends JavaPlugin {
 
         //GET localhost:11111/command/?cmd=ban+Lianecx
         app.get("/command", (req, res) -> {
-            if (wrongHash(req.getAuthorization().get(0).getData())) {
+            if(wrongHash(req.getIp(), req.getAuthorization().get(0).getData())) {
                 res.setStatus(Status._401);
                 res.send(invalidHash.toString());
                 return;
@@ -300,7 +300,7 @@ public final class DiscordLinker extends JavaPlugin {
 //            }
 
         app.post("/chat", (req, res) -> {
-            if(wrongHash(req.getAuthorization().get(0).getData())) {
+            if(wrongHash(req.getIp(), req.getAuthorization().get(0).getData())) {
                 res.setStatus(Status._401);
                 res.send(invalidHash.toString());
                 return;
@@ -395,7 +395,7 @@ public final class DiscordLinker extends JavaPlugin {
 
         //GET localhost:11111/disconnect/
         app.get("/disconnect", (req, res) -> {
-            if(wrongHash(req.getAuthorization().get(0).getData())) {
+            if(wrongHash(req.getIp(), req.getAuthorization().get(0).getData())) {
                 res.setStatus(Status._401);
                 res.send(invalidHash.toString());
                 return;
@@ -482,7 +482,7 @@ public final class DiscordLinker extends JavaPlugin {
         app.post("/channel/:method", (req, res) -> {
             String hash = req.getAuthorization().get(0).getData();
 
-            if(wrongHash(hash)) {
+            if(wrongHash(req.getIp(), hash)) {
                 res.setStatus(Status._401);
                 res.send(invalidHash.toString());
                 return;
@@ -528,7 +528,7 @@ public final class DiscordLinker extends JavaPlugin {
         });
 
         app.get("/players", (req, res) -> {
-            if(wrongHash(req.getAuthorization().get(0).getData())) {
+            if(wrongHash(req.getIp(), req.getAuthorization().get(0).getData())) {
                 res.setStatus(Status._401);
                 res.send(invalidHash.toString());
                 return;
@@ -591,7 +591,9 @@ public final class DiscordLinker extends JavaPlugin {
         return markdown;
     }
 
-    public boolean wrongHash(String hash) {
+    public boolean wrongHash(String ip, String hash) {
+        if(wrongIp(ip)) return true;
+
         try {
             if(connJson.get("hash") == null) return true;
             String correctHash = connJson.get("hash").getAsString();
@@ -602,15 +604,16 @@ public final class DiscordLinker extends JavaPlugin {
         }
     }
 
-    public boolean wrongConnection(String Ip, String hash) {
-        return wrongIp(Ip) || !hash.matches("^([A-Za-z0-9+/]{4})*([A-Za-z0-9+/]{3}=|[A-Za-z0-9+/]{2}==)?$") || hash.length() < 30;
+    public boolean wrongConnection(String ip, String hash) {
+        return wrongIp(ip) || !hash.matches("^([A-Za-z0-9+/]{4})*([A-Za-z0-9+/]{3}=|[A-Za-z0-9+/]{2}==)?$") || hash.length() < 30;
     }
 
     public boolean wrongIp(String Ip) {
         try {
             String correctIp = InetAddress.getByName("smpbot.duckdns.org").getHostAddress();
             return !Ip.equals(correctIp);
-        } catch (UnknownHostException ignored) {
+        }
+        catch(UnknownHostException ignored) {
             return true;
         }
     }
