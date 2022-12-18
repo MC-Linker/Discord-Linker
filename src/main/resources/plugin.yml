@@ -11,6 +11,11 @@ commands:
     usage: "/linker reload|port|message|private_message"
     permission: "discordlinker.linker"
     permission-message: "You do not have permission to use this command."
+  verify:
+    description: "Verify your account with the bot. Start a verification process by executing \"/account connect\" in the discord server."
+    usage: "/verify <code>"
+    permission: "discordlinker.verify"
+    permission-message: "You do not have permission to use this command."
 permissions:
   discordlinker.linker:
     description: "Allows the user to use the /linker command"
@@ -24,3 +29,6 @@ permissions:
         description: "Allows the user to use the /linker message command"
       discordlinker.linker.private_message:
         description: "Allows the user to use the /linker private_message command"
+  discordlinker.verify:
+    description: "Allows the user to use the /verify command"
+    default: true
