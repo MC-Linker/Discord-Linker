@@ -3,6 +3,9 @@ package me.lianecx.discordlinker;
 import com.google.gson.*;
 import express.Express;
 import express.utils.Status;
+import me.lianecx.discordlinker.commands.LinkerCommand;
+import me.lianecx.discordlinker.commands.LinkerTabCompleter;
+import me.lianecx.discordlinker.commands.VerifyCommand;
 import net.md_5.bungee.api.chat.ClickEvent;
 import net.md_5.bungee.api.chat.ComponentBuilder;
 import org.apache.commons.lang.RandomStringUtils;
@@ -29,6 +32,7 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.List;
 import java.util.Properties;
+import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -54,6 +58,7 @@ public final class DiscordLinker extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new ChatListeners(), this);
         getCommand("linker").setExecutor(new LinkerCommand());
         getCommand("linker").setTabCompleter(new LinkerTabCompleter());
+        getCommand("verify").setExecutor(new VerifyCommand());
 
         getServer().getScheduler().runTaskAsynchronously(this, () -> {
             HttpConnection.checkVersion();
@@ -62,7 +67,7 @@ public final class DiscordLinker extends JavaPlugin {
                 JsonElement parser = new JsonParser().parse(connReader);
                 connJson = parser.isJsonObject() ? parser.getAsJsonObject() : new JsonObject();
 
-                HttpConnection.send("", "start", null);
+                HttpConnection.sendChat("", "start", null);
             }
             catch(IOException ignored) {}
         });
@@ -76,7 +81,7 @@ public final class DiscordLinker extends JavaPlugin {
 
     @Override
     public void onDisable() {
-        HttpConnection.send("", "close", null);
+        HttpConnection.sendChat("", "close", null);
         getLogger().info(ChatColor.RED + "Plugin disabled.");
         getServer().getScheduler().cancelTasks(this);
         app.stop();
@@ -186,24 +191,25 @@ public final class DiscordLinker extends JavaPlugin {
 
                 res.send(content.toString());
             }
-            catch(InvalidPathException err) {
+            catch (InvalidPathException err) {
                 res.setStatus(Status._404);
                 res.send(invalidPath.toString());
             }
-            catch(IOException err) {
+            catch (IOException err) {
                 res.send("[]");
             }
         });
 
-        //GET localhost:11111/verify/
-        app.get("/verify", (req, res) -> {
-            if(wrongIp(req.getIp())) {
+        //GET localhost:11111/verify/guild
+        app.get("/verify/guild", (req, res) -> {
+            if (wrongIp(req.getIp())) {
                 res.setStatus(Status._401);
                 res.send(invalidConnection.toString());
                 return;
             }
+
             //If connJson and connected guild id is not the same as the one in the request, return 409
-            else if(connJson != null && !connJson.get("id").getAsString().equals(req.getQuery("id"))) {
+            else if (connJson != null && !connJson.get("id").getAsString().equals(req.getQuery("id"))) {
                 res.setStatus(Status._409);
                 JsonObject alreadyConnected = new JsonObject();
                 alreadyConnected.addProperty("message", "This plugin is already connected");
@@ -218,9 +224,21 @@ public final class DiscordLinker extends JavaPlugin {
             res.send(success.toString());
         });
 
+        //GET localhost:11111/verify/?code=12345&uuid=12345-12345-12345-12345
+        app.get("/verify/user", (req, res) -> {
+            if (wrongHash(req.getAuthorization().get(0).getData())) {
+                res.setStatus(Status._401);
+                res.send(invalidHash.toString());
+                return;
+            }
+
+            VerifyCommand.addPlayerToVerificationQueue(UUID.fromString(req.getQuery("uuid")), req.getQuery("code"));
+            res.send(success.toString());
+        });
+
         //GET localhost:11111/command/?cmd=ban+Lianecx
         app.get("/command", (req, res) -> {
-            if(wrongHash(req.getAuthorization().get(0).getData())) {
+            if (wrongHash(req.getAuthorization().get(0).getData())) {
                 res.setStatus(Status._401);
                 res.send(invalidHash.toString());
                 return;
