@@ -1,5 +1,6 @@
-package me.lianecx.discordlinker;
+package me.lianecx.discordlinker.commands;
 
+import me.lianecx.discordlinker.DiscordLinker;
 import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -13,10 +14,6 @@ public class LinkerCommand implements CommandExecutor {
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if(args.length == 0) return false;
-        if(!sender.hasPermission("discordlinker.linker")) {
-            sender.sendMessage(ChatColor.RED + "You do not have permission to use this command.");
-            return true;
-        }
 
         switch (args[0]) {
             case "reload":

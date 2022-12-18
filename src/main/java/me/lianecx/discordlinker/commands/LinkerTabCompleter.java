@@ -1,4 +1,4 @@
-package me.lianecx.discordlinker;
+package me.lianecx.discordlinker.commands;
 
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
