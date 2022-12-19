@@ -24,7 +24,10 @@ public class VerifyCommand implements CommandExecutor {
         Bukkit.getScheduler().scheduleSyncDelayedTask(DiscordLinker.getPlugin(), () -> {
             if (playersAwaitingVerification.containsKey(uuid)) {
                 playersAwaitingVerification.remove(uuid);
-                Bukkit.getPlayer(uuid).sendMessage(ChatColor.YELLOW + "You have been removed from the verification queue because you took too long to verify.");
+
+                Player player = Bukkit.getPlayer(uuid);
+                if(player != null)
+                    player.sendMessage(ChatColor.YELLOW + "You have been removed from the verification queue because you took too long to verify.");
             }
         }, 20 * 180);
     }

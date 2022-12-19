@@ -29,17 +29,19 @@ public class HttpConnection {
 
         JsonArray allChannels = DiscordLinker.getConnJson().getAsJsonArray("channels");
         JsonArray filteredChannels = new JsonArray();
-        for (JsonElement channel : allChannels) {
+        for(JsonElement channel : allChannels) {
             try {
                 JsonArray types = channel.getAsJsonObject().getAsJsonArray("types");
                 if(types.contains(new JsonPrimitive(type))) filteredChannels.add(channel);
-            } catch(Exception err) {
+            }
+            catch(Exception err) {
                 //If channel is corrupted, remove
                 allChannels.remove(channel);
 
                 try {
                     DiscordLinker.getPlugin().updateConn();
-                } catch (IOException ignored) {}
+                }
+                catch(IOException ignored) {}
             }
         }
 
@@ -48,7 +50,7 @@ public class HttpConnection {
 
     public static void sendChat(String message, String type, String player) {
         JsonArray channels = getChannels(type);
-        if (channels == null || channels.size() == 0) return;
+        if(channels == null || channels.size() == 0) return;
 
         JsonObject chatJson = new JsonObject();
         chatJson.addProperty("type", type);
@@ -59,7 +61,7 @@ public class HttpConnection {
         chatJson.add("ip", DiscordLinker.getConnJson().get("ip"));
 
         int code = send(RequestMethod.POST, "/chat", chatJson);
-        if (code == 403) DiscordLinker.getPlugin().disconnect();
+        if(code == 403) DiscordLinker.getPlugin().disconnect();
     }
 
     public static void sendVerificationResponse(String code, UUID uuid) {
@@ -83,13 +85,13 @@ public class HttpConnection {
             conn.setDoOutput(true);
 
             conn.connect();
-            try (OutputStream os = conn.getOutputStream()) {
+            try(OutputStream os = conn.getOutputStream()) {
                 os.write(out);
             }
 
             return conn.getResponseCode();
         }
-        catch (IOException ignored) {}
+        catch(IOException ignored) {}
 
         return 0;
     }
@@ -99,10 +101,10 @@ public class HttpConnection {
             HttpURLConnection conn = (HttpURLConnection) new URL(BOT_URL + "/version").openConnection();
             InputStream inputStream = conn.getInputStream();
             String latestVersion = new BufferedReader(new InputStreamReader(inputStream)).lines().collect(Collectors.joining("\n"));
-            if (!latestVersion.equals(PLUGIN_VERSION))
+            if(!latestVersion.equals(PLUGIN_VERSION))
                 DiscordLinker.getPlugin().getLogger().info(ChatColor.AQUA + "Please update to the latest Discord-Linker version (" + latestVersion + ") for a bug-free and feature-rich experience.");
 
         }
-        catch (IOException ignored) {}
+        catch(IOException ignored) {}
     }
 }
