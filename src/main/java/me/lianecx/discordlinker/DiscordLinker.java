@@ -11,6 +11,8 @@ import net.md_5.bungee.api.chat.ComponentBuilder;
 import org.apache.commons.lang.RandomStringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.core.Logger;
+import org.bstats.bukkit.Metrics;
+import org.bstats.charts.SimplePie;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.command.CommandException;
@@ -65,12 +67,16 @@ public final class DiscordLinker extends JavaPlugin {
 
             try(Reader connReader = Files.newBufferedReader(Paths.get(getDataFolder() + "/connection.conn"))) {
                 JsonElement parser = new JsonParser().parse(connReader);
-                connJson = parser.isJsonObject() ? parser.getAsJsonObject() : new JsonObject();
+                connJson = parser.isJsonObject() ? parser.getAsJsonObject() : null;
 
                 HttpConnection.sendChat("", "start", null);
             }
             catch(IOException ignored) {}
         });
+
+        int pluginId = 17143;
+        Metrics metrics = new Metrics(this, pluginId);
+        metrics.addCustomChart(new SimplePie("server_connected_with_discord", () -> connJson != null ? "true" : "false"));
 
         Logger log = (Logger) LogManager.getRootLogger();
         log.addAppender(cmdLogger);
