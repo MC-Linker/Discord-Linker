@@ -21,10 +21,8 @@ import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.*;
-import java.net.InetAddress;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
-import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
@@ -316,10 +314,12 @@ public final class DiscordLinker extends JavaPlugin {
 
             String msg;
             String username;
+            String replyMsg;
             boolean privateMsg;
-            String targetUsername = "";
+            String targetUsername = null;
             try {
                 msg = parser.get("msg").getAsString();
+                replyMsg = parser.get("reply") != null && !parser.get("reply").isJsonNull() ? parser.get("reply").getAsString() : null;
                 username = parser.get("username").getAsString();
                 privateMsg = parser.get("private").getAsBoolean();
                 if(privateMsg) targetUsername = parser.get("target").getAsString();
@@ -331,8 +331,18 @@ public final class DiscordLinker extends JavaPlugin {
             }
 
             //Get config string and insert message
-            String chatMessage = getConfig().getString(privateMsg ? "private_message" : "message");
+            String configPath;
+            if(privateMsg) configPath = "private_message";
+            else if(replyMsg != null) configPath = "reply_message";
+            else configPath = "message";
+            String chatMessage = getConfig().getString(configPath);
             chatMessage = chatMessage.replaceAll("%message%", markdownToColorCodes(msg));
+
+            if(replyMsg != null) {
+                chatMessage = chatMessage.replaceAll("%reply_message%", markdownToColorCodes(replyMsg));
+                String reducedReplyMsg = replyMsg.length() > 20 ? replyMsg.substring(0, 20) + "..." : replyMsg;
+                chatMessage = chatMessage.replaceAll("%reply_message_reduced%", markdownToColorCodes(reducedReplyMsg));
+            }
 
             //Translate color codes
             chatMessage = ChatColor.translateAlternateColorCodes('&', chatMessage);

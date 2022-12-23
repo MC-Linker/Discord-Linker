@@ -6,3 +6,7 @@ port: 11111
 message: "&l&9Discord &8| &l&7%username% &8>>&r %message%"
 # The formatting of private chat messages that are sent from discord to minecraft using `/message`
 private_message: "&9&o&lDiscord &8&o| &7&o%username% whispers to you: %message%"
+# The formatting of chat messages from minecraft to discord that reply to another message
+# %reply_message_reduced% is the message that was replied to, but reduced to 20 characters
+# %reply_message% is the full message that was replied to
+reply_message: "-> %reply_message_reduced%\n&l&9Discord &8| &l&7%username% &8>>&r %message%"
