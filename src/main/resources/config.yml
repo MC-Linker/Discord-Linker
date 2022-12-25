@@ -7,6 +7,7 @@ message: "&l&9Discord &8| &l&7%username% &8>>&r %message%"
 # The formatting of private chat messages that are sent from discord to minecraft using `/message`
 private_message: "&9&o&lDiscord &8&o| &7&o%username% whispers to you: %message%"
 # The formatting of chat messages from minecraft to discord that reply to another message
-# %reply_message_reduced% is the message that was replied to, but reduced to 20 characters
+# %reply_message_reduced% is the message that was replied to, but reduced to 30 characters
 # %reply_message% is the full message that was replied to
-reply_message: "-> %reply_message_reduced%\n&l&9Discord &8| &l&7%username% &8>>&r %message%"
+# %reply_username% is the username of the person who sent the message that was replied to
+reply_message: "&l&7(replying to %reply_username%) &8->&r %reply_message_reduced% \n &l&9Discord &8| &l&7%username% &8>>&r %message%"
