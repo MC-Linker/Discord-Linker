@@ -19,19 +19,19 @@ public class ChatListeners implements Listener {
         String replacedMessage = ChatColor.stripColor(event.getMessage().replaceAll("(?i)&[0-9A-FK-OR]", ""));
 
         PLUGIN.getServer().getScheduler().runTaskAsynchronously(PLUGIN, () ->
-                HttpConnection.sendChat(replacedMessage, "chat", event.getPlayer().getName()));
+                HttpConnection.sendChat(replacedMessage, ChatType.CHAT, event.getPlayer().getName()));
     }
 
     @EventHandler(ignoreCancelled = true, priority = EventPriority.HIGH)
     public void onPlayerJoin(PlayerJoinEvent event) {
         PLUGIN.getServer().getScheduler().runTaskAsynchronously(PLUGIN, () ->
-                HttpConnection.sendChat(event.getJoinMessage(), "join", event.getPlayer().getName()));
+                HttpConnection.sendChat(event.getJoinMessage(), ChatType.JOIN, event.getPlayer().getName()));
     }
 
     @EventHandler(ignoreCancelled = true, priority = EventPriority.HIGH)
     public void onPlayerQuit(PlayerQuitEvent event) {
         PLUGIN.getServer().getScheduler().runTaskAsynchronously(PLUGIN, () ->
-                HttpConnection.sendChat(event.getQuitMessage(), "quit", event.getPlayer().getName()));
+                HttpConnection.sendChat(event.getQuitMessage(), ChatType.QUIT, event.getPlayer().getName()));
     }
 
     @EventHandler(ignoreCancelled = true, priority = EventPriority.HIGH)
@@ -40,26 +40,26 @@ public class ChatListeners implements Listener {
         if(event.getAdvancement().getKey().toString().startsWith("minecraft:recipes/")) return;
 
         PLUGIN.getServer().getScheduler().runTaskAsynchronously(PLUGIN, () ->
-                HttpConnection.sendChat(event.getAdvancement().getKey().toString(), "advancement", event.getPlayer().getName()));
+                HttpConnection.sendChat(event.getAdvancement().getKey().toString(), ChatType.ADVANCEMENT, event.getPlayer().getName()));
     }
 
     @EventHandler(ignoreCancelled = true, priority = EventPriority.HIGH)
     public void onPlayerDeath(PlayerDeathEvent event) {
         PLUGIN.getServer().getScheduler().runTaskAsynchronously(PLUGIN, () ->
-                HttpConnection.sendChat(event.getDeathMessage(), "death", event.getEntity().getName()));
+                HttpConnection.sendChat(event.getDeathMessage(), ChatType.DEATH, event.getEntity().getName()));
     }
 
     @EventHandler(ignoreCancelled = true, priority = EventPriority.HIGH)
     public void onPlayerCommand(PlayerCommandPreprocessEvent event) {
         PLUGIN.getServer().getScheduler().runTaskAsynchronously(PLUGIN, () ->
-                HttpConnection.sendChat(event.getMessage(), "player_command", event.getPlayer().getName()));
+                HttpConnection.sendChat(event.getMessage(), ChatType.PLAYER_COMMAND, event.getPlayer().getName()));
     }
 
     @EventHandler(ignoreCancelled = true, priority = EventPriority.HIGH)
     public void onConsoleCommand(ServerCommandEvent event) {
         PLUGIN.getServer().getScheduler().runTaskAsynchronously(PLUGIN, () -> {
             //Command sender either from the console or a command block
-            String commandType = event.getSender() instanceof ConsoleCommandSender ? "console_command" : "block_command";
+            ChatType commandType = event.getSender() instanceof ConsoleCommandSender ? ChatType.CONSOLE_COMMAND : ChatType.BLOCK_COMMAND;
             HttpConnection.sendChat(event.getCommand(), commandType, event.getSender().getName());
         });
     }

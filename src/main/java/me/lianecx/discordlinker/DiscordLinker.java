@@ -21,8 +21,10 @@ import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.*;
+import java.net.InetAddress;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
+import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
@@ -49,11 +51,13 @@ public final class DiscordLinker extends JavaPlugin {
     private static final Gson gson = new Gson();
     FileConfiguration config = getConfig();
 
+    public static final String URL_REGEX = "https?://[-\\w_.]{2,}\\.[a-z]{2,4}/\\S*?";
+    public static final String MD_URL_REGEX = "(?i)\\[([^]]+)]\\((" + URL_REGEX + ")\\)";
+
     @Override
     public void onEnable() {
         plugin = this;
-        config.options().copyDefaults(true);
-        saveConfig();
+        saveDefaultConfig();
 
         getServer().getPluginManager().registerEvents(new ChatListeners(), this);
         getCommand("linker").setExecutor(new LinkerCommand());
@@ -67,7 +71,7 @@ public final class DiscordLinker extends JavaPlugin {
                 JsonElement parser = new JsonParser().parse(connReader);
                 connJson = parser.isJsonObject() ? parser.getAsJsonObject() : null;
 
-                HttpConnection.sendChat("", "start", null);
+                HttpConnection.sendChat("", ChatType.START, null);
             }
             catch(IOException ignored) {}
         });
@@ -85,7 +89,7 @@ public final class DiscordLinker extends JavaPlugin {
 
     @Override
     public void onDisable() {
-        HttpConnection.sendChat("", "close", null);
+        HttpConnection.sendChat("", ChatType.CLOSE, null);
         getLogger().info(ChatColor.RED + "Plugin disabled.");
         getServer().getScheduler().cancelTasks(this);
         app.stop();
@@ -315,13 +319,15 @@ public final class DiscordLinker extends JavaPlugin {
             String msg;
             String username;
             String replyMsg;
+            String replyUsername = "";
             boolean privateMsg;
-            String targetUsername = null;
+            String targetUsername = "";
             try {
                 msg = parser.get("msg").getAsString();
-                replyMsg = parser.get("reply") != null && !parser.get("reply").isJsonNull() ? parser.get("reply").getAsString() : null;
+                replyMsg = parser.get("reply_msg") != null && !parser.get("reply_msg").isJsonNull() ? parser.get("reply_msg").getAsString() : null;
                 username = parser.get("username").getAsString();
                 privateMsg = parser.get("private").getAsBoolean();
+                if(replyMsg != null) replyUsername = parser.get("reply_username").getAsString();
                 if(privateMsg) targetUsername = parser.get("target").getAsString();
             }
             catch(ClassCastException err) {
@@ -340,7 +346,11 @@ public final class DiscordLinker extends JavaPlugin {
 
             if(replyMsg != null) {
                 chatMessage = chatMessage.replaceAll("%reply_message%", markdownToColorCodes(replyMsg));
-                String reducedReplyMsg = replyMsg.length() > 20 ? replyMsg.substring(0, 20) + "..." : replyMsg;
+                chatMessage = chatMessage.replaceAll("%reply_username%", replyUsername);
+
+                String reducedReplyMsg = replyMsg.length() > 30 ? replyMsg.substring(0, 30) + "..." : replyMsg;
+                //if reply message is a url, dont reduce it
+                if(replyMsg.matches(URL_REGEX) || replyMsg.matches(MD_URL_REGEX)) reducedReplyMsg = replyMsg;
                 chatMessage = chatMessage.replaceAll("%reply_message_reduced%", markdownToColorCodes(reducedReplyMsg));
             }
 
@@ -351,15 +361,13 @@ public final class DiscordLinker extends JavaPlugin {
             chatMessage = chatMessage.replaceAll("%username%", username);
 
             //Make links clickable
-            String urlRegex = "https?://[-\\w_.]{2,}\\.[a-z]{2,4}/\\S*?";
-            String mdUrlRegex = "(?i)\\[([^]]+)]\\((" + urlRegex + ")\\)";
-            Pattern mdUrlPattern = Pattern.compile(mdUrlRegex);
+            Pattern mdUrlPattern = Pattern.compile(MD_URL_REGEX);
 
             ComponentBuilder chatBuilder = new ComponentBuilder("");
 
             StringBuilder tempMessage = new StringBuilder();
             for(String word : chatMessage.split(" ")) {
-                if(word.matches(urlRegex)) {
+                if(word.matches(URL_REGEX)) {
                     if(tempMessage.length() != 0)
                         chatBuilder.append(tempMessage.toString(), ComponentBuilder.FormatRetention.NONE);
                     tempMessage.setLength(0); //Clear tempMessage
@@ -369,7 +377,7 @@ public final class DiscordLinker extends JavaPlugin {
                     chatBuilder.underlined(true);
                     tempMessage.append(" ");
                 }
-                else if(word.matches(mdUrlRegex)) {
+                else if(word.matches(MD_URL_REGEX)) {
                     if(tempMessage.length() != 0)
                         chatBuilder.append(tempMessage.toString(), ComponentBuilder.FormatRetention.NONE);
                     tempMessage.setLength(0); //Clear tempMessage

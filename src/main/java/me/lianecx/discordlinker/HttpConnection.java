@@ -14,6 +14,23 @@ import java.nio.charset.StandardCharsets;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+enum ChatType {
+    CHAT,
+    JOIN,
+    QUIT,
+    ADVANCEMENT,
+    DEATH,
+    PLAYER_COMMAND,
+    CONSOLE_COMMAND,
+    BLOCK_COMMAND,
+    START,
+    CLOSE;
+
+    String getKey() {
+        return name().toLowerCase();
+    }
+}
+
 public class HttpConnection {
     private static final int BOT_PORT = 3100;
     private static final String BOT_URL = "http://smpbot.duckdns.org:" + BOT_PORT;
@@ -24,7 +41,7 @@ public class HttpConnection {
         return DiscordLinker.getConnJson().getAsJsonArray("channels").size() > 0;
     }
 
-    private static JsonArray getChannels(String type) {
+    private static JsonArray getChannels(ChatType type) {
         if(!shouldChat()) return null;
 
         JsonArray allChannels = DiscordLinker.getConnJson().getAsJsonArray("channels");
@@ -32,7 +49,7 @@ public class HttpConnection {
         for(JsonElement channel : allChannels) {
             try {
                 JsonArray types = channel.getAsJsonObject().getAsJsonArray("types");
-                if(types.contains(new JsonPrimitive(type))) filteredChannels.add(channel);
+                if(types.contains(new JsonPrimitive(type.getKey()))) filteredChannels.add(channel);
             }
             catch(Exception err) {
                 //If channel is corrupted, remove
@@ -48,12 +65,12 @@ public class HttpConnection {
         return filteredChannels;
     }
 
-    public static void sendChat(String message, String type, String player) {
+    public static void sendChat(String message, ChatType type, String player) {
         JsonArray channels = getChannels(type);
         if(channels == null || channels.size() == 0) return;
 
         JsonObject chatJson = new JsonObject();
-        chatJson.addProperty("type", type);
+        chatJson.addProperty("type", type.getKey());
         chatJson.addProperty("player", player);
         chatJson.addProperty("message", ChatColor.stripColor(message));
         chatJson.add("channels", channels);
