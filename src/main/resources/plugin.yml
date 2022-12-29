@@ -4,6 +4,7 @@ main: me.lianecx.discordlinker.DiscordLinker
 api-version: 1.13
 authors: [ Lianecx ]
 description: Official plugin for the MC Linker Discord Bot.
+website: https://github.com/MC-Linker/Discord-Linker
 prefix: Discord-Linker
 commands:
   linker:
