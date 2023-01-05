@@ -1,5 +1,8 @@
-package me.lianecx.discordlinker;
+package me.lianecx.discordlinker.events;
 
+import me.lianecx.discordlinker.DiscordLinker;
+import me.lianecx.discordlinker.network.ChatType;
+import me.lianecx.discordlinker.network.HttpConnection;
 import org.bukkit.ChatColor;
 import org.bukkit.command.ConsoleCommandSender;
 import org.bukkit.event.EventHandler;
