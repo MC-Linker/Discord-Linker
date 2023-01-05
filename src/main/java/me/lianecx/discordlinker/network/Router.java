@@ -2,6 +2,7 @@ package me.lianecx.discordlinker.network;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import express.utils.Status;
 import me.lianecx.discordlinker.ConsoleLogger;
@@ -21,6 +22,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
+import java.math.BigInteger;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -30,6 +32,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
 import java.util.List;
 import java.util.Properties;
 import java.util.UUID;
@@ -46,6 +49,7 @@ public class Router {
     public static final JsonObject INVALID_PATH = new JsonObject();
     public static final JsonObject INVALID_PARAM = new JsonObject();
     public static final JsonObject INVALID_JSON = new JsonObject();
+    public static final JsonObject INVALID_CODE = new JsonObject();
     public static final JsonObject INVALID_PLAYER = new JsonObject();
     public static final JsonObject ALREADY_CONNECTED = new JsonObject();
     public static final JsonObject SUCCESS = new JsonObject();
@@ -62,6 +66,7 @@ public class Router {
         INVALID_JSON.addProperty("message", "Invalid JSON");
         INVALID_PLAYER.addProperty("message", "Target player does not exist or is not online");
         ALREADY_CONNECTED.addProperty("message", "This plugin is already connected with a different guild.");
+        INVALID_CODE.addProperty("message", "Invalid verification code");
 
         Logger log = (Logger) LogManager.getRootLogger();
         log.addAppender(cmdLogger);
@@ -290,23 +295,33 @@ public class Router {
         try {
             DiscordLinker.getPlugin().getLogger().info("Connection request...");
 
+            if(!data.get("code").getAsString().equals(verifyCode)) {
+                DiscordLinker.getPlugin().getLogger().info("Connection unsuccessful");
+                return new RouterResponse(Status._401, INVALID_CODE.toString());
+            }
+
+            //Create random 32-character hex string
+            String token = new BigInteger(130, new SecureRandom()).toString(16);
+
             JsonObject connJson = new JsonObject();
-            connJson.addProperty("hash", createHash(data.get("token").getAsString()));
             connJson.add("channels", new JsonArray());
             connJson.add("id", data.get("id"));
             connJson.add("ip", data.get("ip"));
+            connJson.addProperty("protocol", "http");
+            connJson.addProperty("hash", createHash(token));
+
             DiscordLinker.getPlugin().updateConn(connJson);
 
             DiscordLinker.getPlugin().getLogger().info("Successfully connected with discord server. ID: " + data.get("id").getAsString());
 
             JsonObject respJson = new JsonObject();
-            respJson.add("hash", data.get("token"));
             respJson.add("id", data.get("id"));
             respJson.add("ip", data.get("ip"));
             respJson.addProperty("version", getServer().getBukkitVersion().split("-")[0]);
             respJson.addProperty("online", getServer().getOnlineMode());
             respJson.addProperty("worldPath", URLEncoder.encode(getWorldPath(), "utf-8"));
             respJson.addProperty("path", URLEncoder.encode(getServer().getWorldContainer().getCanonicalPath(), "utf-8"));
+            respJson.addProperty("token", token);
 
             return new RouterResponse(Status._200, respJson.toString());
         }
@@ -322,15 +337,14 @@ public class Router {
     public static RouterResponse removeChannel(JsonObject data) {
         try {
             JsonObject connJson = DiscordLinker.getConnJson();
-            JsonObject newChannel = data.get("channel").getAsJsonObject();
             JsonArray channels = connJson.get("channels").getAsJsonArray();
 
-            channels.forEach(channel -> {
-                JsonObject jsonChannel = channel.getAsJsonObject();
-                if(jsonChannel.get("id").getAsString().equals(newChannel.get("id").getAsString())) {
+            for(JsonElement channel : channels) {
+                if(channel.getAsJsonObject().get("id").getAsString().equals(data.get("id").getAsString())) {
                     channels.remove(channel);
+                    break;
                 }
-            });
+            }
 
             //Update connJson with new channels
             connJson.add("channels", channels);
@@ -348,16 +362,15 @@ public class Router {
     public static RouterResponse addChannel(JsonObject data) {
         try {
             JsonObject connJson = DiscordLinker.getConnJson();
-            JsonObject channel = data.get("channel").getAsJsonObject();
             JsonArray channels = connJson.get("channels").getAsJsonArray();
 
-            channels.add(channel);
-            //Remove channels with the same id
+            //Remove channels with the same id as added channel
             channels.forEach(jsonChannel -> {
-                if(jsonChannel.getAsJsonObject().get("id").getAsString().equals(channel.get("id").getAsString())) {
+                if(jsonChannel.getAsJsonObject().get("id").getAsString().equals(data.get("id").getAsString())) {
                     channels.remove(jsonChannel);
                 }
             });
+            channels.add(data);
 
             //Update connJson with new channels
             connJson.add("channels", channels);

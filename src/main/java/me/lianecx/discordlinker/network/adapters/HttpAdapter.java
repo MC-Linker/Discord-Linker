@@ -25,20 +25,24 @@ public class HttpAdapter {
         this.app = app;
 
         this.app.all((req, res) -> {
-            if(!this.checkAuth(req)) return;
-
             Route route = Route.getRouteByPath(req.getPath());
+            if(route == null) {
+                res.sendStatus(Status._404);
+                return;
+            }
+
+            //Check auth and IP
+            if((route.doesRequireToken() && !this.checkToken(req)) /*|| (route.isBotOnly() && !this.checkIp(req.getIp()))*/) {
+                res.setStatus(Status._401);
+                res.send(Router.INVALID_AUTH.toString());
+                return;
+            }
             JsonObject data = this.parseRequest(req);
             System.out.println(data);
             System.out.println(route);
 
-            if(route == Route.PUT_FILE) {
-                this.respond(Router.putFile(data, req.getBody()), res);
-                return;
-            }
-
-            if(route != null) this.respond(route.execute(data), res);
-            else res.sendStatus(Status._404);
+            if(route == Route.PUT_FILE) this.respond(Router.putFile(data, req.getBody()), res);
+            else this.respond(route.execute(data), res);
         });
     }
 
@@ -46,16 +50,25 @@ public class HttpAdapter {
         app.listen(() -> DiscordLinker.getPlugin().getLogger().info("Listening on port " + port), port);
     }
 
-    private boolean checkAuth(Request req) {
+    private boolean checkToken(Request req) {
         try {
             if(DiscordLinker.getConnJson().get("hash") == null) return false;
 
             String token = req.getAuthorization().get(0).getData();
             String correctHash = DiscordLinker.getConnJson().get("hash").getAsString();
-            String correctIp = InetAddress.getByName(HttpConnection.BOT_URL.getHost()).getHostAddress();
-            return correctHash.equals(Router.createHash(token)) && req.getIp().equals(correctIp);
+            return correctHash.equals(Router.createHash(token));
         }
-        catch(NoSuchAlgorithmException | UnknownHostException err) {
+        catch(NoSuchAlgorithmException err) {
+            return false;
+        }
+    }
+
+    private boolean checkIp(String ip) {
+        try {
+            String correctIp = InetAddress.getByName(HttpConnection.BOT_URL.getHost()).getHostAddress();
+            return ip.equals(correctIp);
+        }
+        catch(UnknownHostException e) {
             return false;
         }
     }
