@@ -21,7 +21,7 @@ public class LinkerCommand implements CommandExecutor {
 
                 //Get port from config
                 int port = PLUGIN.getConfig().getInt("port") != 0 ? PLUGIN.getConfig().getInt("port") : 11111;
-                restartServer(port);
+                DiscordLinker.getPlugin().restartHttpServer(port);
                 sender.sendMessage(ChatColor.GREEN + "Successfully reloaded config.");
                 break;
             case "port":
@@ -41,11 +41,11 @@ public class LinkerCommand implements CommandExecutor {
                 PLUGIN.getConfig().set("port", newPort);
                 PLUGIN.saveConfig();
 
-                restartServer(newPort);
+                DiscordLinker.getPlugin().restartHttpServer(newPort);
                 sender.sendMessage(
-                    ChatColor.GREEN + "Successfully set port to " +
-                    ChatColor.DARK_AQUA + newPort +
-                    ChatColor.GREEN + "."
+                        ChatColor.GREEN + "Successfully set port to " +
+                                ChatColor.DARK_AQUA + newPort +
+                                ChatColor.GREEN + "."
                 );
                 break;
             case "private_message":
@@ -70,10 +70,5 @@ public class LinkerCommand implements CommandExecutor {
         }
 
         return true;
-    }
-
-    public void restartServer(int port) {
-        DiscordLinker.getApp().stop();
-        DiscordLinker.getApp().listen(() -> PLUGIN.getLogger().info("Listening on port " + port), port);
     }
 }
