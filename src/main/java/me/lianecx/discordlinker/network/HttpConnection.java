@@ -1,43 +1,28 @@
-package me.lianecx.discordlinker;
+package me.lianecx.discordlinker.network;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
 import express.http.RequestMethod;
+import me.lianecx.discordlinker.DiscordLinker;
 import org.bukkit.ChatColor;
 
 import java.io.*;
 import java.net.HttpURLConnection;
+import java.net.URI;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.UUID;
 import java.util.stream.Collectors;
-
-enum ChatType {
-    CHAT,
-    JOIN,
-    QUIT,
-    ADVANCEMENT,
-    DEATH,
-    PLAYER_COMMAND,
-    CONSOLE_COMMAND,
-    BLOCK_COMMAND,
-    START,
-    CLOSE;
-
-    String getKey() {
-        return name().toLowerCase();
-    }
-}
 
 public class HttpConnection {
 
     private static final String PLUGIN_VERSION = DiscordLinker.getPlugin().getDescription().getVersion();
 
     //If snapshot version, request test-bot at port 3101 otherwise request main-bot at port 3100
-    private static final int BOT_PORT = PLUGIN_VERSION.contains("SNAPSHOT") ? 3101 : 3100;
-    private static final String BOT_URL = "http://smpbot.duckdns.org:" + BOT_PORT;
+    public static final int BOT_PORT = PLUGIN_VERSION.contains("SNAPSHOT") ? 3101 : 3100;
+    public static final URI BOT_URL = URI.create("http://smpbot.duckdns.org:" + BOT_PORT);
 
     private static boolean shouldChat() {
         if(DiscordLinker.getConnJson() == null || DiscordLinker.getConnJson().get("channels") == null) return false;

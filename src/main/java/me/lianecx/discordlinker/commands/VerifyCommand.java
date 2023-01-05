@@ -1,7 +1,7 @@
 package me.lianecx.discordlinker.commands;
 
 import me.lianecx.discordlinker.DiscordLinker;
-import me.lianecx.discordlinker.HttpConnection;
+import me.lianecx.discordlinker.network.HttpConnection;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
