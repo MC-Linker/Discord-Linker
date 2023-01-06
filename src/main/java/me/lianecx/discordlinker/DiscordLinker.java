@@ -27,6 +27,7 @@ import java.io.IOException;
 import java.io.Reader;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.Arrays;
 import java.util.Collections;
 
 
@@ -103,8 +104,9 @@ public final class DiscordLinker extends JavaPlugin {
 
         Socket socket = IO.socket(HttpConnection.BOT_URL, ioOptions);
 
-        socket.on(Socket.EVENT_CONNECT_ERROR, args -> getLogger().info(ChatColor.RED + "Could not reach the Discord Bot! Reconnecting..."));
-        socket.on(Socket.EVENT_CONNECT, args -> getLogger().info(ChatColor.GREEN + "Connected to the Discord Bot!"));
+        socket.on(Socket.EVENT_CONNECT_ERROR, args -> getLogger().info(ChatColor.RED + "Could not reach the Discord Bot! Reconnecting..." + Arrays.toString(args)));
+        socket.on(Socket.EVENT_CONNECT, args -> getLogger().info(ChatColor.GREEN + "Connected to the Discord Bot!" + Arrays.toString(args)));
+        socket.on(Socket.EVENT_DISCONNECT, args -> getLogger().info(ChatColor.RED + "Disconnected from the Discord Bot!" + Arrays.toString(args)));
 
         WebSocketAdapter adapter = new WebSocketAdapter(socket);
         adapter.connect();
