@@ -32,17 +32,20 @@ public class HttpAdapter {
             }
 
             //Check auth and IP
-            if((route.doesRequireToken() && !this.checkToken(req)) /*|| (route.isBotOnly() && !this.checkIp(req.getIp()))*/) {
+            if((route.doesRequireToken() && !this.checkToken(req)) || (route.isBotOnly() && !this.checkIp(req.getIp()))) {
                 res.setStatus(Status._401);
                 res.send(Router.INVALID_AUTH.toString());
                 return;
             }
             JsonObject data = this.parseRequest(req);
-            System.out.println(data);
-            System.out.println(route);
 
-            if(route == Route.PUT_FILE) this.respond(Router.putFile(data, req.getBody()), res);
-            else this.respond(route.execute(data), res);
+            if(route == Route.PUT_FILE) {
+                //Special case: File upload (pass body as input stream to function)
+                Router.putFile(data, req.getBody(), routerResponse -> this.respond(routerResponse, res));
+            }
+            else {
+                route.execute(data, routerResponse -> this.respond(routerResponse, res));
+            }
         });
     }
 

@@ -36,6 +36,7 @@ import java.security.SecureRandom;
 import java.util.List;
 import java.util.Properties;
 import java.util.UUID;
+import java.util.function.Consumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -72,23 +73,23 @@ public class Router {
         log.addAppender(cmdLogger);
     }
 
-    public static RouterResponse getFile(JsonObject data) {
+    public static void getFile(JsonObject data, Consumer<RouterResponse> callback) {
         try {
             Path file = Paths.get(URLDecoder.decode(data.get("path").getAsString(), "utf-8"));
 
-            return new RouterResponse(Status._200, file.toString(), true);
+            callback.accept(new RouterResponse(Status._200, file.toString(), true));
         }
         catch(InvalidPathException err) {
-            return new RouterResponse(Status._404, INVALID_PATH.toString());
+            callback.accept(new RouterResponse(Status._404, INVALID_PATH.toString()));
         }
         catch(UnsupportedEncodingException err) {
             JsonObject error = new JsonObject();
             error.addProperty("message", err.toString());
-            return new RouterResponse(Status._500, error.toString());
+            callback.accept(new RouterResponse(Status._500, error.toString()));
         }
     }
 
-    public static RouterResponse putFile(JsonObject data, InputStream fileStream) {
+    public static void putFile(JsonObject data, InputStream fileStream, Consumer<RouterResponse> callback) {
         try(FileOutputStream outputStream = new FileOutputStream(URLDecoder.decode(data.get("path").getAsString(), "utf-8"))) {
             //Transfer body (inputStream) to outputStream
             byte[] buf = new byte[8192];
@@ -97,16 +98,16 @@ public class Router {
                 outputStream.write(buf, 0, length);
             }
 
-            return new RouterResponse(Status._200, SUCCESS.toString());
+            callback.accept(new RouterResponse(Status._200, SUCCESS.toString()));
         }
         catch(IOException err) {
             JsonObject error = new JsonObject();
             error.addProperty("message", err.toString());
-            return new RouterResponse(Status._500, error.toString());
+            callback.accept(new RouterResponse(Status._500, error.toString()));
         }
     }
 
-    public static RouterResponse listFile(JsonObject data) {
+    public static void listFile(JsonObject data, Consumer<RouterResponse> callback) {
         try {
             Path folder = Paths.get(URLDecoder.decode(data.get("folder").getAsString(), "utf-8"));
 
@@ -120,71 +121,75 @@ public class Router {
             }).forEach(content::add);
             stream.close();
 
-            return new RouterResponse(Status._200, content.toString());
+            callback.accept(new RouterResponse(Status._200, content.toString()));
         }
         catch(InvalidPathException err) {
-            return new RouterResponse(Status._404, INVALID_PATH.toString());
+            callback.accept(new RouterResponse(Status._404, INVALID_PATH.toString()));
         }
         catch(IOException err) {
-            return new RouterResponse(Status._200, "[]");
+            callback.accept(new RouterResponse(Status._200, "[]"));
         }
     }
 
-    public static RouterResponse verifyGuild(JsonObject data) {
+    public static void verifyGuild(JsonObject data, Consumer<RouterResponse> callback) {
         //If plugin is already connected to a different guild, respond with 409: Conflict
         if(DiscordLinker.getConnJson() != null && !DiscordLinker.getConnJson().get("id").getAsString().equals(data.get("id").getAsString())) {
-            return new RouterResponse(Status._409, ALREADY_CONNECTED.toString());
+            callback.accept(new RouterResponse(Status._409, ALREADY_CONNECTED.toString()));
+            return;
         }
 
         verifyCode = RandomStringUtils.randomAlphanumeric(6);
         DiscordLinker.getPlugin().getLogger().info(ChatColor.YELLOW + "Verification Code: " + verifyCode);
 
         getServer().getScheduler().runTaskLater(DiscordLinker.getPlugin(), () -> verifyCode = null, 3600);
-        return new RouterResponse(Status._200, SUCCESS.toString());
+        callback.accept(new RouterResponse(Status._200, SUCCESS.toString()));
     }
 
-    public static RouterResponse verifyUser(JsonObject data) {
+    public static void verifyUser(JsonObject data, Consumer<RouterResponse> callback) {
         VerifyCommand.addPlayerToVerificationQueue(UUID.fromString(data.get("uuid").getAsString()), data.get("code").getAsString());
-        return new RouterResponse(Status._200, SUCCESS.toString());
+        callback.accept(new RouterResponse(Status._200, SUCCESS.toString()));
     }
 
-    public static RouterResponse command(JsonObject data) {
-        JsonObject responseJson = new JsonObject();
+    public static void command(JsonObject data, Consumer<RouterResponse> callback) {
+        Bukkit.getScheduler().runTask(DiscordLinker.getPlugin(), () -> {
+            JsonObject responseJson = new JsonObject();
 
-        try {
-            String cmd = URLDecoder.decode(data.get("cmd").getAsString(), "utf-8");
-            DiscordLinker.getPlugin().getLogger().info(ChatColor.AQUA + "Command from Discord: /" + cmd);
-            cmdLogger.startLogging();
-            getServer().dispatchCommand(Bukkit.getConsoleSender(), cmd);
-        }
-        catch(UnsupportedEncodingException | IllegalArgumentException | CommandException err) {
-            responseJson.addProperty("message", err.toString());
-            return new RouterResponse(Status._500, responseJson.toString());
-        }
-        finally {
-            cmdLogger.stopLogging();
-        }
+            try {
+                String cmd = URLDecoder.decode(data.get("cmd").getAsString(), "utf-8");
+                DiscordLinker.getPlugin().getLogger().info(ChatColor.AQUA + "Command from Discord: /" + cmd);
+                cmdLogger.startLogging();
+                getServer().dispatchCommand(Bukkit.getConsoleSender(), cmd);
+            }
+            catch(UnsupportedEncodingException | IllegalArgumentException | CommandException err) {
+                responseJson.addProperty("message", err.toString());
+                callback.accept(new RouterResponse(Status._500, responseJson.toString()));
+                return;
+            }
+            finally {
+                cmdLogger.stopLogging();
+            }
 
-        String commandResponse = String.join("\n", cmdLogger.getData());
+            String commandResponse = String.join("\n", cmdLogger.getData());
+            cmdLogger.clearData();
 
-        //cmdLogger returns weirdly encoded chars (probably ASCII) which is why ChatColor.stripColor does not work on the returned string.
-        //Color codes are stripped successfully with this regex, but other non-english chars like € or © are not displayed correctly (�) after sending them to Discord.
-        String colorCodeRegex = "(?i)\\x7F([\\dA-FK-OR])";
+            //cmdLogger returns weirdly encoded chars (probably ASCII) which is why ChatColor.stripColor does not work on the returned string.
+            //Color codes are stripped successfully with this regex, but other non-english chars like € or © are not displayed correctly (�) after sending them to Discord.
+            String colorCodeRegex = "(?i)\\x7F([\\dA-FK-OR])";
 
-        //Get first color used in string
-        ChatColor firstColor = null;
-        Pattern pattern = Pattern.compile(colorCodeRegex);
-        Matcher matcher = pattern.matcher(commandResponse);
-        if(matcher.find()) firstColor = ChatColor.getByChar(matcher.group(1));
+            //Get first color used in string
+            ChatColor firstColor = null;
+            Pattern pattern = Pattern.compile(colorCodeRegex);
+            Matcher matcher = pattern.matcher(commandResponse);
+            if(matcher.find()) firstColor = ChatColor.getByChar(matcher.group(1));
 
-        responseJson.addProperty("message", matcher.replaceAll(""));
-        if(firstColor != null) responseJson.addProperty("color", firstColor.getChar());
+            responseJson.addProperty("message", matcher.replaceAll(""));
+            if(firstColor != null) responseJson.addProperty("color", firstColor.getChar());
 
-        cmdLogger.clearData();
-        return new RouterResponse(Status._200, responseJson.toString());
+            callback.accept(new RouterResponse(Status._200, responseJson.toString()));
+        });
     }
 
-    public static RouterResponse chat(JsonObject data) {
+    public static void chat(JsonObject data, Consumer<RouterResponse> callback) {
         String msg;
         String username;
         String replyMsg;
@@ -200,7 +205,8 @@ public class Router {
             if(privateMsg) targetUsername = data.get("target").getAsString();
         }
         catch(ClassCastException err) {
-            return new RouterResponse(Status._400, INVALID_JSON.toString());
+            callback.accept(new RouterResponse(Status._400, INVALID_JSON.toString()));
+            return;
         }
 
         //Get config string and insert message
@@ -266,7 +272,10 @@ public class Router {
 
         if(privateMsg) {
             Player player = getServer().getPlayer(targetUsername);
-            if(player == null) return new RouterResponse(Status._422, INVALID_PLAYER.toString());
+            if(player == null) {
+                callback.accept(new RouterResponse(Status._422, INVALID_PLAYER.toString()));
+                return;
+            }
 
             player.spigot().sendMessage(chatBuilder.create());
         }
@@ -274,30 +283,31 @@ public class Router {
             getServer().spigot().broadcast(chatBuilder.create());
         }
 
-        return new RouterResponse(Status._200, SUCCESS.toString());
+        callback.accept(new RouterResponse(Status._200, SUCCESS.toString()));
     }
 
-    public static RouterResponse disconnect(JsonObject data) {
+    public static void disconnect(JsonObject data, Consumer<RouterResponse> callback) {
         boolean deleted = DiscordLinker.getPlugin().disconnect();
 
         if(deleted) {
             DiscordLinker.getPlugin().getLogger().info("Disconnected from discord...");
-            return new RouterResponse(Status._200, SUCCESS.toString());
+            callback.accept(new RouterResponse(Status._200, SUCCESS.toString()));
         }
         else {
             JsonObject error = new JsonObject();
             error.addProperty("message", "Could not delete connection file");
-            return new RouterResponse(Status._500, error.toString());
+            callback.accept(new RouterResponse(Status._500, error.toString()));
         }
     }
 
-    public static RouterResponse connect(JsonObject data) {
+    public static void connect(JsonObject data, Consumer<RouterResponse> callback) {
         try {
             DiscordLinker.getPlugin().getLogger().info("Connection request...");
 
             if(!data.get("code").getAsString().equals(verifyCode)) {
                 DiscordLinker.getPlugin().getLogger().info("Connection unsuccessful");
-                return new RouterResponse(Status._401, INVALID_CODE.toString());
+                callback.accept(new RouterResponse(Status._401, INVALID_CODE.toString()));
+                return;
             }
 
             //Create random 32-character hex string
@@ -323,18 +333,18 @@ public class Router {
             respJson.addProperty("path", URLEncoder.encode(getServer().getWorldContainer().getCanonicalPath(), "utf-8"));
             respJson.addProperty("token", token);
 
-            return new RouterResponse(Status._200, respJson.toString());
+            callback.accept(new RouterResponse(Status._200, respJson.toString()));
         }
         catch(IOException | NoSuchAlgorithmException err) {
             DiscordLinker.getPlugin().getLogger().info("Connection unsuccessful");
-            return new RouterResponse(Status._500, err.toString());
+            callback.accept(new RouterResponse(Status._500, err.toString()));
         }
         finally {
             verifyCode = null;
         }
     }
 
-    public static RouterResponse removeChannel(JsonObject data) {
+    public static void removeChannel(JsonObject data, Consumer<RouterResponse> callback) {
         try {
             JsonObject connJson = DiscordLinker.getConnJson();
             JsonArray channels = connJson.get("channels").getAsJsonArray();
@@ -350,50 +360,51 @@ public class Router {
             connJson.add("channels", channels);
             DiscordLinker.getPlugin().updateConn(connJson);
 
-            return new RouterResponse(Status._200, channels.toString());
+            callback.accept(new RouterResponse(Status._200, channels.toString()));
         }
         catch(IOException err) {
             JsonObject error = new JsonObject();
             error.addProperty("message", err.toString());
-            return new RouterResponse(Status._500, error.toString());
+            callback.accept(new RouterResponse(Status._500, error.toString()));
         }
     }
 
-    public static RouterResponse addChannel(JsonObject data) {
+    public static void addChannel(JsonObject data, Consumer<RouterResponse> callback) {
         try {
             JsonObject connJson = DiscordLinker.getConnJson();
             JsonArray channels = connJson.get("channels").getAsJsonArray();
 
             //Remove channels with the same id as added channel
-            channels.forEach(jsonChannel -> {
+            for(JsonElement jsonChannel : channels) {
                 if(jsonChannel.getAsJsonObject().get("id").getAsString().equals(data.get("id").getAsString())) {
                     channels.remove(jsonChannel);
+                    break;
                 }
-            });
+            }
             channels.add(data);
 
             //Update connJson with new channels
             connJson.add("channels", channels);
             DiscordLinker.getPlugin().updateConn(connJson);
 
-            return new RouterResponse(Status._200, channels.toString());
+            callback.accept(new RouterResponse(Status._200, channels.toString()));
         }
         catch(IOException err) {
             JsonObject error = new JsonObject();
             error.addProperty("message", err.toString());
-            return new RouterResponse(Status._500, error.toString());
+            callback.accept(new RouterResponse(Status._500, error.toString()));
         }
     }
 
-    public static RouterResponse listPlayers(JsonObject data) {
+    public static void listPlayers(JsonObject data, Consumer<RouterResponse> callback) {
         List<String> onlinePlayers = getServer().getOnlinePlayers().stream()
                 .map(Player::getName)
                 .collect(Collectors.toList());
-        return new RouterResponse(Status._200, gson.toJson(onlinePlayers));
+        callback.accept(new RouterResponse(Status._200, gson.toJson(onlinePlayers)));
     }
 
-    public static RouterResponse root(JsonObject data) {
-        return new RouterResponse(Status._200, "To invite MC Linker, open this link: https://top.gg/bot/712759741528408064");
+    public static void root(JsonObject data, Consumer<RouterResponse> callback) {
+        callback.accept(new RouterResponse(Status._200, "To invite MC Linker, open this link: https://top.gg/bot/712759741528408064"));
     }
 
     private static String markdownToColorCodes(String markdown) {

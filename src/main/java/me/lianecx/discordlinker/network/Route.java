@@ -2,7 +2,8 @@ package me.lianecx.discordlinker.network;
 
 import com.google.gson.JsonObject;
 
-import java.util.function.Function;
+import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 
 public enum Route {
 
@@ -22,12 +23,12 @@ public enum Route {
 
     private final String eventName;
     private final String path;
-    private final Function<JsonObject, Router.RouterResponse> function;
+    private final BiConsumer<JsonObject, Consumer<Router.RouterResponse>> function;
     private final boolean requiresToken;
     private final boolean botOnly;
 
 
-    Route(String routeString, String eventName, Function<JsonObject, Router.RouterResponse> function) {
+    Route(String routeString, String eventName, BiConsumer<JsonObject, Consumer<Router.RouterResponse>> function) {
         this.path = routeString;
         this.eventName = eventName;
         this.function = function;
@@ -35,7 +36,7 @@ public enum Route {
         this.botOnly = true;
     }
 
-    Route(String routeString, String eventName, Function<JsonObject, Router.RouterResponse> function, boolean requiresToken) {
+    Route(String routeString, String eventName, BiConsumer<JsonObject, Consumer<Router.RouterResponse>> function, boolean requiresToken) {
         this.path = routeString;
         this.eventName = eventName;
         this.function = function;
@@ -43,7 +44,7 @@ public enum Route {
         this.botOnly = true;
     }
 
-    Route(String routeString, String eventName, Function<JsonObject, Router.RouterResponse> function, boolean requiresToken, boolean botOnly) {
+    Route(String routeString, String eventName, BiConsumer<JsonObject, Consumer<Router.RouterResponse>> function, boolean requiresToken, boolean botOnly) {
         this.path = routeString;
         this.eventName = eventName;
         this.function = function;
@@ -69,8 +70,8 @@ public enum Route {
         return null;
     }
 
-    public Router.RouterResponse execute(JsonObject data) {
-        return function.apply(data);
+    public void execute(JsonObject data, Consumer<Router.RouterResponse> callback) {
+        function.accept(data, callback);
     }
 
     public String getPath() {
