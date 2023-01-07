@@ -2,6 +2,8 @@ package me.lianecx.discordlinker.network.adapters;
 
 import io.socket.client.Socket;
 
+import java.util.Arrays;
+
 public class WebSocketAdapter {
 
     private final Socket socket;
@@ -11,7 +13,9 @@ public class WebSocketAdapter {
     }
 
     public void connect() {
-        socket.onAnyIncoming(System.out::println);
+        socket.onAnyIncoming(args -> {
+            System.out.println("Incoming: " + Arrays.toString(args));
+        });
 
         socket.connect();
     }
