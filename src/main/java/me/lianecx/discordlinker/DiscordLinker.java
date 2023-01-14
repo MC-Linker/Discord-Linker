@@ -142,7 +142,8 @@ public final class DiscordLinker extends JavaPlugin {
             updateConn();
         }
         catch(IOException e) {
-            //TODO: Handle this
+            webSocketAdapter.disconnect();
+            getLogger().info(ChatColor.RED + "Failed to save connection data. Please try again.");
         }
     }
 
