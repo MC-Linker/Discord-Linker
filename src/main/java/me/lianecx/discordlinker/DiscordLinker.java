@@ -1,11 +1,10 @@
 package me.lianecx.discordlinker;
 
+import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import express.Express;
-import io.socket.client.IO;
-import io.socket.client.Socket;
 import me.lianecx.discordlinker.commands.LinkerCommand;
 import me.lianecx.discordlinker.commands.LinkerTabCompleter;
 import me.lianecx.discordlinker.commands.VerifyCommand;
@@ -25,9 +24,13 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.Reader;
+import java.math.BigInteger;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.security.SecureRandom;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 
 
 public final class DiscordLinker extends JavaPlugin {
@@ -35,10 +38,10 @@ public final class DiscordLinker extends JavaPlugin {
     private static final int PLUGIN_ID = 17143;
     private static JsonObject connJson;
     private static DiscordLinker plugin;
-    private final FileConfiguration config = getConfig();
+    private static HttpAdapter httpAdapter;
+    private static WebSocketAdapter webSocketAdapter;
 
-    private HttpAdapter httpAdapter;
-    private WebSocketAdapter webSocketAdapter;
+    private final FileConfiguration config = getConfig();
 
 
     @Override
@@ -51,11 +54,12 @@ public final class DiscordLinker extends JavaPlugin {
         getCommand("linker").setTabCompleter(new LinkerTabCompleter());
         getCommand("verify").setExecutor(new VerifyCommand());
 
-        Router.init();
         getServer().getScheduler().runTaskAsynchronously(this, () -> {
             HttpConnection.checkVersion();
 
             try(Reader connReader = Files.newBufferedReader(Paths.get(getDataFolder() + "/connection.conn"))) {
+                Router.init(); //Try-catch the init
+
                 JsonElement parser = new JsonParser().parse(connReader);
                 connJson = parser.isJsonObject() ? parser.getAsJsonObject() : null;
 
@@ -70,7 +74,7 @@ public final class DiscordLinker extends JavaPlugin {
 
             //Start websocket server if connection has been made previously
             if(connJson != null && connJson.get("protocol").getAsString().equals("websocket")) {
-                webSocketAdapter = startSocketServer();
+                webSocketAdapter = startSocketClient();
             }
 
             getLogger().info(ChatColor.GREEN + "Plugin enabled.");
@@ -95,25 +99,8 @@ public final class DiscordLinker extends JavaPlugin {
         return plugin;
     }
 
-    private WebSocketAdapter startSocketServer() {
-        //Connect to bot's WebSocket server if plugin is connected to discord
-        IO.Options ioOptions = IO.Options.builder()
-                .setAuth(Collections.singletonMap("token", connJson.get("token").getAsString()))
-                .setReconnectionDelayMax(10000)
-                .build();
-
-        Socket socket = IO.socket(HttpConnection.BOT_URL, ioOptions);
-
-        socket.on(Socket.EVENT_CONNECT_ERROR, args -> getLogger().info(ChatColor.RED + "Could not reach the Discord Bot! Reconnecting..."));
-        socket.on(Socket.EVENT_CONNECT, args -> getLogger().info(ChatColor.GREEN + "Connected to the Discord Bot!"));
-        socket.on(Socket.EVENT_DISCONNECT, args -> {
-            if(args[0].equals("io server disconnect")) {
-                getLogger().info(ChatColor.RED + "Disconnected from the Discord Bot!");
-                this.disconnect();
-            }
-        });
-
-        WebSocketAdapter adapter = new WebSocketAdapter(socket);
+    private WebSocketAdapter startSocketClient() {
+        WebSocketAdapter adapter = new WebSocketAdapter(Collections.singletonMap("token", connJson.get("token").getAsString()));
         adapter.connect();
 
         return adapter;
@@ -134,8 +121,34 @@ public final class DiscordLinker extends JavaPlugin {
         httpAdapter.connect(port);
     }
 
+    //Connects to the websocket server with a verification code
+    public void connectWebsocketClient(String code) {
+        //Create random 32-character hex string
+        String token = new BigInteger(130, new SecureRandom()).toString(16);
+
+        Map<String, String> auth = new HashMap<>();
+        auth.put("code", code);
+        auth.put("token", token);
+        webSocketAdapter = new WebSocketAdapter(auth);
+        webSocketAdapter.connect();
+
+        //Save connection data
+        connJson = new JsonObject();
+        connJson.addProperty("protocol", "websocket");
+        connJson.addProperty("token", token);
+        connJson.add("channels", new JsonArray());
+
+        try {
+            updateConn();
+        }
+        catch(IOException e) {
+            //TODO: Handle this
+        }
+    }
+
     public boolean disconnect() {
         connJson = null;
+        if(webSocketAdapter != null) webSocketAdapter = null;
         File connection = new File(getDataFolder() + "/connection.conn");
         return connection.delete();
     }

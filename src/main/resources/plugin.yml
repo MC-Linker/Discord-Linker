@@ -30,6 +30,8 @@ permissions:
         description: "Allows the user to use the /linker message command"
       discordlinker.linker.private_message:
         description: "Allows the user to use the /linker private_message command"
+      discordlinker.linker.connect:
+        description: "Allows the user to use the /linker connect command"
   discordlinker.verify:
     description: "Allows the user to use the /verify command"
     default: true

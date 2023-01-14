@@ -1,9 +1,6 @@
 package me.lianecx.discordlinker.network;
 
-import com.google.gson.Gson;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
+import com.google.gson.*;
 import express.utils.Status;
 import me.lianecx.discordlinker.ConsoleLogger;
 import me.lianecx.discordlinker.DiscordLinker;
@@ -54,13 +51,14 @@ public class Router {
     public static final JsonObject INVALID_PLAYER = new JsonObject();
     public static final JsonObject ALREADY_CONNECTED = new JsonObject();
     public static final JsonObject SUCCESS = new JsonObject();
+    public static final JsonObject CONNECT_RESPONSE = new JsonObject();
     private static final Gson gson = new Gson();
     private static final ConsoleLogger cmdLogger = new ConsoleLogger();
     private static final String URL_REGEX = "https?://[-\\w_.]{2,}\\.[a-z]{2,4}/\\S*?";
     private static final String MD_URL_REGEX = "(?i)\\[([^]]+)]\\((" + URL_REGEX + ")\\)";
     private static String verifyCode = null;
 
-    public static void init() {
+    public static void init() throws IOException {
         INVALID_AUTH.addProperty("message", "Invalid Authorization");
         INVALID_PATH.addProperty("message", "Invalid Path");
         INVALID_PARAM.addProperty("message", "Invalid method parameter");
@@ -68,6 +66,12 @@ public class Router {
         INVALID_PLAYER.addProperty("message", "Target player does not exist or is not online");
         ALREADY_CONNECTED.addProperty("message", "This plugin is already connected with a different guild.");
         INVALID_CODE.addProperty("message", "Invalid verification code");
+
+        CONNECT_RESPONSE.addProperty("version", getServer().getBukkitVersion().split("-")[0]);
+        CONNECT_RESPONSE.addProperty("online", getServer().getOnlineMode());
+        CONNECT_RESPONSE.addProperty("worldPath", URLEncoder.encode(getWorldPath(), "utf-8"));
+        CONNECT_RESPONSE.addProperty("path", URLEncoder.encode(getServer().getWorldContainer().getCanonicalPath(), "utf-8"));
+        CONNECT_RESPONSE.add("token", JsonNull.INSTANCE);
 
         Logger log = (Logger) LogManager.getRootLogger();
         log.addAppender(cmdLogger);
@@ -324,13 +328,7 @@ public class Router {
 
             DiscordLinker.getPlugin().getLogger().info("Successfully connected with discord server. ID: " + data.get("id").getAsString());
 
-            JsonObject respJson = new JsonObject();
-            respJson.add("id", data.get("id"));
-            respJson.add("ip", data.get("ip"));
-            respJson.addProperty("version", getServer().getBukkitVersion().split("-")[0]);
-            respJson.addProperty("online", getServer().getOnlineMode());
-            respJson.addProperty("worldPath", URLEncoder.encode(getWorldPath(), "utf-8"));
-            respJson.addProperty("path", URLEncoder.encode(getServer().getWorldContainer().getCanonicalPath(), "utf-8"));
+            JsonObject respJson = deepCopy(CONNECT_RESPONSE);
             respJson.addProperty("token", token);
 
             callback.accept(new RouterResponse(Status._200, respJson.toString()));
@@ -449,6 +447,10 @@ public class Router {
         }
 
         return hexString.toString();
+    }
+
+    public static JsonObject deepCopy(JsonObject obj) {
+        return gson.fromJson(gson.toJson(obj), JsonObject.class);
     }
 
     public static class RouterResponse {

@@ -17,6 +17,7 @@ public class LinkerTabCompleter implements TabCompleter {
             suggestions.add("port");
             suggestions.add("message");
             suggestions.add("private_message");
+            suggestions.add("connect");
         }
 
         return suggestions;

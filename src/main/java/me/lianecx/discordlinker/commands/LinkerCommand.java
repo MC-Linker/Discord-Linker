@@ -62,10 +62,20 @@ public class LinkerCommand implements CommandExecutor {
                 PLUGIN.saveConfig();
 
                 sender.sendMessage(
-                    ChatColor.GREEN + "Successfully set " + args[0] + " to " +
-                    ChatColor.RESET + ChatColor.translateAlternateColorCodes('&', message) +
-                    ChatColor.GREEN + "."
+                        ChatColor.GREEN + "Successfully set " + args[0] + " to " +
+                                ChatColor.RESET + ChatColor.translateAlternateColorCodes('&', message) +
+                                ChatColor.GREEN + "."
                 );
+                break;
+            case "connect":
+                if(args.length < 2) {
+                    sender.sendMessage(ChatColor.RED + "Please specify a verification code!");
+                    return true;
+                }
+
+                String code = args[1];
+                DiscordLinker.getPlugin().connectWebsocketClient(code);
+                sender.sendMessage(ChatColor.GREEN + "Attempting to connect to Discord bot...");
                 break;
         }
 
