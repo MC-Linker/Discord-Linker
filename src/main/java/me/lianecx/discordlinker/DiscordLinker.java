@@ -69,13 +69,19 @@ public final class DiscordLinker extends JavaPlugin {
 
             Metrics metrics = new Metrics(this, PLUGIN_ID);
             metrics.addCustomChart(new SimplePie("server_connected_with_discord", () -> connJson != null ? "true" : "false"));
-
-            httpAdapter = startHttpServer();
+            if(connJson != null) {
+                //TODO register on https://bstats.org/plugin/bukkit/DiscordLinker/17143
+                metrics.addCustomChart(new SimplePie("server_has_websocket", () -> connJson.get("protocol").getAsString().equals("websocket") ? "true" : "false"));
+                metrics.addCustomChart(new SimplePie("server_has_http", () -> connJson.get("protocol").getAsString().equals("http") ? "true" : "false"));
+            }
+            metrics.addCustomChart(new SimplePie("server_has_websocket", () -> "false"));
+            metrics.addCustomChart(new SimplePie("server_has_http", () -> "true"));
 
             //Start websocket server if connection has been made previously
             if(connJson != null && connJson.get("protocol").getAsString().equals("websocket")) {
                 webSocketAdapter = startSocketClient();
             }
+            else httpAdapter = startHttpServer();
 
             getLogger().info(ChatColor.GREEN + "Plugin enabled.");
         });

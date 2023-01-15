@@ -54,7 +54,7 @@ public enum Route {
 
     public static Route getRouteByPath(String path) {
         for(Route route : Route.values()) {
-            if(route.getPath().equals(path)) {
+            if(route.getPath() != null && route.getPath().equals(path)) {
                 return route;
             }
         }
@@ -63,7 +63,7 @@ public enum Route {
 
     public static Route getRouteByEventName(String eventName) {
         for(Route route : Route.values()) {
-            if(route.getEventName().equals(eventName)) {
+            if(route.getEventName() != null && route.getEventName().equals(eventName)) {
                 return route;
             }
         }

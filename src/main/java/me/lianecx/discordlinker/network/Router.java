@@ -1,6 +1,9 @@
 package me.lianecx.discordlinker.network;
 
-import com.google.gson.*;
+import com.google.gson.Gson;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 import express.utils.Status;
 import me.lianecx.discordlinker.ConsoleLogger;
 import me.lianecx.discordlinker.DiscordLinker;
@@ -52,7 +55,7 @@ public class Router {
     public static final JsonObject ALREADY_CONNECTED = new JsonObject();
     public static final JsonObject SUCCESS = new JsonObject();
     public static final JsonObject CONNECT_RESPONSE = new JsonObject();
-    private static final Gson gson = new Gson();
+    public static final Gson GSON = new Gson();
     private static final ConsoleLogger cmdLogger = new ConsoleLogger();
     private static final String URL_REGEX = "https?://[-\\w_.]{2,}\\.[a-z]{2,4}/\\S*?";
     private static final String MD_URL_REGEX = "(?i)\\[([^]]+)]\\((" + URL_REGEX + ")\\)";
@@ -71,7 +74,6 @@ public class Router {
         CONNECT_RESPONSE.addProperty("online", getServer().getOnlineMode());
         CONNECT_RESPONSE.addProperty("worldPath", URLEncoder.encode(getWorldPath(), "utf-8"));
         CONNECT_RESPONSE.addProperty("path", URLEncoder.encode(getServer().getWorldContainer().getCanonicalPath(), "utf-8"));
-        CONNECT_RESPONSE.add("token", JsonNull.INSTANCE);
 
         Logger log = (Logger) LogManager.getRootLogger();
         log.addAppender(cmdLogger);
@@ -131,7 +133,7 @@ public class Router {
             callback.accept(new RouterResponse(Status._404, INVALID_PATH.toString()));
         }
         catch(IOException err) {
-            callback.accept(new RouterResponse(Status._200, "[]"));
+            callback.accept(new RouterResponse(Status._200, new JsonArray().toString()));
         }
     }
 
@@ -398,7 +400,7 @@ public class Router {
         List<String> onlinePlayers = getServer().getOnlinePlayers().stream()
                 .map(Player::getName)
                 .collect(Collectors.toList());
-        callback.accept(new RouterResponse(Status._200, gson.toJson(onlinePlayers)));
+        callback.accept(new RouterResponse(Status._200, GSON.toJson(onlinePlayers)));
     }
 
     public static void root(JsonObject data, Consumer<RouterResponse> callback) {
@@ -450,7 +452,7 @@ public class Router {
     }
 
     public static JsonObject deepCopy(JsonObject obj) {
-        return gson.fromJson(gson.toJson(obj), JsonObject.class);
+        return GSON.fromJson(GSON.toJson(obj), JsonObject.class);
     }
 
     public static class RouterResponse {
