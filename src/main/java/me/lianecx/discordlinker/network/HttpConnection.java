@@ -1,9 +1,7 @@
 package me.lianecx.discordlinker.network;
 
-import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import com.google.gson.JsonPrimitive;
 import express.http.RequestMethod;
 import me.lianecx.discordlinker.DiscordLinker;
 import org.bukkit.ChatColor;
@@ -24,51 +22,6 @@ public class HttpConnection {
     public static final int BOT_PORT = PLUGIN_VERSION.contains("SNAPSHOT") ? 3101 : 3100;
     public static final URI BOT_URL = URI.create("http://79.205.22.76:" + BOT_PORT);
 
-    private static boolean shouldChat() {
-        if(DiscordLinker.getConnJson() == null || DiscordLinker.getConnJson().get("channels") == null) return false;
-        return DiscordLinker.getConnJson().getAsJsonArray("channels").size() > 0;
-    }
-
-    private static JsonArray getChannels(ChatType type) {
-        if(!shouldChat()) return null;
-
-        JsonArray allChannels = DiscordLinker.getConnJson().getAsJsonArray("channels");
-        JsonArray filteredChannels = new JsonArray();
-        for(JsonElement channel : allChannels) {
-            try {
-                JsonArray types = channel.getAsJsonObject().getAsJsonArray("types");
-                if(types.contains(new JsonPrimitive(type.getKey()))) filteredChannels.add(channel);
-            }
-            catch(Exception err) {
-                //If channel is corrupted, remove
-                allChannels.remove(channel);
-
-                try {
-                    DiscordLinker.getPlugin().updateConn();
-                }
-                catch(IOException ignored) {}
-            }
-        }
-
-        return filteredChannels;
-    }
-
-    public static void sendChat(String message, ChatType type, String player) {
-        JsonArray channels = getChannels(type);
-        if(channels == null || channels.size() == 0) return;
-
-        JsonObject chatJson = new JsonObject();
-        chatJson.addProperty("type", type.getKey());
-        chatJson.addProperty("player", player);
-        chatJson.addProperty("message", ChatColor.stripColor(message));
-        chatJson.add("channels", channels);
-        chatJson.add("id", DiscordLinker.getConnJson().get("id"));
-        chatJson.add("ip", DiscordLinker.getConnJson().get("ip"));
-
-        int code = send(RequestMethod.POST, "/chat", chatJson);
-        if(code == 403) DiscordLinker.getPlugin().disconnect();
-    }
-
     public static void sendVerificationResponse(String code, UUID uuid) {
         JsonObject verifyJson = new JsonObject();
         verifyJson.addProperty("code", code);
@@ -77,7 +30,7 @@ public class HttpConnection {
         send(RequestMethod.POST, "/verify/response", verifyJson);
     }
 
-    public static int send(RequestMethod method, String route, JsonObject body) {
+    public static int send(RequestMethod method, String route, JsonElement body) {
         try {
             HttpURLConnection conn = (HttpURLConnection) new URL(BOT_URL + route).openConnection();
 

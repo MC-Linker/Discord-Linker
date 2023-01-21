@@ -1,10 +1,10 @@
 package me.lianecx.discordlinker;
 
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
+import com.google.gson.*;
 import express.Express;
+import express.http.RequestMethod;
+import io.socket.client.Socket;
+import io.socket.emitter.Emitter;
 import me.lianecx.discordlinker.commands.LinkerCommand;
 import me.lianecx.discordlinker.commands.LinkerTabCompleter;
 import me.lianecx.discordlinker.commands.VerifyCommand;
@@ -31,6 +31,8 @@ import java.security.SecureRandom;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
 
 
 public final class DiscordLinker extends JavaPlugin {
@@ -62,26 +64,28 @@ public final class DiscordLinker extends JavaPlugin {
 
                 JsonElement parser = new JsonParser().parse(connReader);
                 connJson = parser.isJsonObject() ? parser.getAsJsonObject() : null;
-
-                HttpConnection.sendChat("", ChatType.START, null);
             }
             catch(IOException ignored) {}
+
+            String protocol = connJson != null ? connJson.get("protocol").getAsString() : null;
+
+            //Start websocket server if connection has been made previously
+            if(connJson != null && protocol.equals("websocket")) startSocketClient();
+            else startHttpServer();
+            sendChat("", ChatType.START, null);
+
 
             Metrics metrics = new Metrics(this, PLUGIN_ID);
             metrics.addCustomChart(new SimplePie("server_connected_with_discord", () -> connJson != null ? "true" : "false"));
             if(connJson != null) {
                 //TODO register on https://bstats.org/plugin/bukkit/DiscordLinker/17143
-                metrics.addCustomChart(new SimplePie("server_has_websocket", () -> connJson.get("protocol").getAsString().equals("websocket") ? "true" : "false"));
-                metrics.addCustomChart(new SimplePie("server_has_http", () -> connJson.get("protocol").getAsString().equals("http") ? "true" : "false"));
+                metrics.addCustomChart(new SimplePie("server_has_websocket", () -> protocol.equals("websocket") ? "true" : "false"));
+                metrics.addCustomChart(new SimplePie("server_has_http", () -> protocol.equals("http") ? "true" : "false"));
             }
-            metrics.addCustomChart(new SimplePie("server_has_websocket", () -> "false"));
-            metrics.addCustomChart(new SimplePie("server_has_http", () -> "true"));
-
-            //Start websocket server if connection has been made previously
-            if(connJson != null && connJson.get("protocol").getAsString().equals("websocket")) {
-                webSocketAdapter = startSocketClient();
+            else {
+                metrics.addCustomChart(new SimplePie("server_has_websocket", () -> "false"));
+                metrics.addCustomChart(new SimplePie("server_has_http", () -> "false"));
             }
-            else httpAdapter = startHttpServer();
 
             getLogger().info(ChatColor.GREEN + "Plugin enabled.");
         });
@@ -89,10 +93,11 @@ public final class DiscordLinker extends JavaPlugin {
 
     @Override
     public void onDisable() {
-        HttpConnection.sendChat("", ChatType.CLOSE, null);
+        sendChat("", ChatType.CLOSE, null);
+
         getServer().getScheduler().cancelTasks(this);
-        httpAdapter.disconnect();
-        if(webSocketAdapter != null) webSocketAdapter.disconnect();
+        closeHttpServer();
+        closeSocketClient();
 
         getLogger().info(ChatColor.RED + "Plugin disabled.");
     }
@@ -105,52 +110,90 @@ public final class DiscordLinker extends JavaPlugin {
         return plugin;
     }
 
-    private WebSocketAdapter startSocketClient() {
-        WebSocketAdapter adapter = new WebSocketAdapter(Collections.singletonMap("token", connJson.get("token").getAsString()));
-        adapter.connect();
-
-        return adapter;
+    public void startSocketClient() {
+        webSocketAdapter = new WebSocketAdapter(Collections.singletonMap("token", connJson.get("token").getAsString()));
+        webSocketAdapter.connect();
     }
 
-    private HttpAdapter startHttpServer() {
+    public void startHttpServer(int port) {
+        if(httpAdapter != null) {
+            httpAdapter.disconnect();
+            httpAdapter.connect(port);
+        }
+
         Express app = new Express();
-        HttpAdapter adapter = new HttpAdapter(app);
+        httpAdapter = new HttpAdapter(app);
 
-        int port = config.getInt("port") != 0 ? config.getInt("port") : 11111;
-        adapter.connect(port);
-
-        return adapter;
-    }
-
-    public void restartHttpServer(int port) {
-        httpAdapter.disconnect();
         httpAdapter.connect(port);
     }
 
-    //Connects to the websocket server with a verification code
-    public void connectWebsocketClient(String code) {
+    public void startHttpServer() {
+        startHttpServer(config.getInt("port") != 0 ? config.getInt("port") : 11111);
+    }
+
+    public void closeHttpServer() {
+        if(httpAdapter != null) httpAdapter.disconnect();
+        httpAdapter = null;
+    }
+
+    public void closeSocketClient() {
+        if(webSocketAdapter != null) webSocketAdapter.disconnect();
+        webSocketAdapter = null;
+    }
+
+    /**
+     * Connects to the websocket server with a verification code
+     */
+    public void connectWebsocketClient(String code, Consumer<Boolean> callback) {
         //Create random 32-character hex string
         String token = new BigInteger(130, new SecureRandom()).toString(16);
 
         Map<String, String> auth = new HashMap<>();
         auth.put("code", code);
         auth.put("token", token);
-        webSocketAdapter = new WebSocketAdapter(auth);
-        webSocketAdapter.connect();
+        if(webSocketAdapter != null) webSocketAdapter.disconnect();
+        WebSocketAdapter tempAdapter = new WebSocketAdapter(auth);
 
-        //Save connection data
-        connJson = new JsonObject();
-        connJson.addProperty("protocol", "websocket");
-        connJson.addProperty("token", token);
-        connJson.add("channels", new JsonArray());
+        //Register connection listeners
+        AtomicReference<Emitter.Listener> failListener = new AtomicReference<>();
+        AtomicReference<Emitter.Listener> successListener = new AtomicReference<>();
+        failListener.set(objects -> {
+            tempAdapter.getSocket().off(Socket.EVENT_DISCONNECT, failListener.get());
+            tempAdapter.getSocket().off(Socket.EVENT_CONNECT_ERROR, failListener.get());
+            tempAdapter.getSocket().off(Socket.EVENT_CONNECT, successListener.get());
+            callback.accept(false);
+        });
+        successListener.set(objects -> {
+            tempAdapter.getSocket().off(Socket.EVENT_DISCONNECT, failListener.get());
+            tempAdapter.getSocket().off(Socket.EVENT_CONNECT_ERROR, failListener.get());
+            tempAdapter.getSocket().off(Socket.EVENT_CONNECT, successListener.get());
 
-        try {
-            updateConn();
-        }
-        catch(IOException e) {
-            webSocketAdapter.disconnect();
-            getLogger().info(ChatColor.RED + "Failed to save connection data. Please try again.");
-        }
+            webSocketAdapter = tempAdapter; //Code is valid, set the adapter to the new one
+
+            //Save connection data
+            connJson = new JsonObject();
+            connJson.addProperty("protocol", "websocket");
+            connJson.addProperty("token", token);
+            connJson.add("channels", new JsonArray());
+            connJson.addProperty("id", code.split(":")[0]);
+
+            try {
+                updateConn();
+                callback.accept(true);
+            }
+            catch(IOException e) {
+                webSocketAdapter.disconnect();
+                getLogger().info(ChatColor.RED + "Failed to save connection data.");
+                e.printStackTrace();
+                callback.accept(false);
+            }
+        });
+
+        tempAdapter.getSocket().on(Socket.EVENT_DISCONNECT, failListener.get());
+        tempAdapter.getSocket().on(Socket.EVENT_CONNECT_ERROR, failListener.get());
+        tempAdapter.getSocket().on("auth-success", successListener.get());
+
+        tempAdapter.connect();
     }
 
     public boolean disconnect() {
@@ -158,6 +201,10 @@ public final class DiscordLinker extends JavaPlugin {
         if(webSocketAdapter != null) webSocketAdapter = null;
         File connection = new File(getDataFolder() + "/connection.conn");
         return connection.delete();
+    }
+
+    public boolean isWebSocketConnected() {
+        return webSocketAdapter != null && webSocketAdapter.getSocket().connected();
     }
 
     public void updateConn() throws IOException {
@@ -169,5 +216,54 @@ public final class DiscordLinker extends JavaPlugin {
     public void updateConn(JsonObject connJson) throws IOException {
         DiscordLinker.connJson = connJson;
         updateConn();
+    }
+
+    public void sendChat(String message, ChatType type, String player) {
+        JsonArray channels = filterChannels(type);
+        if(channels == null || channels.size() == 0) return;
+
+        JsonObject chatJson = new JsonObject();
+        chatJson.addProperty("type", type.getKey());
+        chatJson.addProperty("player", player);
+        chatJson.addProperty("message", ChatColor.stripColor(message));
+        chatJson.add("channels", channels);
+        chatJson.add("id", DiscordLinker.getConnJson().get("id"));
+
+        if(connJson.get("protocol").getAsString().equals("websocket")) {
+            webSocketAdapter.send("chat", chatJson);
+        }
+        else {
+            int code = HttpConnection.send(RequestMethod.POST, "/chat", chatJson);
+            if(code == 403) DiscordLinker.getPlugin().disconnect();
+        }
+    }
+
+    private boolean shouldChat() {
+        if(connJson == null || connJson.get("channels") == null) return false;
+        return connJson.getAsJsonArray("channels").size() > 0;
+    }
+
+    private JsonArray filterChannels(ChatType type) {
+        if(!shouldChat()) return null;
+
+        JsonArray allChannels = connJson.getAsJsonArray("channels");
+        JsonArray filteredChannels = new JsonArray();
+        for(JsonElement channel : allChannels) {
+            try {
+                JsonArray types = channel.getAsJsonObject().getAsJsonArray("types");
+                if(types.contains(new JsonPrimitive(type.getKey()))) filteredChannels.add(channel);
+            }
+            catch(Exception err) {
+                //If channel is corrupted, remove
+                allChannels.remove(channel);
+
+                try {
+                    updateConn();
+                }
+                catch(IOException ignored) {}
+            }
+        }
+
+        return filteredChannels;
     }
 }

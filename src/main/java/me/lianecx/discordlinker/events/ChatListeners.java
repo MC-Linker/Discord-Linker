@@ -2,7 +2,6 @@ package me.lianecx.discordlinker.events;
 
 import me.lianecx.discordlinker.DiscordLinker;
 import me.lianecx.discordlinker.network.ChatType;
-import me.lianecx.discordlinker.network.HttpConnection;
 import org.bukkit.ChatColor;
 import org.bukkit.command.ConsoleCommandSender;
 import org.bukkit.event.EventHandler;
@@ -22,19 +21,19 @@ public class ChatListeners implements Listener {
         String replacedMessage = ChatColor.stripColor(event.getMessage().replaceAll("(?i)&[0-9A-FK-OR]", ""));
 
         PLUGIN.getServer().getScheduler().runTaskAsynchronously(PLUGIN, () ->
-                HttpConnection.sendChat(replacedMessage, ChatType.CHAT, event.getPlayer().getName()));
+                PLUGIN.sendChat(replacedMessage, ChatType.CHAT, event.getPlayer().getName()));
     }
 
     @EventHandler(ignoreCancelled = true, priority = EventPriority.HIGH)
     public void onPlayerJoin(PlayerJoinEvent event) {
         PLUGIN.getServer().getScheduler().runTaskAsynchronously(PLUGIN, () ->
-                HttpConnection.sendChat(event.getJoinMessage(), ChatType.JOIN, event.getPlayer().getName()));
+                PLUGIN.sendChat(event.getJoinMessage(), ChatType.JOIN, event.getPlayer().getName()));
     }
 
     @EventHandler(ignoreCancelled = true, priority = EventPriority.HIGH)
     public void onPlayerQuit(PlayerQuitEvent event) {
         PLUGIN.getServer().getScheduler().runTaskAsynchronously(PLUGIN, () ->
-                HttpConnection.sendChat(event.getQuitMessage(), ChatType.QUIT, event.getPlayer().getName()));
+                PLUGIN.sendChat(event.getQuitMessage(), ChatType.QUIT, event.getPlayer().getName()));
     }
 
     @EventHandler(ignoreCancelled = true, priority = EventPriority.HIGH)
@@ -43,19 +42,19 @@ public class ChatListeners implements Listener {
         if(event.getAdvancement().getKey().toString().startsWith("minecraft:recipes/")) return;
 
         PLUGIN.getServer().getScheduler().runTaskAsynchronously(PLUGIN, () ->
-                HttpConnection.sendChat(event.getAdvancement().getKey().toString(), ChatType.ADVANCEMENT, event.getPlayer().getName()));
+                PLUGIN.sendChat(event.getAdvancement().getKey().toString(), ChatType.ADVANCEMENT, event.getPlayer().getName()));
     }
 
     @EventHandler(ignoreCancelled = true, priority = EventPriority.HIGH)
     public void onPlayerDeath(PlayerDeathEvent event) {
         PLUGIN.getServer().getScheduler().runTaskAsynchronously(PLUGIN, () ->
-                HttpConnection.sendChat(event.getDeathMessage(), ChatType.DEATH, event.getEntity().getName()));
+                PLUGIN.sendChat(event.getDeathMessage(), ChatType.DEATH, event.getEntity().getName()));
     }
 
     @EventHandler(ignoreCancelled = true, priority = EventPriority.HIGH)
     public void onPlayerCommand(PlayerCommandPreprocessEvent event) {
         PLUGIN.getServer().getScheduler().runTaskAsynchronously(PLUGIN, () ->
-                HttpConnection.sendChat(event.getMessage(), ChatType.PLAYER_COMMAND, event.getPlayer().getName()));
+                PLUGIN.sendChat(event.getMessage(), ChatType.PLAYER_COMMAND, event.getPlayer().getName()));
     }
 
     @EventHandler(ignoreCancelled = true, priority = EventPriority.HIGH)
@@ -63,7 +62,7 @@ public class ChatListeners implements Listener {
         PLUGIN.getServer().getScheduler().runTaskAsynchronously(PLUGIN, () -> {
             //Command sender either from the console or a command block
             ChatType commandType = event.getSender() instanceof ConsoleCommandSender ? ChatType.CONSOLE_COMMAND : ChatType.BLOCK_COMMAND;
-            HttpConnection.sendChat(event.getCommand(), commandType, event.getSender().getName());
+            PLUGIN.sendChat(event.getCommand(), commandType, event.getSender().getName());
         });
     }
 }

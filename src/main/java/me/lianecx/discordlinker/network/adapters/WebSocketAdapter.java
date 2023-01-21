@@ -2,6 +2,7 @@ package me.lianecx.discordlinker.network.adapters;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import express.utils.Status;
 import io.socket.client.Ack;
 import io.socket.client.IO;
@@ -18,6 +19,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -42,33 +44,38 @@ public class WebSocketAdapter {
         Socket socket = IO.socket(HttpConnection.BOT_URL, ioOptions);
 
         socket.on(Socket.EVENT_CONNECT_ERROR, args -> LOGGER.info(ChatColor.RED + "Could not reach the Discord Bot! Reconnecting..."));
-        socket.on(Socket.EVENT_CONNECT, args -> LOGGER.info(ChatColor.GREEN + "Connected to the Discord Bot!"));
+        socket.on(Socket.EVENT_CONNECT, args -> {
+            LOGGER.info(ChatColor.GREEN + "Connected to the Discord Bot!");
+            DiscordLinker.getPlugin().closeHttpServer();
+        });
         socket.on(Socket.EVENT_DISCONNECT, args -> {
             if(args[0].equals("io server disconnect")) {
                 LOGGER.info(ChatColor.RED + "Disconnected from the Discord Bot!");
                 DiscordLinker.getPlugin().disconnect();
+                DiscordLinker.getPlugin().startHttpServer();
             }
             else LOGGER.info(ChatColor.RED + "Disconnected from the Discord Bot! Reconnecting...");
         });
 
         socket.onAnyIncoming(args -> {
-            System.out.println(args[1]);
             String eventName = (String) args[0];
-            JsonObject data = Router.GSON.fromJson(args[1].toString(), JsonObject.class);
-            Ack ack = (Ack) args[args.length - 1];
+            JsonObject data = new JsonParser().parse(args[1].toString()).getAsJsonObject();
+
+            AtomicReference<Ack> ack = new AtomicReference<>(null);
+            if(args[args.length - 1] instanceof Ack) ack.set((Ack) args[args.length - 1]); //Optional ack
 
             Route route = Route.getRouteByEventName(eventName);
             if(route == null) {
-                ack.call(jsonFromStatus(Status._404));
+                if(ack.get() != null) ack.get().call(jsonFromStatus(Status._404));
                 return;
             }
 
             if(route == Route.PUT_FILE) {
                 //Special case: File upload (pass body as input stream to function)
-                Router.putFile(data, (InputStream) args[2], routerResponse -> this.respond(routerResponse, ack));
+                Router.putFile(data, (InputStream) args[2], routerResponse -> this.respond(routerResponse, ack.get()));
             }
             else {
-                route.execute(data, routerResponse -> this.respond(routerResponse, ack));
+                route.execute(data, routerResponse -> this.respond(routerResponse, ack.get()));
             }
         });
 
@@ -83,6 +90,14 @@ public class WebSocketAdapter {
         socket.disconnect();
     }
 
+    public Socket getSocket() {
+        return socket;
+    }
+
+    public void send(String event, JsonElement data) {
+        socket.emit(event, data);
+    }
+
     private JsonObject jsonFromStatus(Status status) {
         JsonObject json = new JsonObject();
         json.addProperty("status", status.getCode());
@@ -90,6 +105,8 @@ public class WebSocketAdapter {
     }
 
     private void respond(Router.RouterResponse response, Ack ack) {
+        if(ack == null) return;
+
         if(response.isAttachment()) {
             //Read files from response and send them
             String path = response.getMessage();
@@ -97,8 +114,10 @@ public class WebSocketAdapter {
                 byte[] file = Files.readAllBytes(Paths.get(path));
                 ack.call(file);
             }
-            catch(IOException e) {
-                ack.call(jsonFromStatus(Status._500));
+            catch(IOException err) {
+                JsonObject error = jsonFromStatus(Status._500);
+                error.addProperty("message", err.toString());
+                ack.call(error);
             }
 
             return;
@@ -106,7 +125,7 @@ public class WebSocketAdapter {
 
         JsonObject json = jsonFromStatus(response.getStatus());
         if(response.getMessage() != null) {
-            JsonObject data = Router.GSON.fromJson(response.getMessage(), JsonObject.class);
+            JsonElement data = new JsonParser().parse(response.getMessage());
             json.add("data", data);
         }
         ack.call(json);

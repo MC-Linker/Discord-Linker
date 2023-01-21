@@ -12,7 +12,7 @@ public enum ChatType {
     START,
     CLOSE;
 
-    String getKey() {
+    public String getKey() {
         return name().toLowerCase();
     }
 }

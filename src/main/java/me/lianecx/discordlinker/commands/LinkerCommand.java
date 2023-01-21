@@ -19,9 +19,7 @@ public class LinkerCommand implements CommandExecutor {
             case "reload":
                 PLUGIN.reloadConfig();
 
-                //Get port from config
-                int port = PLUGIN.getConfig().getInt("port") != 0 ? PLUGIN.getConfig().getInt("port") : 11111;
-                DiscordLinker.getPlugin().restartHttpServer(port);
+                if(!DiscordLinker.getPlugin().isWebSocketConnected()) DiscordLinker.getPlugin().startHttpServer();
                 sender.sendMessage(ChatColor.GREEN + "Successfully reloaded config.");
                 break;
             case "port":
@@ -41,7 +39,7 @@ public class LinkerCommand implements CommandExecutor {
                 PLUGIN.getConfig().set("port", newPort);
                 PLUGIN.saveConfig();
 
-                DiscordLinker.getPlugin().restartHttpServer(newPort);
+                DiscordLinker.getPlugin().startHttpServer(newPort);
                 sender.sendMessage(
                         ChatColor.GREEN + "Successfully set port to " +
                                 ChatColor.DARK_AQUA + newPort +
@@ -73,10 +71,22 @@ public class LinkerCommand implements CommandExecutor {
                     return true;
                 }
 
+                if(DiscordLinker.getPlugin().isWebSocketConnected()) {
+                    sender.sendMessage(ChatColor.RED + "The server is already connected! Please disconnect it first using `/disconnect` in Discord.");
+                    return true;
+                }
+
                 String code = args[1];
-                DiscordLinker.getPlugin().connectWebsocketClient(code);
-                sender.sendMessage(ChatColor.GREEN + "Attempting to connect to Discord bot...");
+                sender.sendMessage(ChatColor.YELLOW + "Attempting to connect to the Discord bot...");
+                DiscordLinker.getPlugin().connectWebsocketClient(code, success -> {
+                    if(success)
+                        sender.sendMessage(ChatColor.GREEN + "Successfully connected to Discord!");
+                    else
+                        sender.sendMessage(ChatColor.RED + "Failed to connect to Discord! Please validate the code and try again.");
+                });
                 break;
+            default:
+                return false;
         }
 
         return true;

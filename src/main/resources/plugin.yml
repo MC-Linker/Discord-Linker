@@ -8,8 +8,8 @@ website: https://github.com/MC-Linker/Discord-Linker
 prefix: Discord-Linker
 commands:
   linker:
-    description: "Settings of the Discord-Linker"
-    usage: "/linker reload|port|message|private_message"
+    description: "Settings for the Discord-Linker plugin"
+    usage: "/linker reload|port|message|private_message|connect"
     permission: "discordlinker.linker"
     permission-message: "You do not have permission to use this command."
   verify:

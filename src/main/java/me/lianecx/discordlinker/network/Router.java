@@ -18,10 +18,7 @@ import org.bukkit.ChatColor;
 import org.bukkit.command.CommandException;
 import org.bukkit.entity.Player;
 
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.UnsupportedEncodingException;
+import java.io.*;
 import java.math.BigInteger;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
@@ -81,12 +78,13 @@ public class Router {
 
     public static void getFile(JsonObject data, Consumer<RouterResponse> callback) {
         try {
-            Path file = Paths.get(URLDecoder.decode(data.get("path").getAsString(), "utf-8"));
+            File file = new File(URLDecoder.decode(data.get("path").getAsString(), "utf-8"));
+            if(!file.isFile()) {
+                callback.accept(new RouterResponse(Status._404, INVALID_PATH.toString()));
+                return;
+            }
 
             callback.accept(new RouterResponse(Status._200, file.toString(), true));
-        }
-        catch(InvalidPathException err) {
-            callback.accept(new RouterResponse(Status._404, INVALID_PATH.toString()));
         }
         catch(UnsupportedEncodingException err) {
             JsonObject error = new JsonObject();
