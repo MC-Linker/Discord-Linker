@@ -155,17 +155,14 @@ public final class DiscordLinker extends JavaPlugin {
         WebSocketAdapter tempAdapter = new WebSocketAdapter(auth);
 
         //Register connection listeners
-        AtomicReference<Emitter.Listener> failListener = new AtomicReference<>();
-        AtomicReference<Emitter.Listener> successListener = new AtomicReference<>();
-        failListener.set(objects -> {
-            tempAdapter.getSocket().off(Socket.EVENT_DISCONNECT, failListener.get());
-            tempAdapter.getSocket().off(Socket.EVENT_CONNECT_ERROR, failListener.get());
-            tempAdapter.getSocket().off(Socket.EVENT_CONNECT, successListener.get());
+        Emitter.Listener failListener = objects -> {
+            tempAdapter.disconnect();
             callback.accept(false);
-        });
+        };
+        AtomicReference<Emitter.Listener> successListener = new AtomicReference<>();
         successListener.set(objects -> {
-            tempAdapter.getSocket().off(Socket.EVENT_DISCONNECT, failListener.get());
-            tempAdapter.getSocket().off(Socket.EVENT_CONNECT_ERROR, failListener.get());
+            tempAdapter.getSocket().off(Socket.EVENT_DISCONNECT, failListener);
+            tempAdapter.getSocket().off(Socket.EVENT_CONNECT_ERROR, failListener);
             tempAdapter.getSocket().off(Socket.EVENT_CONNECT, successListener.get());
 
             webSocketAdapter = tempAdapter; //Code is valid, set the adapter to the new one
@@ -189,8 +186,8 @@ public final class DiscordLinker extends JavaPlugin {
             }
         });
 
-        tempAdapter.getSocket().on(Socket.EVENT_DISCONNECT, failListener.get());
-        tempAdapter.getSocket().on(Socket.EVENT_CONNECT_ERROR, failListener.get());
+        tempAdapter.getSocket().on(Socket.EVENT_DISCONNECT, failListener);
+        tempAdapter.getSocket().on(Socket.EVENT_CONNECT_ERROR, failListener);
         tempAdapter.getSocket().on("auth-success", successListener.get());
 
         tempAdapter.connect();
