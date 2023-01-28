@@ -13,56 +13,49 @@ import org.bukkit.event.server.ServerCommandEvent;
 
 public class ChatListeners implements Listener {
 
-    private static final DiscordLinker PLUGIN = DiscordLinker.getPlugin();
-
     @EventHandler(ignoreCancelled = true, priority = EventPriority.HIGH)
     public void onChatMessage(AsyncPlayerChatEvent event) {
         //Remove color codes
         String replacedMessage = ChatColor.stripColor(event.getMessage().replaceAll("(?i)&[0-9A-FK-OR]", ""));
-
-        PLUGIN.getServer().getScheduler().runTaskAsynchronously(PLUGIN, () ->
-                PLUGIN.sendChat(replacedMessage, ChatType.CHAT, event.getPlayer().getName()));
+        sendChatAsync(replacedMessage, ChatType.CHAT, event.getPlayer().getName());
     }
 
     @EventHandler(ignoreCancelled = true, priority = EventPriority.HIGH)
     public void onPlayerJoin(PlayerJoinEvent event) {
-        PLUGIN.getServer().getScheduler().runTaskAsynchronously(PLUGIN, () ->
-                PLUGIN.sendChat(event.getJoinMessage(), ChatType.JOIN, event.getPlayer().getName()));
+        sendChatAsync(event.getJoinMessage(), ChatType.JOIN, event.getPlayer().getName());
     }
 
     @EventHandler(ignoreCancelled = true, priority = EventPriority.HIGH)
     public void onPlayerQuit(PlayerQuitEvent event) {
-        PLUGIN.getServer().getScheduler().runTaskAsynchronously(PLUGIN, () ->
-                PLUGIN.sendChat(event.getQuitMessage(), ChatType.QUIT, event.getPlayer().getName()));
+        sendChatAsync(event.getQuitMessage(), ChatType.QUIT, event.getPlayer().getName());
     }
 
     @EventHandler(ignoreCancelled = true, priority = EventPriority.HIGH)
     public void onAdvancement(PlayerAdvancementDoneEvent event) {
         //Dont process recipes
         if(event.getAdvancement().getKey().toString().startsWith("minecraft:recipes/")) return;
-
-        PLUGIN.getServer().getScheduler().runTaskAsynchronously(PLUGIN, () ->
-                PLUGIN.sendChat(event.getAdvancement().getKey().toString(), ChatType.ADVANCEMENT, event.getPlayer().getName()));
+        sendChatAsync(event.getAdvancement().getKey().toString(), ChatType.ADVANCEMENT, event.getPlayer().getName());
     }
 
     @EventHandler(ignoreCancelled = true, priority = EventPriority.HIGH)
     public void onPlayerDeath(PlayerDeathEvent event) {
-        PLUGIN.getServer().getScheduler().runTaskAsynchronously(PLUGIN, () ->
-                PLUGIN.sendChat(event.getDeathMessage(), ChatType.DEATH, event.getEntity().getName()));
+        sendChatAsync(event.getDeathMessage(), ChatType.DEATH, event.getEntity().getName());
     }
 
     @EventHandler(ignoreCancelled = true, priority = EventPriority.HIGH)
     public void onPlayerCommand(PlayerCommandPreprocessEvent event) {
-        PLUGIN.getServer().getScheduler().runTaskAsynchronously(PLUGIN, () ->
-                PLUGIN.sendChat(event.getMessage(), ChatType.PLAYER_COMMAND, event.getPlayer().getName()));
+        sendChatAsync(event.getMessage(), ChatType.PLAYER_COMMAND, event.getPlayer().getName());
     }
 
     @EventHandler(ignoreCancelled = true, priority = EventPriority.HIGH)
     public void onConsoleCommand(ServerCommandEvent event) {
-        PLUGIN.getServer().getScheduler().runTaskAsynchronously(PLUGIN, () -> {
-            //Command sender either from the console or a command block
-            ChatType commandType = event.getSender() instanceof ConsoleCommandSender ? ChatType.CONSOLE_COMMAND : ChatType.BLOCK_COMMAND;
-            PLUGIN.sendChat(event.getCommand(), commandType, event.getSender().getName());
-        });
+        //Command sender either from the console or a command block
+        ChatType commandType = event.getSender() instanceof ConsoleCommandSender ? ChatType.CONSOLE_COMMAND : ChatType.BLOCK_COMMAND;
+        sendChatAsync(event.getCommand(), commandType, event.getSender().getName());
+    }
+
+    public void sendChatAsync(String message, ChatType type, String sender) {
+        DiscordLinker.getPlugin().getServer().getScheduler().runTaskAsynchronously(DiscordLinker.getPlugin(), () ->
+                DiscordLinker.getAdapterManager().sendChat(message, type, sender));
     }
 }

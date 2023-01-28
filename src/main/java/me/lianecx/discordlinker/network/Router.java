@@ -51,7 +51,6 @@ public class Router {
     public static final JsonObject INVALID_PLAYER = new JsonObject();
     public static final JsonObject ALREADY_CONNECTED = new JsonObject();
     public static final JsonObject SUCCESS = new JsonObject();
-    public static final JsonObject CONNECT_RESPONSE = new JsonObject();
     public static final Gson GSON = new Gson();
     private static final ConsoleLogger cmdLogger = new ConsoleLogger();
     private static final String URL_REGEX = "https?://[-\\w_.]{2,}\\.[a-z]{2,4}/\\S*?";
@@ -66,11 +65,6 @@ public class Router {
         INVALID_PLAYER.addProperty("message", "Target player does not exist or is not online");
         ALREADY_CONNECTED.addProperty("message", "This plugin is already connected with a different guild.");
         INVALID_CODE.addProperty("message", "Invalid verification code");
-
-        CONNECT_RESPONSE.addProperty("version", getServer().getBukkitVersion().split("-")[0]);
-        CONNECT_RESPONSE.addProperty("online", getServer().getOnlineMode());
-        CONNECT_RESPONSE.addProperty("worldPath", URLEncoder.encode(getWorldPath(), "utf-8"));
-        CONNECT_RESPONSE.addProperty("path", URLEncoder.encode(getServer().getWorldContainer().getCanonicalPath(), "utf-8"));
 
         Logger log = (Logger) LogManager.getRootLogger();
         log.addAppender(cmdLogger);
@@ -291,7 +285,7 @@ public class Router {
     }
 
     public static void disconnect(JsonObject data, Consumer<RouterResponse> callback) {
-        boolean deleted = DiscordLinker.getPlugin().disconnect();
+        boolean deleted = DiscordLinker.getPlugin().deleteConn();
 
         if(deleted) {
             DiscordLinker.getPlugin().getLogger().info("Disconnected from discord...");
@@ -328,10 +322,9 @@ public class Router {
 
             DiscordLinker.getPlugin().getLogger().info("Successfully connected with discord server. ID: " + data.get("id").getAsString());
 
-            JsonObject respJson = deepCopy(CONNECT_RESPONSE);
-            respJson.addProperty("token", token);
-
-            callback.accept(new RouterResponse(Status._200, respJson.toString()));
+            JsonObject connectResponse = getConnectResponse();
+            connectResponse.addProperty("token", token);
+            callback.accept(new RouterResponse(Status._200, connectResponse.toString()));
         }
         catch(IOException | NoSuchAlgorithmException err) {
             DiscordLinker.getPlugin().getLogger().info("Connection unsuccessful");
@@ -449,8 +442,19 @@ public class Router {
         return hexString.toString();
     }
 
-    public static JsonObject deepCopy(JsonObject obj) {
-        return GSON.fromJson(GSON.toJson(obj), JsonObject.class);
+    public static JsonObject getConnectResponse() {
+        try {
+            JsonObject response = new JsonObject();
+            response.addProperty("version", getServer().getBukkitVersion().split("-")[0]);
+            response.addProperty("online", getServer().getOnlineMode());
+            response.addProperty("worldPath", URLEncoder.encode(getWorldPath(), "utf-8"));
+            response.addProperty("path", URLEncoder.encode(getServer().getWorldContainer().getCanonicalPath(), "utf-8"));
+
+            return response;
+        }
+        catch(IOException err) {
+            return null;
+        }
     }
 
     public static class RouterResponse {

@@ -8,7 +8,6 @@ import io.socket.client.Ack;
 import io.socket.client.IO;
 import io.socket.client.Socket;
 import me.lianecx.discordlinker.DiscordLinker;
-import me.lianecx.discordlinker.network.HttpConnection;
 import me.lianecx.discordlinker.network.Route;
 import me.lianecx.discordlinker.network.Router;
 import org.bukkit.ChatColor;
@@ -20,17 +19,15 @@ import java.nio.file.Paths;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 public class WebSocketAdapter {
 
     private final Socket socket;
-    private static final Logger LOGGER = DiscordLinker.getPlugin().getLogger();
-
+    private static final DiscordLinker PLUGIN = DiscordLinker.getPlugin();
 
     public WebSocketAdapter(Map<String, String> auth) {
-        Set<Map.Entry<String, JsonElement>> queries = Router.CONNECT_RESPONSE.entrySet();
+        Set<Map.Entry<String, JsonElement>> queries = Router.getConnectResponse().entrySet();
         String queryString = queries.stream()
                 .map(e -> e.getKey() + "=" + e.getValue().getAsString())
                 .collect(Collectors.joining("&"));
@@ -41,20 +38,21 @@ public class WebSocketAdapter {
                 .setReconnectionDelayMax(10000)
                 .build();
 
-        Socket socket = IO.socket(HttpConnection.BOT_URL, ioOptions);
+        Socket socket = IO.socket(HttpAdapter.BOT_URI, ioOptions);
 
-        socket.on(Socket.EVENT_CONNECT_ERROR, args -> LOGGER.info(ChatColor.RED + "Could not reach the Discord Bot! Reconnecting..."));
+        socket.on(Socket.EVENT_CONNECT_ERROR, args -> PLUGIN.getLogger().info(ChatColor.RED + "Could not reach the Discord Bot! Reconnecting..."));
         socket.on(Socket.EVENT_CONNECT, args -> {
-            LOGGER.info(ChatColor.GREEN + "Connected to the Discord Bot!");
-            DiscordLinker.getPlugin().closeHttpServer();
+            PLUGIN.getLogger().info(ChatColor.GREEN + "Connected to the Discord Bot!");
+            DiscordLinker.getAdapterManager().stopHttp();
         });
+
         socket.on(Socket.EVENT_DISCONNECT, args -> {
-            if(args[0].equals("io server disconnect")) {
-                LOGGER.info(ChatColor.RED + "Disconnected from the Discord Bot!");
-                DiscordLinker.getPlugin().disconnect();
-                DiscordLinker.getPlugin().startHttpServer();
+            if(args[0].equals("io server disconnect") || args[0].equals("io client disconnect")) {
+                PLUGIN.getLogger().info(ChatColor.RED + "Disconnected from the Discord Bot!");
+                PLUGIN.deleteConn();
+                DiscordLinker.getAdapterManager().startHttp();
             }
-            else LOGGER.info(ChatColor.RED + "Disconnected from the Discord Bot! Reconnecting...");
+            else PLUGIN.getLogger().info(ChatColor.RED + "Disconnected from the Discord Bot! Reconnecting...");
         });
 
         socket.onAnyIncoming(args -> {

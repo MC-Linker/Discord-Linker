@@ -1,7 +1,7 @@
 package me.lianecx.discordlinker.commands;
 
 import me.lianecx.discordlinker.DiscordLinker;
-import me.lianecx.discordlinker.network.HttpConnection;
+import me.lianecx.discordlinker.network.adapters.HttpAdapter;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
@@ -53,7 +53,7 @@ public class VerifyCommand implements CommandExecutor {
         }
 
         playersAwaitingVerification.remove(uuid);
-        HttpConnection.sendVerificationResponse(code, uuid); // Send verification response to the bot
+        HttpAdapter.sendVerificationResponse(code, uuid); // Send verification response to the bot
         sender.sendMessage(ChatColor.GREEN + "You have been verified successfully. You can now go back to discord.");
 
         return true;
