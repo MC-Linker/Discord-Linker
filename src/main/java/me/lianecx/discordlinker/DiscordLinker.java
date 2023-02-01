@@ -71,9 +71,10 @@ public final class DiscordLinker extends JavaPlugin {
 
             if(Objects.equals(protocol, "websocket")) adapterManager = new AdapterManager(token, getPort());
             else adapterManager = new AdapterManager(getPort());
-            adapterManager.startAll();
-
-            adapterManager.sendChat("", ChatType.START, null);
+            adapterManager.startAll(connected -> {
+                if(!connected) return;
+                adapterManager.sendChat("", ChatType.START, null);
+            });
 
             Metrics metrics = new Metrics(this, PLUGIN_ID);
             metrics.addCustomChart(new SimplePie("server_connected_with_discord", () -> connJson != null ? "true" : "false"));

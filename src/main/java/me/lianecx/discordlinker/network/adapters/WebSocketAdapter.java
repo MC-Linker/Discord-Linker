@@ -7,6 +7,7 @@ import express.utils.Status;
 import io.socket.client.Ack;
 import io.socket.client.IO;
 import io.socket.client.Socket;
+import io.socket.emitter.Emitter;
 import me.lianecx.discordlinker.DiscordLinker;
 import me.lianecx.discordlinker.network.Route;
 import me.lianecx.discordlinker.network.Router;
@@ -19,6 +20,7 @@ import java.nio.file.Paths;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 public class WebSocketAdapter {
@@ -80,7 +82,27 @@ public class WebSocketAdapter {
         this.socket = socket;
     }
 
-    public void connect() {
+    public void connect(Consumer<Boolean> callback) {
+        //Add listeners and remove them after the first event
+        AtomicReference<Emitter.Listener> connectListener = new AtomicReference<>();
+        AtomicReference<Emitter.Listener> errorListener = new AtomicReference<>();
+        connectListener.set(args -> {
+            callback.accept(true);
+            socket.off(Socket.EVENT_CONNECT, connectListener.get());
+            socket.off(Socket.EVENT_CONNECT_ERROR, errorListener.get());
+            socket.off(Socket.EVENT_DISCONNECT, errorListener.get());
+        });
+        errorListener.set(args -> {
+            callback.accept(false);
+            socket.off(Socket.EVENT_CONNECT, connectListener.get());
+            socket.off(Socket.EVENT_CONNECT_ERROR, errorListener.get());
+            socket.off(Socket.EVENT_DISCONNECT, errorListener.get());
+        });
+
+        socket.on(Socket.EVENT_CONNECT, connectListener.get());
+        socket.on(Socket.EVENT_CONNECT_ERROR, errorListener.get());
+        socket.on(Socket.EVENT_DISCONNECT, errorListener.get());
+
         socket.connect();
     }
 

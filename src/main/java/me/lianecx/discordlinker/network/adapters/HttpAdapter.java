@@ -19,6 +19,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Paths;
 import java.security.NoSuchAlgorithmException;
 import java.util.UUID;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 public class HttpAdapter {
@@ -58,8 +59,11 @@ public class HttpAdapter {
         });
     }
 
-    public void connect(int port) {
-        app.listen(() -> DiscordLinker.getPlugin().getLogger().info("Listening on port " + port), port);
+    public void connect(int port, Consumer<Boolean> callback) {
+        app.listen(() -> {
+            callback.accept(true);
+            DiscordLinker.getPlugin().getLogger().info("Listening on port " + port);
+        }, port);
     }
 
     public static int send(RequestMethod method, String route, JsonElement body) {

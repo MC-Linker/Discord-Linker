@@ -3,8 +3,6 @@ package me.lianecx.discordlinker.network.adapters;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import express.http.RequestMethod;
-import io.socket.client.Socket;
-import io.socket.emitter.Emitter;
 import me.lianecx.discordlinker.DiscordLinker;
 import me.lianecx.discordlinker.network.ChatType;
 import org.bukkit.ChatColor;
@@ -15,7 +13,6 @@ import java.security.SecureRandom;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
 public class AdapterManager {
@@ -39,13 +36,13 @@ public class AdapterManager {
         this.httpPort = httpPort;
     }
 
-    public void startAll() {
+    public void startAll(Consumer<Boolean> callback) {
         // If adapters are already connected, disconnect them
         if(isWebSocketConnected()) webSocketAdapter.disconnect();
         if(isHttpConnected()) httpAdapter.disconnect();
 
-        if(webSocketAdapter != null) webSocketAdapter.connect();
-        else if(httpAdapter != null) httpAdapter.connect(httpPort);
+        if(webSocketAdapter != null) webSocketAdapter.connect(callback);
+        else if(httpAdapter != null) httpAdapter.connect(httpPort, callback);
     }
 
     public void stopAll() {
@@ -56,7 +53,7 @@ public class AdapterManager {
     public void startHttp() {
         if(isHttpConnected()) httpAdapter.disconnect();
         else httpAdapter = new HttpAdapter();
-        httpAdapter.connect(httpPort);
+        httpAdapter.connect(httpPort, bool -> {});
 
         webSocketAdapter = null;
     }
@@ -83,21 +80,10 @@ public class AdapterManager {
 
         WebSocketAdapter tempAdapter = new WebSocketAdapter(auth);
 
-        //Register connection listeners
-        Emitter.Listener failListener = objects -> {
-            tempAdapter.disconnect();
-            callback.accept(false);
-            if(webSocketAdapter != null) webSocketAdapter.connect();
-        };
-        AtomicReference<Emitter.Listener> successListener = new AtomicReference<>();
-        successListener.set(objects -> {
+        //Set listeners
+        tempAdapter.getSocket().on("auth-success", data -> {
             //Code is valid, set the adapter to the new one
             webSocketAdapter = tempAdapter;
-
-            //Remove listeners
-            webSocketAdapter.getSocket().off(Socket.EVENT_DISCONNECT, failListener);
-            webSocketAdapter.getSocket().off(Socket.EVENT_CONNECT_ERROR, failListener);
-            webSocketAdapter.getSocket().off(Socket.EVENT_CONNECT, successListener.get());
 
             //Save connection data
             JsonObject connJson = new JsonObject();
@@ -119,13 +105,15 @@ public class AdapterManager {
                 callback.accept(false);
             }
         });
-
-        //Set listeners
-        tempAdapter.getSocket().on(Socket.EVENT_DISCONNECT, failListener);
-        tempAdapter.getSocket().on(Socket.EVENT_CONNECT_ERROR, failListener);
-        tempAdapter.getSocket().on("auth-success", successListener.get());
-
-        tempAdapter.connect();
+        tempAdapter.connect(connected -> {
+            //If connected, the bot will call auth-success above
+            if(!connected) {
+                tempAdapter.disconnect();
+                callback.accept(false);
+                //Connect to old websocket if it exists
+                if(webSocketAdapter != null) webSocketAdapter.connect(bool -> {});
+            }
+        });
     }
 
     public boolean isWebSocketConnected() {

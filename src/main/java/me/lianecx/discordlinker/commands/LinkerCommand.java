@@ -21,8 +21,7 @@ public class LinkerCommand implements CommandExecutor {
                 PLUGIN.reloadConfig();
 
                 DiscordLinker.getAdapterManager().setHttpPort(PLUGIN.getPort());
-                DiscordLinker.getAdapterManager().startAll();
-                sender.sendMessage(ChatColor.GREEN + "Successfully reloaded config.");
+                DiscordLinker.getAdapterManager().startAll(connected -> sender.sendMessage(ChatColor.GREEN + "Successfully reloaded config."));
                 break;
             case "port":
                 if(args.length == 1) {
