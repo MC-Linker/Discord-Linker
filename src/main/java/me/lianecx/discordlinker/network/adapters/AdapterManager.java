@@ -91,13 +91,13 @@ public class AdapterManager {
         };
         AtomicReference<Emitter.Listener> successListener = new AtomicReference<>();
         successListener.set(objects -> {
-            //Remove listeners
-            tempAdapter.getSocket().off(Socket.EVENT_DISCONNECT, failListener);
-            tempAdapter.getSocket().off(Socket.EVENT_CONNECT_ERROR, failListener);
-            tempAdapter.getSocket().off(Socket.EVENT_CONNECT, successListener.get());
-
             //Code is valid, set the adapter to the new one
             webSocketAdapter = tempAdapter;
+
+            //Remove listeners
+            webSocketAdapter.getSocket().off(Socket.EVENT_DISCONNECT, failListener);
+            webSocketAdapter.getSocket().off(Socket.EVENT_CONNECT_ERROR, failListener);
+            webSocketAdapter.getSocket().off(Socket.EVENT_CONNECT, successListener.get());
 
             //Save connection data
             JsonObject connJson = new JsonObject();

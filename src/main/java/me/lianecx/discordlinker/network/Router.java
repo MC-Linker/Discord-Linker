@@ -320,7 +320,7 @@ public class Router {
 
             DiscordLinker.getPlugin().updateConn(connJson);
 
-            DiscordLinker.getPlugin().getLogger().info("Successfully connected with discord server. ID: " + data.get("id").getAsString());
+            DiscordLinker.getPlugin().getLogger().info("Successfully connected to Discord!");
 
             JsonObject connectResponse = getConnectResponse();
             connectResponse.addProperty("token", token);

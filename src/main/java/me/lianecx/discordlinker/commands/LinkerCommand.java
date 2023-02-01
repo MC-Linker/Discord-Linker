@@ -1,7 +1,6 @@
 package me.lianecx.discordlinker.commands;
 
 import me.lianecx.discordlinker.DiscordLinker;
-import me.lianecx.discordlinker.network.adapters.AdapterManager;
 import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -12,7 +11,6 @@ import java.util.Arrays;
 public class LinkerCommand implements CommandExecutor {
 
     private final DiscordLinker PLUGIN = DiscordLinker.getPlugin();
-    private final AdapterManager MANAGER = DiscordLinker.getAdapterManager();
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
@@ -22,8 +20,8 @@ public class LinkerCommand implements CommandExecutor {
             case "reload":
                 PLUGIN.reloadConfig();
 
-                MANAGER.setHttpPort(PLUGIN.getPort());
-                MANAGER.startAll();
+                DiscordLinker.getAdapterManager().setHttpPort(PLUGIN.getPort());
+                DiscordLinker.getAdapterManager().startAll();
                 sender.sendMessage(ChatColor.GREEN + "Successfully reloaded config.");
                 break;
             case "port":
@@ -44,9 +42,9 @@ public class LinkerCommand implements CommandExecutor {
                 PLUGIN.getConfig().set("port", newPort);
                 PLUGIN.saveConfig();
 
-                MANAGER.setHttpPort(newPort);
+                DiscordLinker.getAdapterManager().setHttpPort(newPort);
                 //Only start http server if it was already started
-                if(MANAGER.isHttpConnected()) MANAGER.startHttp();
+                if(DiscordLinker.getAdapterManager().isHttpConnected()) DiscordLinker.getAdapterManager().startHttp();
                 sender.sendMessage(ChatColor.GREEN + "Successfully set port to " + ChatColor.DARK_AQUA + newPort + ChatColor.GREEN + ".");
                 break;
             case "private_message":
@@ -70,14 +68,14 @@ public class LinkerCommand implements CommandExecutor {
                     return true;
                 }
 
-                if(MANAGER.isWebSocketConnected()) {
+                if(DiscordLinker.getAdapterManager().isWebSocketConnected()) {
                     sender.sendMessage(ChatColor.RED + "The server is already connected! Please disconnect it first using `/disconnect` in Discord.");
                     return true;
                 }
 
                 String code = args[1];
                 sender.sendMessage(ChatColor.YELLOW + "Attempting to connect to the Discord bot...");
-                MANAGER.connectWebsocket(code, success -> {
+                DiscordLinker.getAdapterManager().connectWebsocket(code, success -> {
                     if(success)
                         sender.sendMessage(ChatColor.GREEN + "Successfully connected to Discord!");
                     else
