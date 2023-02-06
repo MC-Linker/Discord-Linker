@@ -29,7 +29,7 @@ public class HttpAdapter {
 
     //If snapshot version, request test-bot at port 3101 otherwise request main-bot at port 3100
     public static final int BOT_PORT = PLUGIN_VERSION.contains("SNAPSHOT") ? 3101 : 3100;
-    public static final URI BOT_URI = URI.create("http://smpbot.duckdns.org:" + BOT_PORT);
+    public static final URI BOT_URI = URI.create("http://api.mclinker.com:" + BOT_PORT);
 
     public HttpAdapter() {
         this.app = new Express();
