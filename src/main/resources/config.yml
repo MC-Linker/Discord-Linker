@@ -1,5 +1,5 @@
 # The port the plugin should listen on.
-# If you change this, make sure to specify it in the `/connect plugin <ip> <port>` bot command
+# If you change this, make sure to specify it in the `/connect plugin true` bot command
 port: 11111
 
 # The formatting of chat messages that are sent from discord to minecraft
