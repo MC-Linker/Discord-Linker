@@ -66,7 +66,7 @@ public final class DiscordLinker extends JavaPlugin {
             }
             catch(IOException ignored) {}
 
-            String protocol = connJson != null ? connJson.get("protocol").getAsString() : null;
+            String protocol = connJson != null && connJson.get("protocol") != null ? connJson.get("protocol").getAsString() : null;
             String token = Objects.equals(protocol, "websocket") ? connJson.get("token").getAsString() : null;
 
             if(Objects.equals(protocol, "websocket")) adapterManager = new AdapterManager(token, getPort());
