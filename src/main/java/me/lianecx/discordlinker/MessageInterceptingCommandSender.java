@@ -1,7 +1,5 @@
 package me.lianecx.discordlinker;
 
-import com.sun.istack.internal.NotNull;
-import com.sun.istack.internal.Nullable;
 import net.md_5.bungee.api.chat.BaseComponent;
 import org.bukkit.Server;
 import org.bukkit.command.CommandSender;
@@ -50,13 +48,13 @@ public class MessageInterceptingCommandSender implements ConsoleCommandSender {
     }
 
     @Override
-    public void sendMessage(@NotNull String message) {
+    public void sendMessage(String message) {
         wrappedSender.sendMessage(message);
         addLog(message);
     }
 
     @Override
-    public void sendMessage(@NotNull String[] messages) {
+    public void sendMessage(String[] messages) {
         wrappedSender.sendMessage(messages);
         for(String message : messages) {
             addLog(message);
@@ -64,17 +62,17 @@ public class MessageInterceptingCommandSender implements ConsoleCommandSender {
     }
 
     @Override
-    public @NotNull Server getServer() {
+    public Server getServer() {
         return wrappedSender.getServer();
     }
 
     @Override
-    public @NotNull String getName() {
+    public String getName() {
         return "Discord-Linker";
     }
 
     @Override
-    public @NotNull CommandSender.Spigot spigot() {
+    public CommandSender.Spigot spigot() {
         return spigotWrapper;
     }
 
@@ -84,73 +82,73 @@ public class MessageInterceptingCommandSender implements ConsoleCommandSender {
     }
 
     @Override
-    public void acceptConversationInput(@NotNull String input) {
+    public void acceptConversationInput(String input) {
         wrappedSender.acceptConversationInput(input);
     }
 
     @Override
-    public boolean beginConversation(@NotNull Conversation conversation) {
+    public boolean beginConversation(Conversation conversation) {
         return wrappedSender.beginConversation(conversation);
     }
 
     @Override
-    public void abandonConversation(@NotNull Conversation conversation) {
+    public void abandonConversation(Conversation conversation) {
         wrappedSender.abandonConversation(conversation);
     }
 
     @Override
-    public void abandonConversation(@NotNull Conversation conversation, @NotNull ConversationAbandonedEvent details) {
+    public void abandonConversation(Conversation conversation, ConversationAbandonedEvent details) {
         wrappedSender.abandonConversation(conversation, details);
     }
 
     @Override
-    public void sendRawMessage(@NotNull String message) {
+    public void sendRawMessage(String message) {
         wrappedSender.sendRawMessage(message);
         addLog(message);
     }
 
     @Override
-    public boolean isPermissionSet(@NotNull String name) {
+    public boolean isPermissionSet(String name) {
         return wrappedSender.isPermissionSet(name);
     }
 
     @Override
-    public boolean isPermissionSet(@NotNull Permission perm) {
+    public boolean isPermissionSet(Permission perm) {
         return wrappedSender.isPermissionSet(perm);
     }
 
     @Override
-    public boolean hasPermission(@NotNull String name) {
+    public boolean hasPermission(String name) {
         return wrappedSender.hasPermission(name);
     }
 
     @Override
-    public boolean hasPermission(@NotNull Permission perm) {
+    public boolean hasPermission(Permission perm) {
         return wrappedSender.hasPermission(perm);
     }
 
     @Override
-    public @NotNull PermissionAttachment addAttachment(@NotNull Plugin plugin, @NotNull String name, boolean value) {
+    public PermissionAttachment addAttachment(Plugin plugin, String name, boolean value) {
         return wrappedSender.addAttachment(plugin, name, value);
     }
 
     @Override
-    public @NotNull PermissionAttachment addAttachment(@NotNull Plugin plugin) {
+    public PermissionAttachment addAttachment(Plugin plugin) {
         return wrappedSender.addAttachment(plugin);
     }
 
     @Override
-    public @Nullable PermissionAttachment addAttachment(@NotNull Plugin plugin, @NotNull String name, boolean value, int ticks) {
+    public PermissionAttachment addAttachment(Plugin plugin, String name, boolean value, int ticks) {
         return wrappedSender.addAttachment(plugin, name, value, ticks);
     }
 
     @Override
-    public @Nullable PermissionAttachment addAttachment(@NotNull Plugin plugin, int ticks) {
+    public PermissionAttachment addAttachment(Plugin plugin, int ticks) {
         return wrappedSender.addAttachment(plugin, ticks);
     }
 
     @Override
-    public void removeAttachment(@NotNull PermissionAttachment attachment) {
+    public void removeAttachment(PermissionAttachment attachment) {
         wrappedSender.removeAttachment(attachment);
     }
 
@@ -160,7 +158,7 @@ public class MessageInterceptingCommandSender implements ConsoleCommandSender {
     }
 
     @Override
-    public @NotNull Set<PermissionAttachmentInfo> getEffectivePermissions() {
+    public Set<PermissionAttachmentInfo> getEffectivePermissions() {
         return wrappedSender.getEffectivePermissions();
     }
 
@@ -180,7 +178,7 @@ public class MessageInterceptingCommandSender implements ConsoleCommandSender {
          *
          * @param component the components to send
          */
-        public void sendMessage(@NotNull net.md_5.bungee.api.chat.BaseComponent component) {
+        public void sendMessage(BaseComponent component) {
             wrappedSender.spigot().sendMessage();
             addLog(BaseComponent.toLegacyText(component));
         }
@@ -190,7 +188,7 @@ public class MessageInterceptingCommandSender implements ConsoleCommandSender {
          *
          * @param components the components to send
          */
-        public void sendMessage(@NotNull net.md_5.bungee.api.chat.BaseComponent... components) {
+        public void sendMessage(BaseComponent... components) {
             wrappedSender.spigot().sendMessage(components);
             addLog(BaseComponent.toLegacyText(components));
         }
