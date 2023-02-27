@@ -5,12 +5,14 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import express.utils.Status;
+import me.lianecx.discordlinker.ConsoleLogger;
 import me.lianecx.discordlinker.DiscordLinker;
-import me.lianecx.discordlinker.MessageInterceptingCommandSender;
 import me.lianecx.discordlinker.commands.VerifyCommand;
 import net.md_5.bungee.api.chat.ClickEvent;
 import net.md_5.bungee.api.chat.ComponentBuilder;
 import org.apache.commons.lang.RandomStringUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.core.Logger;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.command.CommandException;
@@ -50,10 +52,9 @@ public class Router {
     public static final JsonObject ALREADY_CONNECTED = new JsonObject();
     public static final JsonObject SUCCESS = new JsonObject();
     public static final Gson GSON = new Gson();
+    private static final ConsoleLogger cmdLogger = new ConsoleLogger();
     private static final String URL_REGEX = "https?://[-\\w_.]{2,}\\.[a-z]{2,4}/\\S*?";
     private static final String MD_URL_REGEX = "(?i)\\[([^]]+)]\\((" + URL_REGEX + ")\\)";
-    private static final Pattern COLOR_PATTERN = Pattern.compile("(?i)§[0-9A-FK-OR]");
-    private static final MessageInterceptingCommandSender interceptingCommandSender = new MessageInterceptingCommandSender(Bukkit.getConsoleSender());
     private static String verifyCode = null;
 
     public static void init() throws IOException {
@@ -64,6 +65,9 @@ public class Router {
         INVALID_PLAYER.addProperty("message", "Target player does not exist or is not online");
         ALREADY_CONNECTED.addProperty("message", "This plugin is already connected with a different guild.");
         INVALID_CODE.addProperty("message", "Invalid verification code");
+
+        Logger log = (Logger) LogManager.getRootLogger();
+        log.addAppender(cmdLogger);
     }
 
     public static void getFile(JsonObject data, Consumer<RouterResponse> callback) {
@@ -151,8 +155,8 @@ public class Router {
             try {
                 String cmd = URLDecoder.decode(data.get("cmd").getAsString(), "utf-8");
                 DiscordLinker.getPlugin().getLogger().info(ChatColor.AQUA + "Command from Discord: /" + cmd);
-                interceptingCommandSender.startLogging();
-                getServer().dispatchCommand(interceptingCommandSender, cmd);
+                cmdLogger.startLogging();
+                getServer().dispatchCommand(Bukkit.getConsoleSender(), cmd);
             }
             catch(UnsupportedEncodingException | IllegalArgumentException | CommandException err) {
                 responseJson.addProperty("message", err.toString());
@@ -161,15 +165,20 @@ public class Router {
                 return;
             }
             finally {
-                interceptingCommandSender.stopLogging();
-                interceptingCommandSender.clearData();
+                cmdLogger.stopLogging();
             }
 
-            String commandResponse = String.join("\n", interceptingCommandSender.getData());
+            String commandResponse = String.join("\n", cmdLogger.getData());
+            cmdLogger.clearData();
+
+            //cmdLogger returns weirdly encoded chars (probably ASCII) which is why ChatColor.stripColor does not work on the returned string.
+            //Color codes are stripped successfully with this regex, but other non-english chars like € or © are not displayed correctly (�) after sending them to Discord.
+            String colorCodeRegex = "(?i)\\x7F([\\dA-FK-OR])";
 
             //Get first color used in string
             ChatColor firstColor = null;
-            Matcher matcher = COLOR_PATTERN.matcher(commandResponse);
+            Pattern pattern = Pattern.compile(colorCodeRegex);
+            Matcher matcher = pattern.matcher(commandResponse);
             if(matcher.find()) firstColor = ChatColor.getByChar(matcher.group(1));
 
             responseJson.addProperty("message", matcher.replaceAll(""));
