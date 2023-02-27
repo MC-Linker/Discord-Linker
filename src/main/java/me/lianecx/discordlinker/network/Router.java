@@ -161,6 +161,7 @@ public class Router {
             catch(UnsupportedEncodingException | IllegalArgumentException | CommandException err) {
                 responseJson.addProperty("message", err.toString());
                 callback.accept(new RouterResponse(Status._500, responseJson.toString()));
+                cmdLogger.clearData();
                 return;
             }
             finally {
