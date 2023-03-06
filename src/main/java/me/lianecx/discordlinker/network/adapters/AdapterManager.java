@@ -13,6 +13,7 @@ import java.security.SecureRandom;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 import java.util.function.Consumer;
 
 public class AdapterManager {
@@ -141,5 +142,14 @@ public class AdapterManager {
             int code = HttpAdapter.send(RequestMethod.POST, "/chat", chatJson);
             if(code == 403) PLUGIN.deleteConn(); //Bot could not find a valid connection to this server
         }
+    }
+
+    public void sendVerificationResponse(String code, UUID uuid) {
+        JsonObject verifyJson = new JsonObject();
+        verifyJson.addProperty("code", code);
+        verifyJson.addProperty("uuid", uuid.toString());
+
+        if(isWebSocketConnected()) webSocketAdapter.send("verify-response", verifyJson);
+        else if(isHttpConnected()) HttpAdapter.send(RequestMethod.POST, "/verify/response", verifyJson);
     }
 }

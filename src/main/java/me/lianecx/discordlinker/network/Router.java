@@ -171,19 +171,8 @@ public class Router {
             String commandResponse = String.join("\n", cmdLogger.getData());
             cmdLogger.clearData();
 
-            //cmdLogger returns weirdly encoded chars (probably ASCII) which is why ChatColor.stripColor does not work on the returned string.
-            //Color codes are stripped successfully with this regex, but other non-english chars like € or © are not displayed correctly (�) after sending them to Discord.
-            String colorCodeRegex = "(?i)\\x7F([\\dA-FK-OR])";
-
-            //Get first color used in string
-            ChatColor firstColor = null;
-            Pattern pattern = Pattern.compile(colorCodeRegex);
-            Matcher matcher = pattern.matcher(commandResponse);
-            if(matcher.find()) firstColor = ChatColor.getByChar(matcher.group(1));
-
-            responseJson.addProperty("message", matcher.replaceAll(""));
-            if(firstColor != null) responseJson.addProperty("color", firstColor.getChar());
-
+            // Replace all color codes with & to properly display in Discord
+            responseJson.addProperty("message", commandResponse.replaceAll("\\x7F", "&"));
             callback.accept(new RouterResponse(Status._200, responseJson.toString()));
         });
     }

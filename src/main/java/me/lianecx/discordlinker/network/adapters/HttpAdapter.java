@@ -18,7 +18,6 @@ import java.net.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Paths;
 import java.security.NoSuchAlgorithmException;
-import java.util.UUID;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
@@ -101,14 +100,6 @@ public class HttpAdapter {
         catch(NoSuchAlgorithmException err) {
             return false;
         }
-    }
-
-    public static void sendVerificationResponse(String code, UUID uuid) {
-        JsonObject verifyJson = new JsonObject();
-        verifyJson.addProperty("code", code);
-        verifyJson.addProperty("uuid", uuid.toString());
-
-        send(RequestMethod.POST, "/verify/response", verifyJson);
     }
 
     private JsonObject parseRequest(Request req) {
