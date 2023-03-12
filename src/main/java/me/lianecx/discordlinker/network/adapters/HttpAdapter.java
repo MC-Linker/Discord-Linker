@@ -52,6 +52,9 @@ public class HttpAdapter {
                 //Special case: File upload (pass body as input stream to function)
                 Router.putFile(data, req.getBody(), routerResponse -> this.respond(routerResponse, res));
             }
+            else if(route == Route.ROOT) {
+                res.redirect("https://mclinker.com");
+            }
             else {
                 route.execute(data, routerResponse -> this.respond(routerResponse, res));
             }
