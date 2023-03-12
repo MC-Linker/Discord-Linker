@@ -5,6 +5,8 @@ import com.google.gson.JsonObject;
 import express.http.RequestMethod;
 import me.lianecx.discordlinker.DiscordLinker;
 import me.lianecx.discordlinker.network.ChatType;
+import me.lianecx.discordlinker.network.StatsUpdateEvent;
+import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 
 import java.io.IOException;
@@ -140,6 +142,24 @@ public class AdapterManager {
         else if(isHttpConnected()) {
             chatJson.add("ip", DiscordLinker.getConnJson().get("ip"));
             int code = HttpAdapter.send(RequestMethod.POST, "/chat", chatJson);
+            if(code == 403) PLUGIN.deleteConn(); //Bot could not find a valid connection to this server
+        }
+    }
+
+    public void sendStatsUpdate(StatsUpdateEvent event) {
+        JsonArray channels = PLUGIN.filterChannels(event);
+        if(channels == null || channels.size() == 0) return;
+
+        JsonObject statsJson = new JsonObject();
+        statsJson.addProperty("event", event.getName());
+        statsJson.add("channels", channels);
+        statsJson.add("id", DiscordLinker.getConnJson().get("id"));
+        if(event == StatsUpdateEvent.MEMBERS) statsJson.addProperty("members", Bukkit.getOnlinePlayers().size());
+
+        if(isWebSocketConnected()) webSocketAdapter.send("update-stats-channels", statsJson);
+        else if(isHttpConnected()) {
+            statsJson.add("ip", DiscordLinker.getConnJson().get("ip"));
+            int code = HttpAdapter.send(RequestMethod.POST, "/update-stats-channels", statsJson);
             if(code == 403) PLUGIN.deleteConn(); //Bot could not find a valid connection to this server
         }
     }

@@ -7,6 +7,7 @@ import me.lianecx.discordlinker.commands.VerifyCommand;
 import me.lianecx.discordlinker.events.ChatListeners;
 import me.lianecx.discordlinker.network.ChatType;
 import me.lianecx.discordlinker.network.Router;
+import me.lianecx.discordlinker.network.StatsUpdateEvent;
 import me.lianecx.discordlinker.network.adapters.AdapterManager;
 import me.lianecx.discordlinker.network.adapters.HttpAdapter;
 import org.bstats.bukkit.Metrics;
@@ -74,6 +75,7 @@ public final class DiscordLinker extends JavaPlugin {
             adapterManager.startAll(connected -> {
                 if(!connected) return;
                 adapterManager.sendChat("", ChatType.START, null);
+                adapterManager.sendStatsUpdate(StatsUpdateEvent.ONLINE);
             });
 
             Metrics metrics = new Metrics(this, PLUGIN_ID);
@@ -92,6 +94,8 @@ public final class DiscordLinker extends JavaPlugin {
     @Override
     public void onDisable() {
         adapterManager.sendChat("", ChatType.CLOSE, null);
+        adapterManager.sendStatsUpdate(StatsUpdateEvent.OFFLINE);
+        adapterManager.sendStatsUpdate(StatsUpdateEvent.MEMBERS);
         adapterManager.stopAll();
 
         getServer().getScheduler().cancelTasks(this);
@@ -138,6 +142,25 @@ public final class DiscordLinker extends JavaPlugin {
                     updateConn();
                 }
                 catch(IOException ignored) {}
+            }
+        }
+
+        return filteredChannels;
+    }
+
+    public boolean shouldSendStats() {
+        if(connJson == null || connJson.get("stats-channels") == null) return false;
+        return connJson.getAsJsonArray("stats-channels").size() > 0;
+    }
+
+    public JsonArray filterChannels(StatsUpdateEvent type) {
+        if(!shouldSendStats()) return null;
+
+        JsonArray allChannels = connJson.getAsJsonArray("stats-channels");
+        JsonArray filteredChannels = new JsonArray();
+        for(JsonElement channel : allChannels) {
+            if(channel.getAsJsonObject().get("type").getAsString().equals(type.getJsonKey())) {
+                filteredChannels.add(channel);
             }
         }
 

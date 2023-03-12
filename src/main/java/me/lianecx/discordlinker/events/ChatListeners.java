@@ -2,6 +2,7 @@ package me.lianecx.discordlinker.events;
 
 import me.lianecx.discordlinker.DiscordLinker;
 import me.lianecx.discordlinker.network.ChatType;
+import me.lianecx.discordlinker.network.StatsUpdateEvent;
 import org.bukkit.ChatColor;
 import org.bukkit.command.ConsoleCommandSender;
 import org.bukkit.event.EventHandler;
@@ -23,11 +24,13 @@ public class ChatListeners implements Listener {
     @EventHandler(ignoreCancelled = true, priority = EventPriority.HIGH)
     public void onPlayerJoin(PlayerJoinEvent event) {
         sendChatAsync(event.getJoinMessage(), ChatType.JOIN, event.getPlayer().getName());
+        sendStatsAsync(StatsUpdateEvent.MEMBERS);
     }
 
     @EventHandler(ignoreCancelled = true, priority = EventPriority.HIGH)
     public void onPlayerQuit(PlayerQuitEvent event) {
         sendChatAsync(event.getQuitMessage(), ChatType.QUIT, event.getPlayer().getName());
+        sendStatsAsync(StatsUpdateEvent.MEMBERS);
     }
 
     @EventHandler(ignoreCancelled = true, priority = EventPriority.HIGH)
@@ -57,5 +60,10 @@ public class ChatListeners implements Listener {
     public void sendChatAsync(String message, ChatType type, String sender) {
         DiscordLinker.getPlugin().getServer().getScheduler().runTaskAsynchronously(DiscordLinker.getPlugin(), () ->
                 DiscordLinker.getAdapterManager().sendChat(message, type, sender));
+    }
+
+    public void sendStatsAsync(StatsUpdateEvent type) {
+        DiscordLinker.getPlugin().getServer().getScheduler().runTaskAsynchronously(DiscordLinker.getPlugin(), () ->
+                DiscordLinker.getAdapterManager().sendStatsUpdate(type));
     }
 }
