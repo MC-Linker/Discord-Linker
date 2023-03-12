@@ -16,10 +16,12 @@ public enum Route {
     CHAT("/chat", "chat", Router::chat),
     DISCONNECT("/disconnect", "disconnect", Router::disconnect),
     CONNECT("/connect", null, Router::connect, false),
-    CHANNEL_REMOVE("/channel/remove", "remove-channel", Router::removeChannel),
-    CHANNEL_ADD("/channel/add", "add-channel", Router::addChannel),
+    CHAT_CHANNEL_REMOVE("/channel/remove", "remove-channel", Router::removeChatChannel),
+    CHAT_CHANNEL_ADD("/stats-channel/add", "add-stats-channel", Router::addStatsChannel),
+    STATS_CHANNEL_REMOVE("/stats-channel/remove", "remove-stats-channel", Router::removeStatsChannel),
+    STATS_CHANNEL_ADD("/channel/add", "add-channel", Router::addChatChannel),
     LIST_PLAYERS("/players", "list-players", Router::listPlayers),
-    ROOT("/", null, Router::root, false, false);
+    ROOT("/", null, null, false, false);
 
     private final String eventName;
     private final String path;

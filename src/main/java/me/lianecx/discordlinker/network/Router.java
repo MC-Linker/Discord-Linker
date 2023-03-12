@@ -325,56 +325,20 @@ public class Router {
         }
     }
 
-    public static void removeChannel(JsonObject data, Consumer<RouterResponse> callback) {
-        try {
-            JsonObject connJson = DiscordLinker.getConnJson();
-            JsonArray channels = connJson.get("channels").getAsJsonArray();
-
-            for(JsonElement channel : channels) {
-                if(channel.getAsJsonObject().get("id").getAsString().equals(data.get("id").getAsString())) {
-                    channels.remove(channel);
-                    break;
-                }
-            }
-
-            //Update connJson with new channels
-            connJson.add("channels", channels);
-            DiscordLinker.getPlugin().updateConn(connJson);
-
-            callback.accept(new RouterResponse(Status._200, channels.toString()));
-        }
-        catch(IOException err) {
-            JsonObject error = new JsonObject();
-            error.addProperty("message", err.toString());
-            callback.accept(new RouterResponse(Status._500, error.toString()));
-        }
+    public static void removeChatChannel(JsonObject data, Consumer<RouterResponse> callback) {
+        callback.accept(handleChannel(data, "channels", false));
     }
 
-    public static void addChannel(JsonObject data, Consumer<RouterResponse> callback) {
-        try {
-            JsonObject connJson = DiscordLinker.getConnJson();
-            JsonArray channels = connJson.get("channels").getAsJsonArray();
+    public static void addChatChannel(JsonObject data, Consumer<RouterResponse> callback) {
+        callback.accept(handleChannel(data, "channels", true));
+    }
 
-            //Remove channels with the same id as added channel
-            for(JsonElement jsonChannel : channels) {
-                if(jsonChannel.getAsJsonObject().get("id").getAsString().equals(data.get("id").getAsString())) {
-                    channels.remove(jsonChannel);
-                    break;
-                }
-            }
-            channels.add(data);
+    public static void removeStatsChannel(JsonObject data, Consumer<RouterResponse> callback) {
+        callback.accept(handleChannel(data, "stats-channels", false));
+    }
 
-            //Update connJson with new channels
-            connJson.add("channels", channels);
-            DiscordLinker.getPlugin().updateConn(connJson);
-
-            callback.accept(new RouterResponse(Status._200, channels.toString()));
-        }
-        catch(IOException err) {
-            JsonObject error = new JsonObject();
-            error.addProperty("message", err.toString());
-            callback.accept(new RouterResponse(Status._500, error.toString()));
-        }
+    public static void addStatsChannel(JsonObject data, Consumer<RouterResponse> callback) {
+        callback.accept(handleChannel(data, "stats-channels", true));
     }
 
     public static void listPlayers(JsonObject data, Consumer<RouterResponse> callback) {
@@ -382,10 +346,6 @@ public class Router {
                 .map(Player::getName)
                 .collect(Collectors.toList());
         callback.accept(new RouterResponse(Status._200, GSON.toJson(onlinePlayers)));
-    }
-
-    public static void root(JsonObject data, Consumer<RouterResponse> callback) {
-        callback.accept(new RouterResponse(Status._200, "To invite MC Linker, open this link: https://top.gg/bot/712759741528408064"));
     }
 
     private static String markdownToColorCodes(String markdown) {
@@ -416,6 +376,35 @@ public class Router {
         String worldName = serverProperties.getProperty("level-name");
 
         return Paths.get(getServer().getWorldContainer().getCanonicalPath(), worldName).toString();
+    }
+
+    private static RouterResponse handleChannel(JsonObject channel, String jsonFieldName, boolean addChannel) {
+        try {
+            JsonObject connJson = DiscordLinker.getConnJson();
+            JsonArray channels;
+            if(!connJson.has(jsonFieldName)) channels = new JsonArray();
+            else channels = connJson.get(jsonFieldName).getAsJsonArray();
+
+            //Remove channels with the same id as added channel to prevent duplicates
+            for(JsonElement jsonChannel : channels) {
+                if(jsonChannel.getAsJsonObject().get("id").getAsString().equals(channel.get("id").getAsString())) {
+                    channels.remove(jsonChannel);
+                    break;
+                }
+            }
+            if(addChannel) channels.add(channel);
+
+            //Update connJson with new channels
+            connJson.add(jsonFieldName, channels);
+            DiscordLinker.getPlugin().updateConn(connJson);
+
+            return new RouterResponse(Status._200, channels.toString());
+        }
+        catch(IOException err) {
+            JsonObject error = new JsonObject();
+            error.addProperty("message", err.toString());
+            return new RouterResponse(Status._500, error.toString());
+        }
     }
 
     public static String createHash(String originalString) throws NoSuchAlgorithmException {
