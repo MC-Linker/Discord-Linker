@@ -303,6 +303,7 @@ public class Router {
 
             JsonObject connJson = new JsonObject();
             connJson.add("channels", new JsonArray());
+            connJson.add("stats-channels", new JsonArray());
             connJson.add("id", data.get("id"));
             connJson.add("ip", data.get("ip"));
             connJson.addProperty("protocol", "http");
