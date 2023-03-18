@@ -17,9 +17,9 @@ public enum Route {
     DISCONNECT("/disconnect", "disconnect", Router::disconnect),
     CONNECT("/connect", null, Router::connect, false),
     CHAT_CHANNEL_REMOVE("/channel/remove", "remove-channel", Router::removeChatChannel),
-    CHAT_CHANNEL_ADD("/stats-channel/add", "add-stats-channel", Router::addStatsChannel),
+    CHAT_CHANNEL_ADD("/channel/add", "add-channel", Router::addChatChannel),
     STATS_CHANNEL_REMOVE("/stats-channel/remove", "remove-stats-channel", Router::removeStatsChannel),
-    STATS_CHANNEL_ADD("/channel/add", "add-channel", Router::addChatChannel),
+    STATS_CHANNEL_ADD("/stats-channel/add", "add-stats-channel", Router::addStatsChannel),
     LIST_PLAYERS("/players", "list-players", Router::listPlayers),
     ROOT("/", null, null, false, false);
 
