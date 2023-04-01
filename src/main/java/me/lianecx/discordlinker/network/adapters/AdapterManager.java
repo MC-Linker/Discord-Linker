@@ -68,7 +68,6 @@ public class AdapterManager {
 
     /**
      * Connects to the websocket server with a verification code.
-     *
      * @param code     The verification code to connect with.
      * @param callback The callback to run when the connection is established or fails.
      */
