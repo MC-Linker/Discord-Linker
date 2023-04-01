@@ -67,7 +67,7 @@ public class LinkerCommand implements CommandExecutor {
                     return true;
                 }
 
-                if(DiscordLinker.getAdapterManager().isWebSocketConnected()) {
+                if(DiscordLinker.getAdapterManager().isWebSocketConnected() || DiscordLinker.getConnJson() != null) {
                     sender.sendMessage(ChatColor.RED + "The server is already connected! Please disconnect it first using `/disconnect` in Discord.");
                     return true;
                 }
