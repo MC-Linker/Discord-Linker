@@ -6,20 +6,24 @@ import org.bukkit.command.TabCompleter;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class LinkerTabCompleter implements TabCompleter {
+
+    List<String> suggestions = new ArrayList<>();
+
+    public LinkerTabCompleter() {
+        suggestions.add("reload");
+        suggestions.add("port");
+        suggestions.add("message");
+        suggestions.add("private_message");
+        suggestions.add("connect");
+    }
+
     @Override
     public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
-        List<String> suggestions = new ArrayList<>();
-
-        if(args.length == 1) {
-            suggestions.add("reload");
-            suggestions.add("port");
-            suggestions.add("message");
-            suggestions.add("private_message");
-            suggestions.add("connect");
-        }
-
-        return suggestions;
+        return suggestions.stream()
+                .filter(s -> s.startsWith(args[args.length - 1]))
+                .collect(Collectors.toList());
     }
 }
