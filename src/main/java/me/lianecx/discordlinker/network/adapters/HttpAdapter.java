@@ -77,6 +77,7 @@ public class HttpAdapter {
 
             conn.setRequestMethod(method.getMethod());
             conn.setRequestProperty("Content-type", "application/json");
+            conn.setRequestProperty("Authorization", "Bearer " + DiscordLinker.getConnJson().get("hash").getAsString());
             conn.setFixedLengthStreamingMode(length);
             conn.setDoOutput(true);
 
