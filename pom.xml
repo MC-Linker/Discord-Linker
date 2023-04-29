@@ -80,6 +80,10 @@
             <id>sonatype</id>
             <url>https://oss.sonatype.org/content/groups/public/</url>
         </repository>
+        <repository>
+            <id>CodeMC</id>
+            <url>https://repo.codemc.org/repository/maven-public/</url>
+        </repository>
     </repositories>
 
     <dependencies>
@@ -95,6 +99,12 @@
             <version>2.19.0</version>
         </dependency>
         <dependency>
+            <groupId>org.bstats</groupId>
+            <artifactId>bstats-bukkit</artifactId>
+            <version>3.0.0</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
             <groupId>com.github.Simonwep</groupId>
             <artifactId>java-express</artifactId>
             <version>0.1.1</version>
@@ -105,10 +115,9 @@
             <version>2.1.0</version>
         </dependency>
         <dependency>
-            <groupId>org.bstats</groupId>
-            <artifactId>bstats-bukkit</artifactId>
-            <version>3.0.0</version>
-            <scope>compile</scope>
+            <groupId>io.github.bananapuncher714</groupId>
+            <artifactId>nbteditor</artifactId>
+            <version>7.18.5</version>
         </dependency>
     </dependencies>
 </project>

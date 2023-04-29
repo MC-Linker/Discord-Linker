@@ -5,6 +5,7 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import express.utils.Status;
+import io.github.bananapuncher714.nbteditor.NBTEditor;
 import me.lianecx.discordlinker.ConsoleLogger;
 import me.lianecx.discordlinker.DiscordLinker;
 import me.lianecx.discordlinker.commands.VerifyCommand;
@@ -175,6 +176,18 @@ public class Router {
             responseJson.addProperty("message", commandResponse.replaceAll("\\x7F", "&"));
             callback.accept(new RouterResponse(Status._200, responseJson.toString()));
         });
+    }
+
+    public static void getPlayerNBT(JsonObject data, Consumer<RouterResponse> callback) {
+        Player player = getServer().getPlayer(UUID.fromString(data.get("uuid").getAsString()));
+        if(player == null) {
+            callback.accept(new RouterResponse(Status._422, INVALID_PLAYER.toString()));
+            return;
+        }
+
+        JsonObject responseJson = new JsonObject();
+        responseJson.addProperty("data", NBTEditor.getNBTCompound(player).toString());
+        callback.accept(new RouterResponse(Status._200, responseJson.toString()));
     }
 
     public static void chat(JsonObject data, Consumer<RouterResponse> callback) {

@@ -13,6 +13,7 @@ public enum Route {
     VERIFY_GUILD("/verify/guild", null, Router::verifyGuild, false),
     VERIFY_USER("/verify/user", "verify-user", Router::verifyUser),
     COMMAND("/command", "command", Router::command),
+    GET_PLAYER_NBT("/player/nbt", "get-player-nbt", Router::getPlayerNBT),
     CHAT("/chat", "chat", Router::chat),
     DISCONNECT("/disconnect", "disconnect", Router::disconnect),
     CONNECT("/connect", null, Router::connect, false),
