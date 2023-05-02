@@ -135,13 +135,7 @@ public final class DiscordLinker extends JavaPlugin {
                 if(types.contains(new JsonPrimitive(type.getKey()))) filteredChannels.add(channel);
             }
             catch(Exception err) {
-                //If channel is corrupted, remove
-                allChannels.remove(channel);
-
-                try {
-                    updateConn();
-                }
-                catch(IOException ignored) {}
+                err.printStackTrace();
             }
         }
 
