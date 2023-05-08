@@ -17,6 +17,8 @@ import org.apache.logging.log4j.core.Logger;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.command.CommandException;
+import org.bukkit.configuration.Configuration;
+import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 
 import java.io.*;
@@ -384,14 +386,6 @@ public class Router {
         return markdown;
     }
 
-    private static String getWorldPath() throws IOException {
-        Properties serverProperties = new Properties();
-        serverProperties.load(Files.newInputStream(Paths.get("server.properties")));
-        String worldName = serverProperties.getProperty("level-name");
-
-        return Paths.get(getServer().getWorldContainer().getCanonicalPath(), worldName).toString();
-    }
-
     private static RouterResponse handleChannel(JsonObject channel, String jsonFieldName, boolean addChannel) {
         try {
             JsonObject connJson = DiscordLinker.getConnJson();
@@ -442,12 +436,30 @@ public class Router {
             response.addProperty("online", getServer().getOnlineMode());
             response.addProperty("worldPath", URLEncoder.encode(getWorldPath(), "utf-8"));
             response.addProperty("path", URLEncoder.encode(getServer().getWorldContainer().getCanonicalPath(), "utf-8"));
+            response.addProperty("floodgatePrefix", getFloodgatePrefix());
 
             return response;
         }
         catch(IOException err) {
             return null;
         }
+    }
+
+    private static String getWorldPath() throws IOException {
+        Properties serverProperties = new Properties();
+        serverProperties.load(Files.newInputStream(Paths.get("server.properties")));
+        String worldName = serverProperties.getProperty("level-name");
+
+        return Paths.get(getServer().getWorldContainer().getCanonicalPath(), worldName).toString();
+    }
+
+    private static String getFloodgatePrefix() {
+        //Load yaml file
+        File floodgateConfig = new File("plugins/floodgate/config.yml");
+        if(!floodgateConfig.exists()) return null;
+
+        Configuration config = YamlConfiguration.loadConfiguration(floodgateConfig);
+        return config.getString("username-prefix");
     }
 
     public static class RouterResponse {
