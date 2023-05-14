@@ -31,6 +31,7 @@ public class WebSocketAdapter {
     public WebSocketAdapter(Map<String, String> auth) {
         Set<Map.Entry<String, JsonElement>> queries = Router.getConnectResponse().entrySet();
         String queryString = queries.stream()
+                .filter(e -> !e.getValue().isJsonNull())
                 .map(e -> e.getKey() + "=" + e.getValue().getAsString())
                 .collect(Collectors.joining("&"));
 
