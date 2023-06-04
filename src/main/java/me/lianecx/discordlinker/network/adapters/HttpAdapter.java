@@ -26,7 +26,7 @@ public class HttpAdapter {
     private final Express app;
     private static final String PLUGIN_VERSION = DiscordLinker.getPlugin().getDescription().getVersion();
 
-    //If snapshot version, request test-bot at port 3101 otherwise request main-bot at port 3100
+    //If snapshot version, request test-bot at port 81 otherwise request main-bot at port 80
     public static final int BOT_PORT = PLUGIN_VERSION.contains("SNAPSHOT") ? 81 : 80;
     public static final URI BOT_URI = URI.create("http://api.mclinker.com:" + BOT_PORT);
 
