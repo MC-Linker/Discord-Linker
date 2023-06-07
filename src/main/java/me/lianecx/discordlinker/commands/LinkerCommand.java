@@ -67,7 +67,7 @@ public class LinkerCommand implements CommandExecutor {
                     return true;
                 }
 
-                if(DiscordLinker.getAdapterManager().isWebSocketConnected() || DiscordLinker.getConnJson() != null) {
+                if(DiscordLinker.getConnJson() != null) {
                     sender.sendMessage(ChatColor.RED + "The server is already connected! Please disconnect it first using `/disconnect` in Discord.");
                     return true;
                 }
@@ -80,6 +80,16 @@ public class LinkerCommand implements CommandExecutor {
                     else
                         sender.sendMessage(ChatColor.RED + "Failed to connect to Discord! Please validate the code and try again.");
                 });
+                break;
+            //Add disconnect
+            case "disconnect":
+                if(DiscordLinker.getConnJson() == null) {
+                    sender.sendMessage(ChatColor.RED + "The server is not connected! Please connect it first using `/connect plugin` in Discord.");
+                    return true;
+                }
+
+                DiscordLinker.getAdapterManager().disconnectForce();
+                sender.sendMessage(ChatColor.GREEN + "Successfully disconnected from Discord!");
                 break;
             default:
                 return false;

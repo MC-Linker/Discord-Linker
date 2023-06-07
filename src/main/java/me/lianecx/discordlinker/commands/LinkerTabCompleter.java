@@ -18,6 +18,7 @@ public class LinkerTabCompleter implements TabCompleter {
         suggestions.add("message");
         suggestions.add("private_message");
         suggestions.add("connect");
+        suggestions.add("disconnect");
     }
 
     @Override

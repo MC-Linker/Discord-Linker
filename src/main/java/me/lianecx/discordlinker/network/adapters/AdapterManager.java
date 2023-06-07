@@ -1,6 +1,7 @@
 package me.lianecx.discordlinker.network.adapters;
 
 import com.google.gson.JsonArray;
+import com.google.gson.JsonNull;
 import com.google.gson.JsonObject;
 import express.http.RequestMethod;
 import me.lianecx.discordlinker.DiscordLinker;
@@ -116,6 +117,18 @@ public class AdapterManager {
                 if(webSocketAdapter != null) webSocketAdapter.connect(bool -> {});
             }
         });
+    }
+
+    public void disconnectForce() {
+        if(isWebSocketConnected()) {
+            webSocketAdapter.send("disconnect-force", null);
+            webSocketAdapter.disconnect();
+            startHttp();
+        }
+        else if(isHttpConnected()) HttpAdapter.send(RequestMethod.GET, "/disconnect-force", JsonNull.INSTANCE);
+        //No need to stop (disconnect) http server
+
+        PLUGIN.deleteConn();
     }
 
     public boolean isWebSocketConnected() {
