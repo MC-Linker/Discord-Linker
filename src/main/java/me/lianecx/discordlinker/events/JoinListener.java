@@ -29,7 +29,7 @@ public class JoinListener implements Listener {
                             ChatColor.AQUA + randomCode + ChatColor.YELLOW +
                             " in the next" + ChatColor.BOLD + " 3 minutes " + ChatColor.YELLOW + "and rejoin.");
                 }
-                else
+                else if(hasRequiredRoleResponse == HasRequiredRoleResponse.ERROR)
                     kickPlayerSynchronized(player, ChatColor.RED + "Your roles could not be verified. Please try again later.");
             });
         }
