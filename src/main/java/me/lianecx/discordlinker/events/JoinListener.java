@@ -13,6 +13,7 @@ public class JoinListener implements Listener {
 
     @EventHandler
     public void onPlayerJoin(PlayerJoinEvent event) {
+        if(DiscordLinker.getConnJson() == null) return;
         if(DiscordLinker.getConnJson().has("requiredRoleToJoin")) {
             Player player = event.getPlayer();
 

@@ -87,7 +87,7 @@ public class HttpAdapter {
             }
 
             int status = conn.getResponseCode();
-            Reader streamReader = status > 299 ? new InputStreamReader(conn.getErrorStream()) : new InputStreamReader(conn.getInputStream());
+            Reader streamReader = new InputStreamReader(status > 299 ? conn.getErrorStream() : conn.getInputStream());
             JsonObject response = new JsonParser().parse(streamReader).getAsJsonObject();
             return new HttpResponse(status, response);
         }
