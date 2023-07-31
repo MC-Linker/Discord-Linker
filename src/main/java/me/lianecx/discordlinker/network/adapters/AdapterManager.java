@@ -3,12 +3,16 @@ package me.lianecx.discordlinker.network.adapters;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonNull;
 import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import express.http.RequestMethod;
+import io.socket.client.AckWithTimeout;
 import me.lianecx.discordlinker.DiscordLinker;
 import me.lianecx.discordlinker.network.ChatType;
+import me.lianecx.discordlinker.network.HasRequiredRoleResponse;
 import me.lianecx.discordlinker.network.StatsUpdateEvent;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
+import org.bukkit.entity.Player;
 
 import java.io.IOException;
 import java.math.BigInteger;
@@ -88,20 +92,24 @@ public class AdapterManager {
             //Code is valid, set the adapter to the new one
             webSocketAdapter = tempAdapter;
 
+            JsonObject dataObject = new JsonParser().parse(data[0].toString()).getAsJsonObject();
+
             //Save connection data
             JsonObject connJson = new JsonObject();
             connJson.addProperty("protocol", "websocket");
             connJson.addProperty("id", code.split(":")[0]);
             connJson.addProperty("token", token);
             connJson.add("channels", new JsonArray());
+            if(dataObject.has("requiredRoleToJoin"))
+                connJson.add("requiredRoleToJoin", dataObject.get("requiredRoleToJoin"));
 
             try {
                 PLUGIN.updateConn(connJson);
                 callback.accept(true);
             }
-            catch(IOException e) {
+            catch(IOException err) {
                 PLUGIN.getLogger().info(ChatColor.RED + "Failed to save connection data.");
-                e.printStackTrace();
+                err.printStackTrace();
 
                 webSocketAdapter.disconnect();
                 startHttp();
@@ -153,8 +161,9 @@ public class AdapterManager {
         if(isWebSocketConnected()) webSocketAdapter.send("chat", chatJson);
         else if(isHttpConnected()) {
             chatJson.add("ip", DiscordLinker.getConnJson().get("ip"));
-            int code = HttpAdapter.send(RequestMethod.POST, "/chat", chatJson);
-            if(code == 403) PLUGIN.deleteConn(); //Bot could not find a valid connection to this server
+            HttpAdapter.HttpResponse response = HttpAdapter.send(RequestMethod.POST, "/chat", chatJson);
+            if(response == null) return;
+            if(response.getStatus() == 403) PLUGIN.deleteConn(); //Bot could not find a valid connection to this server
         }
     }
 
@@ -171,8 +180,9 @@ public class AdapterManager {
         if(isWebSocketConnected()) webSocketAdapter.send("update-stats-channels", statsJson);
         else if(isHttpConnected()) {
             statsJson.add("ip", DiscordLinker.getConnJson().get("ip"));
-            int code = HttpAdapter.send(RequestMethod.POST, "/update-stats-channels", statsJson);
-            if(code == 403) PLUGIN.deleteConn(); //Bot could not find a valid connection to this server
+            HttpAdapter.HttpResponse response = HttpAdapter.send(RequestMethod.POST, "/update-stats-channels", statsJson);
+            if(response == null) return;
+            if(response.getStatus() == 403) PLUGIN.deleteConn(); //Bot could not find a valid connection to this server
         }
     }
 
@@ -183,5 +193,56 @@ public class AdapterManager {
 
         if(isWebSocketConnected()) webSocketAdapter.send("verify-response", verifyJson);
         else if(isHttpConnected()) HttpAdapter.send(RequestMethod.POST, "/verify/response", verifyJson);
+    }
+
+    public void hasRequiredRole(UUID uuid, Consumer<HasRequiredRoleResponse> callback) {
+        JsonObject verifyJson = new JsonObject();
+        verifyJson.addProperty("uuid", uuid.toString());
+        verifyJson.add("id", DiscordLinker.getConnJson().get("id"));
+        verifyJson.add("ip", DiscordLinker.getConnJson().get("ip"));
+
+        if(isWebSocketConnected()) {
+            webSocketAdapter.send("has-required-role", verifyJson, new AckWithTimeout(5000) {
+                @Override
+                public void onSuccess(Object... args) {
+                    try {
+                        JsonObject body = new JsonParser().parse(args[0].toString()).getAsJsonObject();
+                        HasRequiredRoleResponse response = HasRequiredRoleResponse.valueOf(body.get("response").getAsString().toUpperCase());
+                        callback.accept(response);
+                    }
+                    catch(Exception e) {
+                        callback.accept(HasRequiredRoleResponse.ERROR);
+                    }
+                }
+
+                @Override
+                public void onTimeout() {
+                    callback.accept(HasRequiredRoleResponse.ERROR);
+                }
+            });
+        }
+        else if(isHttpConnected()) {
+            HttpAdapter.HttpResponse httpResponse = HttpAdapter.send(RequestMethod.POST, "/has-required-role", verifyJson);
+            if(httpResponse == null || httpResponse.getStatus() >= 500) callback.accept(HasRequiredRoleResponse.ERROR);
+            else {
+                try {
+                    HasRequiredRoleResponse response = HasRequiredRoleResponse.valueOf(httpResponse.getBody().get("response").getAsString().toUpperCase());
+                    callback.accept(response);
+                }
+                catch(Exception e) {
+                    callback.accept(HasRequiredRoleResponse.ERROR);
+                }
+            }
+        }
+    }
+
+    public void verifyUser(Player player, int code) {
+        JsonObject verifyJson = new JsonObject();
+        verifyJson.addProperty("code", String.valueOf(code));
+        verifyJson.addProperty("uuid", player.getUniqueId().toString());
+        verifyJson.addProperty("username", player.getName());
+
+        if(isWebSocketConnected()) webSocketAdapter.send("verify-user", verifyJson);
+        else if(isHttpConnected()) HttpAdapter.send(RequestMethod.POST, "/verify-user", verifyJson);
     }
 }

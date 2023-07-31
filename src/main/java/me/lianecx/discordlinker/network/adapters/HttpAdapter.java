@@ -68,7 +68,7 @@ public class HttpAdapter {
         }, port);
     }
 
-    public static int send(RequestMethod method, String route, JsonElement body) {
+    public static HttpResponse send(RequestMethod method, String route, JsonElement body) {
         try {
             HttpURLConnection conn = (HttpURLConnection) new URL(BOT_URI + route).openConnection();
 
@@ -86,11 +86,14 @@ public class HttpAdapter {
                 os.write(out);
             }
 
-            return conn.getResponseCode();
+            int status = conn.getResponseCode();
+            Reader streamReader = status > 299 ? new InputStreamReader(conn.getErrorStream()) : new InputStreamReader(conn.getInputStream());
+            JsonObject response = new JsonParser().parse(streamReader).getAsJsonObject();
+            return new HttpResponse(status, response);
         }
-        catch(IOException ignored) {}
-
-        return 0;
+        catch(IOException ignored) {
+            return null;
+        }
     }
 
     private boolean checkToken(Request req) {
@@ -152,5 +155,24 @@ public class HttpAdapter {
 
         if(response.isAttachment()) res.sendAttachment(Paths.get(response.getMessage()));
         else res.send(response.getMessage());
+    }
+
+    public static class HttpResponse {
+
+        public int status;
+        public JsonObject body;
+
+        public HttpResponse(int status, JsonObject body) {
+            this.status = status;
+            this.body = body;
+        }
+
+        public int getStatus() {
+            return status;
+        }
+
+        public JsonObject getBody() {
+            return body;
+        }
     }
 }

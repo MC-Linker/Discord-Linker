@@ -119,6 +119,10 @@ public class WebSocketAdapter {
         socket.emit(event, data);
     }
 
+    public void send(String event, JsonElement data, Ack ack) {
+        socket.emit(event, data, ack);
+    }
+
     private JsonObject jsonFromStatus(Status status) {
         JsonObject json = new JsonObject();
         json.addProperty("status", status.getCode());

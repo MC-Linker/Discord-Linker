@@ -5,6 +5,7 @@ import me.lianecx.discordlinker.commands.LinkerCommand;
 import me.lianecx.discordlinker.commands.LinkerTabCompleter;
 import me.lianecx.discordlinker.commands.VerifyCommand;
 import me.lianecx.discordlinker.events.ChatListeners;
+import me.lianecx.discordlinker.events.JoinListener;
 import me.lianecx.discordlinker.network.ChatType;
 import me.lianecx.discordlinker.network.Router;
 import me.lianecx.discordlinker.network.StatsUpdateEvent;
@@ -83,6 +84,7 @@ public final class DiscordLinker extends JavaPlugin {
             metrics.addCustomChart(new SimplePie("server_uses_http", () -> Objects.equals(protocol, "http") ? "true" : "false"));
 
             getServer().getPluginManager().registerEvents(new ChatListeners(), this);
+            getServer().getPluginManager().registerEvents(new JoinListener(), this);
             getCommand("linker").setExecutor(new LinkerCommand());
             getCommand("linker").setTabCompleter(new LinkerTabCompleter());
             getCommand("verify").setExecutor(new VerifyCommand());

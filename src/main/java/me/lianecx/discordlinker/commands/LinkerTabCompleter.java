@@ -23,6 +23,7 @@ public class LinkerTabCompleter implements TabCompleter {
 
     @Override
     public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
+        if(args.length > 1) return null;
         return suggestions.stream()
                 .filter(s -> s.startsWith(args[args.length - 1]))
                 .collect(Collectors.toList());

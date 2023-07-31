@@ -68,7 +68,7 @@ public class LinkerCommand implements CommandExecutor {
                 }
 
                 if(DiscordLinker.getConnJson() != null) {
-                    sender.sendMessage(ChatColor.RED + "The server is already connected! Please disconnect it first using `/disconnect` in Discord.");
+                    sender.sendMessage(ChatColor.RED + "The server is already connected! Please disconnect it first using `/linker disconnect`.");
                     return true;
                 }
 
