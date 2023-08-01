@@ -70,6 +70,11 @@ public class HttpAdapter {
 
     public static HttpResponse send(RequestMethod method, String route, JsonElement body) {
         try {
+            if(body.isJsonObject()) {
+                body.getAsJsonObject().add("id", DiscordLinker.getConnJson().get("id"));
+                body.getAsJsonObject().add("ip", DiscordLinker.getConnJson().get("ip"));
+            }
+
             HttpURLConnection conn = (HttpURLConnection) new URL(BOT_URI + route).openConnection();
 
             byte[] out = body.toString().getBytes(StandardCharsets.UTF_8);

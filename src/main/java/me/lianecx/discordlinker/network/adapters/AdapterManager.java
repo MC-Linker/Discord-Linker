@@ -129,7 +129,7 @@ public class AdapterManager {
 
     public void disconnectForce() {
         if(isWebSocketConnected()) {
-            webSocketAdapter.send("disconnect-force", null);
+            webSocketAdapter.send("disconnect-force", new JsonObject());
             webSocketAdapter.disconnect();
             startHttp();
         }
@@ -156,11 +156,9 @@ public class AdapterManager {
         chatJson.addProperty("player", player);
         chatJson.addProperty("message", ChatColor.stripColor(message));
         chatJson.add("channels", channels);
-        chatJson.add("id", DiscordLinker.getConnJson().get("id"));
 
         if(isWebSocketConnected()) webSocketAdapter.send("chat", chatJson);
         else if(isHttpConnected()) {
-            chatJson.add("ip", DiscordLinker.getConnJson().get("ip"));
             HttpAdapter.HttpResponse response = HttpAdapter.send(RequestMethod.POST, "/chat", chatJson);
             if(response == null) return;
             if(response.getStatus() == 403) PLUGIN.deleteConn(); //Bot could not find a valid connection to this server
@@ -174,12 +172,11 @@ public class AdapterManager {
         JsonObject statsJson = new JsonObject();
         statsJson.addProperty("event", event.getName());
         statsJson.add("channels", channels);
-        statsJson.add("id", DiscordLinker.getConnJson().get("id"));
+
         if(event == StatsUpdateEvent.MEMBERS) statsJson.addProperty("members", Bukkit.getOnlinePlayers().size());
 
         if(isWebSocketConnected()) webSocketAdapter.send("update-stats-channels", statsJson);
         else if(isHttpConnected()) {
-            statsJson.add("ip", DiscordLinker.getConnJson().get("ip"));
             HttpAdapter.HttpResponse response = HttpAdapter.send(RequestMethod.POST, "/update-stats-channels", statsJson);
             if(response == null) return;
             if(response.getStatus() == 403) PLUGIN.deleteConn(); //Bot could not find a valid connection to this server
@@ -198,8 +195,6 @@ public class AdapterManager {
     public void hasRequiredRole(UUID uuid, Consumer<HasRequiredRoleResponse> callback) {
         JsonObject verifyJson = new JsonObject();
         verifyJson.addProperty("uuid", uuid.toString());
-        verifyJson.add("id", DiscordLinker.getConnJson().get("id"));
-        verifyJson.add("ip", DiscordLinker.getConnJson().get("ip"));
 
         if(isWebSocketConnected()) {
             webSocketAdapter.send("has-required-role", verifyJson, new AckWithTimeout(5000) {
@@ -244,5 +239,32 @@ public class AdapterManager {
 
         if(isWebSocketConnected()) webSocketAdapter.send("verify-user", verifyJson);
         else if(isHttpConnected()) HttpAdapter.send(RequestMethod.POST, "/verify-user", verifyJson);
+    }
+
+    public void getInviteURL(Consumer<String> callback) {
+        if(isWebSocketConnected()) webSocketAdapter.send("invite-url", new AckWithTimeout(5000) {
+            @Override
+            public void onSuccess(Object... args) {
+                try {
+                    JsonObject body = new JsonParser().parse(args[0].toString()).getAsJsonObject();
+                    if(body.get("url").isJsonNull()) callback.accept(null);
+                    else callback.accept(body.get("url").getAsString());
+                }
+                catch(Exception e) {
+                    callback.accept(null);
+                }
+            }
+
+            @Override
+            public void onTimeout() {
+                callback.accept(null);
+            }
+        });
+        else if(isHttpConnected()) {
+            HttpAdapter.HttpResponse response = HttpAdapter.send(RequestMethod.POST, "/invite-url", new JsonObject());
+            if(response == null) callback.accept(null);
+            else if(response.getBody().get("url").isJsonNull()) callback.accept(null);
+            else callback.accept(response.getBody().get("url").getAsString());
+        }
     }
 }
