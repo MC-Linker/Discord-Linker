@@ -1,6 +1,7 @@
 package me.lianecx.discordlinker;
 
 import com.google.gson.*;
+import me.lianecx.discordlinker.commands.DiscordCommand;
 import me.lianecx.discordlinker.commands.LinkerCommand;
 import me.lianecx.discordlinker.commands.LinkerTabCompleter;
 import me.lianecx.discordlinker.commands.VerifyCommand;
@@ -88,6 +89,7 @@ public final class DiscordLinker extends JavaPlugin {
             getCommand("linker").setExecutor(new LinkerCommand());
             getCommand("linker").setTabCompleter(new LinkerTabCompleter());
             getCommand("verify").setExecutor(new VerifyCommand());
+            getCommand("discord").setExecutor(new DiscordCommand());
 
             getLogger().info(ChatColor.GREEN + "Plugin enabled.");
         });

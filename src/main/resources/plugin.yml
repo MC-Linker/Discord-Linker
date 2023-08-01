@@ -17,6 +17,11 @@ commands:
     usage: "/verify <code>"
     permission: "discordlinker.verify"
     permission-message: "You do not have permission to use this command."
+  discord:
+    description: "Displays an invite link to the connected discord server."
+    usage: "/discord"
+    permission: "discordlinker.discord"
+    permission-message: "You do not have permission to use this command."
 permissions:
   discordlinker.linker:
     description: "Allows the user to use the /linker command"
@@ -36,4 +41,7 @@ permissions:
         description: "Allows the user to use the /linker disconnect command"
   discordlinker.verify:
     description: "Allows the user to use the /verify command"
+    default: true
+  discordlinker.discord:
+    description: "Allows the user to use the /discord command"
     default: true
