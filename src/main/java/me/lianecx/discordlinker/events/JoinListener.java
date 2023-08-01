@@ -18,17 +18,27 @@ public class JoinListener implements Listener {
             Player player = event.getPlayer();
 
             DiscordLinker.getAdapterManager().hasRequiredRole(event.getPlayer().getUniqueId(), hasRequiredRoleResponse -> {
-                System.out.println(hasRequiredRoleResponse);
                 if(hasRequiredRoleResponse == HasRequiredRoleResponse.FALSE)
                     kickPlayerSynchronized(player, ChatColor.RED + "You do not have the required role to join this server.");
                 else if(hasRequiredRoleResponse == HasRequiredRoleResponse.NOT_CONNECTED) {
                     // random 4 digit code
                     int randomCode = (int) (Math.random() * 9000) + 1000;
                     DiscordLinker.getAdapterManager().verifyUser(event.getPlayer(), randomCode);
-                    kickPlayerSynchronized(player, ChatColor.YELLOW + "You have not connected your Minecraft account to Discord.\nPlease DM " +
-                            ChatColor.AQUA + "@MC Linker#7784" + ChatColor.YELLOW + " with the code " +
-                            ChatColor.AQUA + randomCode + ChatColor.YELLOW +
-                            " in the next" + ChatColor.BOLD + " 3 minutes " + ChatColor.YELLOW + "and rejoin.");
+
+                    DiscordLinker.getAdapterManager().getInviteURL(url -> {
+                        if(url == null) {
+                            kickPlayerSynchronized(player, ChatColor.YELLOW + "You have not connected your Minecraft account to Discord.\nPlease DM " +
+                                    ChatColor.AQUA + "@MC Linker#7784" + ChatColor.YELLOW + " with the code " +
+                                    ChatColor.AQUA + randomCode + ChatColor.YELLOW +
+                                    " in the next" + ChatColor.BOLD + " 3 minutes " + ChatColor.YELLOW + " and rejoin.");
+                            return;
+                        }
+                        kickPlayerSynchronized(player, ChatColor.YELLOW + "You have not connected your Minecraft account to Discord.\nPlease join " +
+                                ChatColor.AQUA + url + ChatColor.YELLOW + " and DM " +
+                                ChatColor.AQUA + "@MC Linker#7784" + ChatColor.YELLOW + " with the code " +
+                                ChatColor.AQUA + randomCode + ChatColor.YELLOW +
+                                " in the next" + ChatColor.BOLD + " 3 minutes.");
+                    });
                 }
                 else if(hasRequiredRoleResponse == HasRequiredRoleResponse.ERROR)
                     kickPlayerSynchronized(player, ChatColor.RED + "Your roles could not be verified. Please try again later.");
