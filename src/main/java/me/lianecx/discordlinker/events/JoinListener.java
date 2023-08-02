@@ -34,7 +34,7 @@ public class JoinListener implements Listener {
                             return;
                         }
                         kickPlayerSynchronized(player, ChatColor.YELLOW + "You have not connected your Minecraft account to Discord.\nPlease join " +
-                                ChatColor.AQUA + url + ChatColor.YELLOW + " and DM " +
+                                ChatColor.AQUA + ChatColor.UNDERLINE + url + ChatColor.YELLOW + " and DM " +
                                 ChatColor.AQUA + "@MC Linker#7784" + ChatColor.YELLOW + " with the code " +
                                 ChatColor.AQUA + randomCode + ChatColor.YELLOW +
                                 " in the next" + ChatColor.BOLD + " 3 minutes.");
