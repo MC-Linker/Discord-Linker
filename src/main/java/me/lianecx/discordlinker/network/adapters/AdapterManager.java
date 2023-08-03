@@ -54,7 +54,8 @@ public class AdapterManager {
     }
 
     public void stopAll() {
-        if(isWebSocketConnected()) webSocketAdapter.disconnect();
+        // This throws an error on reload and server stop, probably because spigot already started unloading some classes when this gets called
+        // if(isWebSocketConnected()) webSocketAdapter.disconnect();
         if(isHttpConnected()) httpAdapter.disconnect();
     }
 
@@ -100,7 +101,7 @@ public class AdapterManager {
             connJson.addProperty("id", code.split(":")[0]);
             connJson.addProperty("token", token);
             connJson.add("channels", new JsonArray());
-            if(dataObject.has("requiredRoleToJoin"))
+            if(dataObject.has("requiredRoleToJoin") && !dataObject.get("requiredRoleToJoin").isJsonNull())
                 connJson.add("requiredRoleToJoin", dataObject.get("requiredRoleToJoin"));
 
             try {

@@ -321,7 +321,7 @@ public class Router {
             connJson.add("stats-channels", new JsonArray());
             connJson.add("id", data.get("id"));
             connJson.add("ip", data.get("ip"));
-            if(data.has("requiredRoleToJoin") || data.get("requiredRoleToJoin").isJsonNull())
+            if(data.has("requiredRoleToJoin") && !data.get("requiredRoleToJoin").isJsonNull())
                 connJson.add("requiredRoleToJoin", data.get("requiredRoleToJoin"));
             connJson.addProperty("protocol", "http");
             connJson.addProperty("hash", createHash(token));
