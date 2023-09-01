@@ -1,14 +1,12 @@
 package me.lianecx.discordlinker.network.adapters;
 
-import com.google.gson.JsonArray;
-import com.google.gson.JsonNull;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
+import com.google.gson.*;
 import express.http.RequestMethod;
 import io.socket.client.AckWithTimeout;
 import me.lianecx.discordlinker.DiscordLinker;
 import me.lianecx.discordlinker.network.ChatType;
 import me.lianecx.discordlinker.network.HasRequiredRoleResponse;
+import me.lianecx.discordlinker.network.Router;
 import me.lianecx.discordlinker.network.StatsUpdateEvent;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
@@ -21,6 +19,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
 public class AdapterManager {
@@ -182,6 +181,35 @@ public class AdapterManager {
             if(response == null) return;
             if(response.getStatus() == 403) PLUGIN.deleteConn(); //Bot could not find a valid connection to this server
         }
+    }
+
+    public void sendRoleSyncUpdate(String name, boolean isGroup) {
+        JsonArray syncedRoles = DiscordLinker.getConnJson().get("synced-roles").getAsJsonArray();
+
+        // Check if the team is synced
+        AtomicReference<JsonObject> role = new AtomicReference<>();
+        for(JsonElement roleJson : syncedRoles) {
+            JsonObject roleObj = roleJson.getAsJsonObject();
+            if(roleObj.get("name").getAsString().equals(name) && roleObj.get("isGroup").getAsBoolean() == isGroup)
+                role.set(roleObj);
+        }
+        if(role.get() == null) return;
+
+        Router.getPlayers(name, isGroup, uuids -> {
+            JsonArray players = new JsonArray();
+            uuids.forEach(players::add);
+            role.get().add("players", players);
+
+            //Update connJson
+            Router.handleChangeArray(role.get(), "synced-roles", true);
+
+            if(isWebSocketConnected()) webSocketAdapter.send("update-synced-role", role.get());
+            else if(isHttpConnected()) {
+                HttpAdapter.HttpResponse response = HttpAdapter.send(RequestMethod.POST, "/update-synced-role", role.get());
+                if(response != null && response.getStatus() == 403)
+                    PLUGIN.deleteConn(); //Bot could not find a valid connection to this server
+            }
+        });
     }
 
     public void sendVerificationResponse(String code, UUID uuid) {
