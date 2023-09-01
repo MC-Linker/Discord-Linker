@@ -3,6 +3,8 @@ version: ${project.version}
 main: me.lianecx.discordlinker.DiscordLinker
 api-version: 1.13
 authors: [ Lianecx ]
+softdepend:
+  - LuckPerms
 description: Official plugin for the MC Linker Discord Bot.
 website: https://mclinker.com
 prefix: Discord-Linker
