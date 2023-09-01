@@ -7,11 +7,17 @@ import me.lianecx.discordlinker.commands.LinkerTabCompleter;
 import me.lianecx.discordlinker.commands.VerifyCommand;
 import me.lianecx.discordlinker.events.ChatListeners;
 import me.lianecx.discordlinker.events.JoinListener;
+import me.lianecx.discordlinker.events.TeamChangeEvent;
+import me.lianecx.discordlinker.events.luckperms.GroupChangeEvent;
 import me.lianecx.discordlinker.network.ChatType;
 import me.lianecx.discordlinker.network.Router;
 import me.lianecx.discordlinker.network.StatsUpdateEvent;
 import me.lianecx.discordlinker.network.adapters.AdapterManager;
 import me.lianecx.discordlinker.network.adapters.HttpAdapter;
+import net.luckperms.api.LuckPerms;
+import net.luckperms.api.LuckPermsProvider;
+import net.luckperms.api.event.EventBus;
+import net.luckperms.api.event.node.NodeMutateEvent;
 import org.bstats.bukkit.Metrics;
 import org.bstats.charts.SimplePie;
 import org.bukkit.ChatColor;
@@ -33,7 +39,6 @@ public final class DiscordLinker extends JavaPlugin {
     private static JsonObject connJson;
     private static DiscordLinker plugin;
     private static AdapterManager adapterManager;
-
     private final FileConfiguration config = getConfig();
 
 
@@ -86,10 +91,17 @@ public final class DiscordLinker extends JavaPlugin {
 
             getServer().getPluginManager().registerEvents(new ChatListeners(), this);
             getServer().getPluginManager().registerEvents(new JoinListener(), this);
+            getServer().getPluginManager().registerEvents(new TeamChangeEvent(), this);
             getCommand("linker").setExecutor(new LinkerCommand());
             getCommand("linker").setTabCompleter(new LinkerTabCompleter());
             getCommand("verify").setExecutor(new VerifyCommand());
             getCommand("discord").setExecutor(new DiscordCommand());
+
+            if(getServer().getPluginManager().isPluginEnabled("LuckPerms")) {
+                LuckPerms luckPerms = LuckPermsProvider.get();
+                EventBus eventBus = luckPerms.getEventBus();
+                eventBus.subscribe(this, NodeMutateEvent.class, GroupChangeEvent::onNodeMutate);
+            }
 
             getLogger().info(ChatColor.GREEN + "Plugin enabled.");
         });
