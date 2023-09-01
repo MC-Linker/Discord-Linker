@@ -4,10 +4,12 @@ import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import com.google.gson.reflect.TypeToken;
 import express.utils.Status;
 import io.github.bananapuncher714.nbteditor.NBTEditor;
 import me.lianecx.discordlinker.ConsoleLogger;
 import me.lianecx.discordlinker.DiscordLinker;
+import me.lianecx.discordlinker.LuckPermsUtil;
 import me.lianecx.discordlinker.commands.VerifyCommand;
 import net.md_5.bungee.api.chat.ClickEvent;
 import net.md_5.bungee.api.chat.ComponentBuilder;
@@ -16,10 +18,12 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.core.Logger;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
+import org.bukkit.OfflinePlayer;
 import org.bukkit.command.CommandException;
 import org.bukkit.configuration.Configuration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
+import org.bukkit.scoreboard.Team;
 
 import java.io.*;
 import java.math.BigInteger;
@@ -33,6 +37,7 @@ import java.nio.file.Paths;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
 import java.util.UUID;
@@ -42,6 +47,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static org.bukkit.Bukkit.getPluginManager;
 import static org.bukkit.Bukkit.getServer;
 
 public class Router {
@@ -52,7 +58,10 @@ public class Router {
     public static final JsonObject INVALID_JSON = new JsonObject();
     public static final JsonObject INVALID_CODE = new JsonObject();
     public static final JsonObject INVALID_PLAYER = new JsonObject();
+    public static final JsonObject INVALID_TEAM = new JsonObject();
+    public static final JsonObject INVALID_GROUP = new JsonObject();
     public static final JsonObject ALREADY_CONNECTED = new JsonObject();
+    public static final JsonObject LUCKPERMS_NOT_LOADED = new JsonObject();
     public static final JsonObject SUCCESS = new JsonObject();
     public static final Gson GSON = new Gson();
     private static final ConsoleLogger cmdLogger = new ConsoleLogger();
@@ -66,8 +75,11 @@ public class Router {
         INVALID_PARAM.addProperty("message", "Invalid method parameter");
         INVALID_JSON.addProperty("message", "Invalid JSON");
         INVALID_PLAYER.addProperty("message", "Target player does not exist or is not online");
+        INVALID_TEAM.addProperty("message", "Target team does not exist");
+        INVALID_GROUP.addProperty("message", "Target group does not exist");
         ALREADY_CONNECTED.addProperty("message", "This plugin is already connected with a different guild.");
         INVALID_CODE.addProperty("message", "Invalid verification code");
+        LUCKPERMS_NOT_LOADED.addProperty("message", "LuckPerms is not loaded");
 
         Logger log = (Logger) LogManager.getRootLogger();
         log.addAppender(cmdLogger);
@@ -343,27 +355,89 @@ public class Router {
         }
     }
 
-    public static void removeChatChannel(JsonObject data, Consumer<RouterResponse> callback) {
-        callback.accept(handleChannel(data, "channels", false));
-    }
-
     public static void addChatChannel(JsonObject data, Consumer<RouterResponse> callback) {
-        callback.accept(handleChannel(data, "channels", true));
+        callback.accept(handleChangeArray(data, "channels", true));
     }
 
-    public static void removeStatsChannel(JsonObject data, Consumer<RouterResponse> callback) {
-        callback.accept(handleChannel(data, "stats-channels", false));
+    public static void removeChatChannel(JsonObject data, Consumer<RouterResponse> callback) {
+        callback.accept(handleChangeArray(data, "channels", false));
     }
 
     public static void addStatsChannel(JsonObject data, Consumer<RouterResponse> callback) {
-        callback.accept(handleChannel(data, "stats-channels", true));
+        callback.accept(handleChangeArray(data, "stats-channels", true));
+    }
+
+    public static void removeStatsChannel(JsonObject data, Consumer<RouterResponse> callback) {
+        callback.accept(handleChangeArray(data, "stats-channels", false));
+    }
+
+    public static void addSyncedRole(JsonObject data, Consumer<RouterResponse> callback) {
+        RouterResponse response = updateSyncedRoleMembers(data);
+
+        if(response.getStatus() == Status._200) {
+            if(!data.has("players") || data.get("players").isJsonNull()) {
+                getPlayers(data.get("name").getAsString(), data.get("isGroup").getAsBoolean(), players -> {
+                    JsonArray playersArray = new JsonArray();
+                    players.forEach(playersArray::add);
+                    data.add("players", playersArray);
+                    callback.accept(handleChangeArray(data, "synced-roles", true));
+                });
+            }
+            else callback.accept(handleChangeArray(data, "synced-roles", true));
+        }
+        else callback.accept(response);
+    }
+
+    public static void removeSyncedRole(JsonObject data, Consumer<RouterResponse> callback) {
+        callback.accept(handleChangeArray(data, "synced-roles", false));
+    }
+
+    public static void updateSyncedRole(JsonObject data, Consumer<RouterResponse> callback) {
+        RouterResponse response = updateSyncedRoleMembers(data);
+
+        if(response.getStatus() == Status._200) callback.accept(handleChangeArray(data, "synced-roles", true));
+        else callback.accept(response);
     }
 
     public static void listPlayers(JsonObject data, Consumer<RouterResponse> callback) {
         List<String> onlinePlayers = getServer().getOnlinePlayers().stream()
                 .map(Player::getName)
                 .collect(Collectors.toList());
-        callback.accept(new RouterResponse(Status._200, GSON.toJson(onlinePlayers)));
+        callback.accept(new RouterResponse(Status._200, GSON.toJson(onlinePlayers, new TypeToken<List<String>>() {}.getType())));
+    }
+
+    private static RouterResponse updateSyncedRoleMembers(JsonObject data) {
+        if(data.get("isGroup").getAsBoolean()) {
+            if(!getPluginManager().isPluginEnabled("LuckPerms"))
+                return new RouterResponse(Status._501, LUCKPERMS_NOT_LOADED.toString());
+
+            List<String> uuids = data.get("players") != null && !data.get("players").isJsonNull() ?
+                    GSON.fromJson(data.get("players"), new TypeToken<List<String>>() {}.getType()) :
+                    null;
+            return LuckPermsUtil.updateGroupMembers(data.get("name").getAsString(), uuids);
+        }
+        else {
+            Team team = getServer().getScoreboardManager().getMainScoreboard().getTeam(data.get("name").getAsString());
+            if(team == null) return new RouterResponse(Status._404, INVALID_TEAM.toString());
+
+            if(data.has("players") && !data.get("players").isJsonNull()) {
+                List<String> addedEntries = new ArrayList<>();
+
+                // Add players from json to team
+                for(JsonElement uuid : data.get("players").getAsJsonArray()) {
+                    OfflinePlayer player = getServer().getOfflinePlayer(UUID.fromString(uuid.getAsString()));
+                    if(team.getEntries().contains(player.getName())) continue;
+                    team.addEntry(player.getName());
+                    addedEntries.add(player.getName());
+                }
+                //Remove players from team that were not added (not in json)
+                for(String entry : team.getEntries()) {
+                    if(addedEntries.contains(entry)) continue;
+                    team.removeEntry(entry);
+                }
+            }
+            return new RouterResponse(Status._200, SUCCESS.toString());
+        }
     }
 
     private static String markdownToColorCodes(String markdown) {
@@ -388,32 +462,59 @@ public class Router {
         return markdown;
     }
 
-    private static RouterResponse handleChannel(JsonObject channel, String jsonFieldName, boolean addChannel) {
+    public static RouterResponse handleChangeArray(JsonObject entry, String jsonFieldName, boolean addEntry) {
         try {
             JsonObject connJson = DiscordLinker.getConnJson();
-            JsonArray channels;
-            if(!connJson.has(jsonFieldName)) channels = new JsonArray();
-            else channels = connJson.get(jsonFieldName).getAsJsonArray();
+            JsonArray array;
+            if(!connJson.has(jsonFieldName)) array = new JsonArray();
+            else array = connJson.get(jsonFieldName).getAsJsonArray();
 
             //Remove channels with the same id as added channel to prevent duplicates
-            for(JsonElement jsonChannel : channels) {
-                if(jsonChannel.getAsJsonObject().get("id").getAsString().equals(channel.get("id").getAsString())) {
-                    channels.remove(jsonChannel);
+            for(JsonElement jsonEntry : array) {
+                if(jsonEntry.getAsJsonObject().get("id").getAsString().equals(entry.get("id").getAsString())) {
+                    array.remove(jsonEntry);
                     break;
                 }
             }
-            if(addChannel) channels.add(channel);
+            if(addEntry) array.add(entry);
 
             //Update connJson with new channels
-            connJson.add(jsonFieldName, channels);
+            connJson.add(jsonFieldName, array);
             DiscordLinker.getPlugin().updateConn(connJson);
 
-            return new RouterResponse(Status._200, channels.toString());
+            return new RouterResponse(Status._200, array.toString());
         }
         catch(IOException err) {
             JsonObject error = new JsonObject();
             error.addProperty("message", err.toString());
             return new RouterResponse(Status._500, error.toString());
+        }
+    }
+
+    public static void getPlayers(String name, boolean isGroup, Consumer<List<String>> callback) {
+        if(isGroup) {
+            if(!getPluginManager().isPluginEnabled("LuckPerms")) {
+                callback.accept(new ArrayList<>());
+                return;
+            }
+
+            LuckPermsUtil.getGroupMembers(name, callback);
+        }
+        else {
+            Team team = getServer().getScoreboardManager().getMainScoreboard().getTeam(name);
+            if(team == null) {
+                callback.accept(new ArrayList<>());
+                return;
+            }
+
+            List<String> players = new ArrayList<>();
+            //Add uuids of all players in team to players list
+            team.getEntries().forEach(entry -> {
+                OfflinePlayer player = getServer().getOfflinePlayer(entry);
+                if(player != null) players.add(player.getUniqueId().toString());
+            });
+
+            callback.accept(players);
         }
     }
 

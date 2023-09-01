@@ -21,6 +21,9 @@ public enum Route {
     CHAT_CHANNEL_ADD("/channel/add", "add-channel", Router::addChatChannel),
     STATS_CHANNEL_REMOVE("/stats-channel/remove", "remove-stats-channel", Router::removeStatsChannel),
     STATS_CHANNEL_ADD("/stats-channel/add", "add-stats-channel", Router::addStatsChannel),
+    SYNCED_ROLE_ADD("/synced-role/add", "add-synced-role", Router::addSyncedRole),
+    SYNCED_ROLE_REMOVE("/synced-role/remove", "remove-synced-role", Router::removeSyncedRole),
+    SYNCED_ROLE_UPDATE("/synced-role/update", "update-synced-role", Router::updateSyncedRole),
     LIST_PLAYERS("/players", "list-players", Router::listPlayers),
     ROOT("/", null, null, false, false);
 
