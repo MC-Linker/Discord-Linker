@@ -1,4 +1,4 @@
-package me.lianecx.discordlinker;
+package me.lianecx.discordlinker.utilities;
 
 import org.apache.logging.log4j.core.LogEvent;
 import org.apache.logging.log4j.core.appender.AbstractAppender;
