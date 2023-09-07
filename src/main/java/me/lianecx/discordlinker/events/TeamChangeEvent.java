@@ -1,6 +1,10 @@
 package me.lianecx.discordlinker.events;
 
 import me.lianecx.discordlinker.DiscordLinker;
+import me.lianecx.discordlinker.utilities.CommandUtil;
+import org.bukkit.command.CommandSender;
+import org.bukkit.entity.Entity;
+import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerCommandPreprocessEvent;
@@ -15,20 +19,20 @@ public class TeamChangeEvent implements Listener {
 
     @EventHandler
     public void onCommand(PlayerCommandPreprocessEvent event) {
-        handleCommand(event.getMessage());
+        handleCommand(event.getPlayer(), event.getMessage());
     }
 
     @EventHandler
     public void onServerCommand(ServerCommandEvent event) {
-        handleCommand(event.getCommand());
+        handleCommand(event.getSender(), event.getCommand());
     }
 
     @EventHandler
     public void onRemoteCommand(RemoteServerCommandEvent event) {
-        handleCommand(event.getCommand());
+        handleCommand(event.getSender(), event.getCommand());
     }
 
-    private void handleCommand(String command) {
+    private void handleCommand(CommandSender sender, String command) {
         if(!command.startsWith("/team") && !command.startsWith("team")) return;
         if(!DiscordLinker.getConnJson().has("synced-roles")) return;
         String[] args = command.split(" ");
@@ -41,19 +45,23 @@ public class TeamChangeEvent implements Listener {
                 getScheduler().runTaskLater(DiscordLinker.getPlugin(), () -> sendRoleSyncUpdateFromTeam(getServer().getScoreboardManager().getMainScoreboard().getTeam(args[2])), 1);
                 break;
             case "leave":
-                //TODO Parse target selectors
-
-                Team team = getServer().getScoreboardManager().getMainScoreboard().getEntryTeam(args[2]);
-                getScheduler().runTaskLater(DiscordLinker.getPlugin(), () -> sendRoleSyncUpdateFromTeam(team), 1);
+                Entity[] selected = CommandUtil.getTargets(sender, args[2]);
+                if(selected == null) return;
+                for(Entity entity : selected) {
+                    if(!(entity instanceof Player)) continue;
+                    Team team = getServer().getScoreboardManager().getMainScoreboard().getEntryTeam(entity.getName());
+                    getScheduler().runTaskLater(DiscordLinker.getPlugin(), () -> sendRoleSyncUpdateFromTeam(team), 1);
+                }
                 break;
             case "remove":
-                //TODO remove synced role
+                Team team = getServer().getScoreboardManager().getMainScoreboard().getTeam(args[2]);
+                if(team != null) DiscordLinker.getAdapterManager().removeSyncedRole(team.getName(), false);
                 break;
         }
     }
 
     private void sendRoleSyncUpdateFromTeam(Team team) {
         if(team == null) return;
-        DiscordLinker.getAdapterManager().sendRoleSyncUpdate(team.getName(), false);
+        DiscordLinker.getAdapterManager().updateSyncedRole(team.getName(), false);
     }
 }
