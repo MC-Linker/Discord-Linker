@@ -59,11 +59,11 @@ public class ChatListeners implements Listener {
 
     public void sendChatAsync(String message, ChatType type, String sender) {
         DiscordLinker.getPlugin().getServer().getScheduler().runTaskAsynchronously(DiscordLinker.getPlugin(), () ->
-                DiscordLinker.getAdapterManager().sendChat(message, type, sender));
+                DiscordLinker.getAdapterManager().chat(message, type, sender));
     }
 
     public void sendStatsAsync(StatsUpdateEvent type) {
         DiscordLinker.getPlugin().getServer().getScheduler().runTaskAsynchronously(DiscordLinker.getPlugin(), () ->
-                DiscordLinker.getAdapterManager().sendStatsUpdate(type));
+                DiscordLinker.getAdapterManager().updateStatsChannel(type));
     }
 }

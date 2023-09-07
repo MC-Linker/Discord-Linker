@@ -1,20 +1,29 @@
-package me.lianecx.discordlinker;
+package me.lianecx.discordlinker.utilities;
 
 import express.utils.Status;
+import me.lianecx.discordlinker.events.luckperms.DeleteGroupEvent;
+import me.lianecx.discordlinker.events.luckperms.GroupMemberChangeEvent;
 import me.lianecx.discordlinker.network.Router;
 import net.luckperms.api.LuckPerms;
 import net.luckperms.api.LuckPermsProvider;
+import net.luckperms.api.event.group.GroupDeleteEvent;
+import net.luckperms.api.event.node.NodeMutateEvent;
 import net.luckperms.api.model.group.Group;
-import net.luckperms.api.node.NodeType;
 import net.luckperms.api.node.matcher.NodeMatcher;
 import net.luckperms.api.node.types.InheritanceNode;
 
 import java.util.*;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 public class LuckPermsUtil {
 
     public static final LuckPerms LUCK_PERMS = LuckPermsProvider.get();
+
+    public static void init() {
+        LUCK_PERMS.getEventBus().subscribe(NodeMutateEvent.class, GroupMemberChangeEvent::onNodeMutate);
+        LUCK_PERMS.getEventBus().subscribe(GroupDeleteEvent.class, DeleteGroupEvent::onGroupDelete);
+    }
 
     public static Router.RouterResponse updateGroupMembers(String name, List<String> uuids) {
         try {
@@ -63,18 +72,11 @@ public class LuckPermsUtil {
             return;
         }
 
-        List<String> players = new ArrayList<>();
+        List<UUID> players = new ArrayList<>();
         NodeMatcher<InheritanceNode> matcher = NodeMatcher.key(InheritanceNode.builder(group).build());
         LUCK_PERMS.getUserManager().searchAll(matcher).thenAcceptAsync(users -> {
-            for(UUID uuid : users.keySet()) {
-                LUCK_PERMS.getUserManager().loadUser(uuid)
-                        .thenAcceptAsync(user -> {
-                            if(user == null) return;
-                            if(user.getNodes(NodeType.INHERITANCE).contains(InheritanceNode.builder(group).build()))
-                                players.add(user.getUniqueId().toString());
-                        });
-            }
-            callback.accept(players);
+            players.addAll(users.keySet());
+            callback.accept(players.stream().map(UUID::toString).collect(Collectors.toList()));
         });
     }
 }
