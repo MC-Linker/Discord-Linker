@@ -147,7 +147,7 @@ public class AdapterManager {
         return httpAdapter != null;
     }
 
-    public void sendChat(String message, ChatType type, String player) {
+    public void chat(String message, ChatType type, String player) {
         JsonArray channels = PLUGIN.filterChannels(type);
         if(channels == null || channels.size() == 0) return;
 
@@ -165,7 +165,7 @@ public class AdapterManager {
         }
     }
 
-    public void sendStatsUpdate(StatsUpdateEvent event) {
+    public void updateStatsChannel(StatsUpdateEvent event) {
         JsonArray channels = PLUGIN.filterChannels(event);
         if(channels == null || channels.size() == 0) return;
 
@@ -183,17 +183,47 @@ public class AdapterManager {
         }
     }
 
-    public void sendRoleSyncUpdate(String name, boolean isGroup) {
+    public void updateSyncedRole(String name, boolean isGroup) {
+        getSyncedRole(name, isGroup, true, role -> {
+            System.out.println(role);
+            if(role == null) return;
+
+            if(isWebSocketConnected()) webSocketAdapter.send("update-synced-role", role);
+            else if(isHttpConnected()) {
+                HttpAdapter.HttpResponse response = HttpAdapter.send(RequestMethod.POST, "/update-synced-role", role);
+                if(response != null && response.getStatus() == 403)
+                    PLUGIN.deleteConn(); //Bot could not find a valid connection to this server
+            }
+        });
+    }
+
+    public void removeSyncedRole(String name, boolean isGroup) {
+        getSyncedRole(name, isGroup, false, role -> {
+            if(role == null) return;
+
+            if(isWebSocketConnected()) webSocketAdapter.send("remove-synced-role", role);
+            else if(isHttpConnected()) {
+                HttpAdapter.HttpResponse response = HttpAdapter.send(RequestMethod.POST, "/remove-synced-role", role);
+                if(response != null && response.getStatus() == 403)
+                    PLUGIN.deleteConn(); //Bot could not find a valid connection to this server
+            }
+        });
+    }
+
+    private void getSyncedRole(String name, boolean isGroup, boolean addEntry, Consumer<JsonObject> callback) {
         JsonArray syncedRoles = DiscordLinker.getConnJson().get("synced-roles").getAsJsonArray();
 
-        // Check if the team is synced
+        // Check if the team/group is synced
         AtomicReference<JsonObject> role = new AtomicReference<>();
         for(JsonElement roleJson : syncedRoles) {
             JsonObject roleObj = roleJson.getAsJsonObject();
             if(roleObj.get("name").getAsString().equals(name) && roleObj.get("isGroup").getAsBoolean() == isGroup)
                 role.set(roleObj);
         }
-        if(role.get() == null) return;
+        if(role.get() == null) {
+            callback.accept(null);
+            return;
+        }
 
         Router.getPlayers(name, isGroup, uuids -> {
             JsonArray players = new JsonArray();
@@ -201,14 +231,9 @@ public class AdapterManager {
             role.get().add("players", players);
 
             //Update connJson
-            Router.handleChangeArray(role.get(), "synced-roles", true);
+            Router.handleChangeArray(role.get(), "synced-roles", addEntry);
 
-            if(isWebSocketConnected()) webSocketAdapter.send("update-synced-role", role.get());
-            else if(isHttpConnected()) {
-                HttpAdapter.HttpResponse response = HttpAdapter.send(RequestMethod.POST, "/update-synced-role", role.get());
-                if(response != null && response.getStatus() == 403)
-                    PLUGIN.deleteConn(); //Bot could not find a valid connection to this server
-            }
+            callback.accept(role.get());
         });
     }
 
