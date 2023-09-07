@@ -6,18 +6,14 @@ import me.lianecx.discordlinker.commands.LinkerCommand;
 import me.lianecx.discordlinker.commands.LinkerTabCompleter;
 import me.lianecx.discordlinker.commands.VerifyCommand;
 import me.lianecx.discordlinker.events.ChatListeners;
-import me.lianecx.discordlinker.events.JoinListener;
+import me.lianecx.discordlinker.events.JoinEvent;
 import me.lianecx.discordlinker.events.TeamChangeEvent;
-import me.lianecx.discordlinker.events.luckperms.GroupChangeEvent;
 import me.lianecx.discordlinker.network.ChatType;
 import me.lianecx.discordlinker.network.Router;
 import me.lianecx.discordlinker.network.StatsUpdateEvent;
 import me.lianecx.discordlinker.network.adapters.AdapterManager;
 import me.lianecx.discordlinker.network.adapters.HttpAdapter;
-import net.luckperms.api.LuckPerms;
-import net.luckperms.api.LuckPermsProvider;
-import net.luckperms.api.event.EventBus;
-import net.luckperms.api.event.node.NodeMutateEvent;
+import me.lianecx.discordlinker.utilities.LuckPermsUtil;
 import org.bstats.bukkit.Metrics;
 import org.bstats.charts.SimplePie;
 import org.bukkit.ChatColor;
@@ -81,8 +77,8 @@ public final class DiscordLinker extends JavaPlugin {
             else adapterManager = new AdapterManager(getPort());
             adapterManager.startAll(connected -> {
                 if(!connected) return;
-                adapterManager.sendChat("", ChatType.START, null);
-                adapterManager.sendStatsUpdate(StatsUpdateEvent.ONLINE);
+                adapterManager.chat("", ChatType.START, null);
+                adapterManager.updateStatsChannel(StatsUpdateEvent.ONLINE);
             });
 
             Metrics metrics = new Metrics(this, PLUGIN_ID);
@@ -90,18 +86,14 @@ public final class DiscordLinker extends JavaPlugin {
             metrics.addCustomChart(new SimplePie("server_uses_http", () -> Objects.equals(protocol, "http") ? "true" : "false"));
 
             getServer().getPluginManager().registerEvents(new ChatListeners(), this);
-            getServer().getPluginManager().registerEvents(new JoinListener(), this);
+            getServer().getPluginManager().registerEvents(new JoinEvent(), this);
             getServer().getPluginManager().registerEvents(new TeamChangeEvent(), this);
             getCommand("linker").setExecutor(new LinkerCommand());
             getCommand("linker").setTabCompleter(new LinkerTabCompleter());
             getCommand("verify").setExecutor(new VerifyCommand());
             getCommand("discord").setExecutor(new DiscordCommand());
 
-            if(getServer().getPluginManager().isPluginEnabled("LuckPerms")) {
-                LuckPerms luckPerms = LuckPermsProvider.get();
-                EventBus eventBus = luckPerms.getEventBus();
-                eventBus.subscribe(this, NodeMutateEvent.class, GroupChangeEvent::onNodeMutate);
-            }
+            if(getServer().getPluginManager().isPluginEnabled("LuckPerms")) LuckPermsUtil.init();
 
             getLogger().info(ChatColor.GREEN + "Plugin enabled.");
         });
@@ -109,9 +101,9 @@ public final class DiscordLinker extends JavaPlugin {
 
     @Override
     public void onDisable() {
-        adapterManager.sendChat("", ChatType.CLOSE, null);
-        adapterManager.sendStatsUpdate(StatsUpdateEvent.OFFLINE);
-        adapterManager.sendStatsUpdate(StatsUpdateEvent.MEMBERS);
+        adapterManager.chat("", ChatType.CLOSE, null);
+        adapterManager.updateStatsChannel(StatsUpdateEvent.OFFLINE);
+        adapterManager.updateStatsChannel(StatsUpdateEvent.MEMBERS);
         adapterManager.stopAll();
 
         getServer().getScheduler().cancelTasks(this);
