@@ -14,7 +14,7 @@ import org.bukkit.event.server.ServerCommandEvent;
 
 public class ChatListeners implements Listener {
 
-    @EventHandler(ignoreCancelled = true, priority = EventPriority.MONITOR)
+    @EventHandler(ignoreCancelled = true, priority = EventPriority.NORMAL)
     public void onChatMessage(AsyncPlayerChatEvent event) {
         //Remove color codes
         String replacedMessage = ChatColor.stripColor(event.getMessage().replaceAll("(?i)&[0-9A-FK-OR]", ""));
