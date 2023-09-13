@@ -406,6 +406,22 @@ public class Router {
         callback.accept(new RouterResponse(Status._200, GSON.toJson(onlinePlayers, new TypeToken<List<String>>() {}.getType())));
     }
 
+    public static void listGroupsAndTeams(JsonObject data, Consumer<RouterResponse> callback) {
+        List<String> groups = new ArrayList<>();
+        List<String> teams = new ArrayList<>();
+
+        if(getPluginManager().isPluginEnabled("LuckPerms")) {
+            groups = LuckPermsUtil.getGroupNames();
+        }
+
+        getServer().getScoreboardManager().getMainScoreboard().getTeams().forEach(team -> teams.add(team.getName()));
+
+        JsonObject response = new JsonObject();
+        response.add("groups", GSON.toJsonTree(groups, new TypeToken<List<String>>() {}.getType()));
+        response.add("teams", GSON.toJsonTree(teams, new TypeToken<List<String>>() {}.getType()));
+        callback.accept(new RouterResponse(Status._200, response.toString()));
+    }
+
     private static RouterResponse updateSyncedRoleMembers(JsonObject data) {
         if(data.get("isGroup").getAsBoolean()) {
             if(!getPluginManager().isPluginEnabled("LuckPerms"))

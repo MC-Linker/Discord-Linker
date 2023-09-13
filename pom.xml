@@ -6,7 +6,7 @@
 
     <groupId>me.lianecx</groupId>
     <artifactId>Discord-Linker</artifactId>
-    <version>3.3</version>
+    <version>3.4-SNAPSHOT</version>
     <packaging>jar</packaging>
 
     <name>Discord-Linker</name>
@@ -109,6 +109,12 @@
             <groupId>io.github.bananapuncher714</groupId>
             <artifactId>nbteditor</artifactId>
             <version>7.18.5</version>
+        </dependency>
+        <dependency>
+            <groupId>net.luckperms</groupId>
+            <artifactId>api</artifactId>
+            <version>5.4</version>
+            <scope>provided</scope>
         </dependency>
     </dependencies>
 </project>

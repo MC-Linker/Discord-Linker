@@ -25,6 +25,10 @@ public class LuckPermsUtil {
         LUCK_PERMS.getEventBus().subscribe(GroupDeleteEvent.class, DeleteGroupEvent::onGroupDelete);
     }
 
+    public static List<String> getGroupNames() {
+        return LUCK_PERMS.getGroupManager().getLoadedGroups().stream().map(Group::getName).collect(Collectors.toList());
+    }
+
     public static Router.RouterResponse updateGroupMembers(String name, List<String> uuids) {
         try {
             Group group = LUCK_PERMS.getGroupManager().getGroup(name);

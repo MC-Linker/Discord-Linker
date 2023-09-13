@@ -25,6 +25,7 @@ public enum Route {
     SYNCED_ROLE_REMOVE("/synced-role/remove", "remove-synced-role", Router::removeSyncedRole),
     SYNCED_ROLE_UPDATE("/synced-role/update", "update-synced-role", Router::updateSyncedRole),
     LIST_PLAYERS("/players", "list-players", Router::listPlayers),
+    LIST_TEAMS_AND_GROUPS("/teams-and-groups", "list-teams-and-groups", Router::listGroupsAndTeams),
     ROOT("/", null, null, false, false);
 
     private final String eventName;
