@@ -14,7 +14,7 @@ public class ConsoleLogger extends AbstractAppender {
     private final List<String> loggedData;
 
     public ConsoleLogger() {
-        super("SMP-Plugin", null, PatternLayout.newBuilder().withPattern("[%d{HH:mm:ss} %level]: %msg").build(), true, null);
+        super("Discord-Linker", null, PatternLayout.newBuilder().withPattern("[%d{HH:mm:ss} %level]: %msg").build(), true, null);
 
         isLogging = false;
         loggedData = new ArrayList<>();

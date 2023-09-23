@@ -185,7 +185,6 @@ public class AdapterManager {
 
     public void updateSyncedRole(String name, boolean isGroup) {
         getSyncedRole(name, isGroup, true, role -> {
-            System.out.println(role);
             if(role == null) return;
 
             if(isWebSocketConnected()) webSocketAdapter.send("update-synced-role", role);

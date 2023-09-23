@@ -14,10 +14,8 @@ import static org.bukkit.Bukkit.getScheduler;
 public class GroupMemberChangeEvent {
 
     public static void onNodeMutate(NodeMutateEvent event) {
-        System.out.println(event);
         if(!event.isUser()) return;
 
-        // Check if the node was an inheritance node
         Set<InheritanceNode> addedInheritance = event.getDataAfter().stream()
                 .filter(node -> node.getType() == NodeType.INHERITANCE && !event.getDataBefore().contains(node))
                 .map(NodeType.INHERITANCE::cast)
