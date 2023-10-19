@@ -115,6 +115,8 @@ public class AdapterManager {
                 startHttp();
                 callback.accept(false);
             }
+
+            webSocketAdapter.getSocket().off("auth-success"); // Only run once
         });
         tempAdapter.connect(connected -> {
             //If connected, the bot will call auth-success above
