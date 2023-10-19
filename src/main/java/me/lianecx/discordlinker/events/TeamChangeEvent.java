@@ -12,6 +12,9 @@ import org.bukkit.event.server.RemoteServerCommandEvent;
 import org.bukkit.event.server.ServerCommandEvent;
 import org.bukkit.scoreboard.Team;
 
+import java.util.HashSet;
+import java.util.Set;
+
 import static org.bukkit.Bukkit.getScheduler;
 import static org.bukkit.Bukkit.getServer;
 
@@ -47,11 +50,17 @@ public class TeamChangeEvent implements Listener {
             case "leave":
                 Entity[] selected = CommandUtil.getTargets(sender, args[2]);
                 if(selected == null) return;
+
+                Set<Team> teams = new HashSet<>();
                 for(Entity entity : selected) {
                     if(!(entity instanceof Player)) continue;
                     Team team = getServer().getScoreboardManager().getMainScoreboard().getEntryTeam(entity.getName());
-                    getScheduler().runTaskLater(DiscordLinker.getPlugin(), () -> sendRoleSyncUpdateFromTeam(team), 1);
+                    if(team != null) teams.add(team);
                 }
+
+                getScheduler().runTaskLater(DiscordLinker.getPlugin(), () -> {
+                    for(Team team : teams) sendRoleSyncUpdateFromTeam(team);
+                }, 1);
                 break;
             case "remove":
                 Team team = getServer().getScoreboardManager().getMainScoreboard().getTeam(args[2]);
