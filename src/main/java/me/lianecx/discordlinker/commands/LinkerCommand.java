@@ -21,7 +21,7 @@ public class LinkerCommand implements CommandExecutor {
                 PLUGIN.reloadConfig();
 
                 DiscordLinker.getAdapterManager().setHttpPort(PLUGIN.getPort());
-                DiscordLinker.getAdapterManager().startAll(connected -> sender.sendMessage(ChatColor.GREEN + "Successfully reloaded config."));
+                DiscordLinker.getAdapterManager().start(connected -> sender.sendMessage(ChatColor.GREEN + "Successfully reloaded config."));
                 break;
             case "port":
                 if(args.length == 1) {
@@ -81,7 +81,6 @@ public class LinkerCommand implements CommandExecutor {
                         sender.sendMessage(ChatColor.RED + "Failed to connect to Discord! Please validate the code and try again.");
                 });
                 break;
-            //Add disconnect
             case "disconnect":
                 if(DiscordLinker.getConnJson() == null) {
                     sender.sendMessage(ChatColor.RED + "The server is not connected! Please connect it first using `/connect plugin` in Discord.");

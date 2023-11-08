@@ -21,7 +21,7 @@ import java.security.NoSuchAlgorithmException;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
-public class HttpAdapter {
+public class HttpAdapter implements NetworkAdapter {
 
     private final Express app;
     private static final String PLUGIN_VERSION = DiscordLinker.getPlugin().getDescription().getVersion();
@@ -92,6 +92,8 @@ public class HttpAdapter {
             }
 
             int status = conn.getResponseCode();
+            //Bot could not find a valid connection to this server
+            if(status == 403) DiscordLinker.getPlugin().deleteConn();
             Reader streamReader = new InputStreamReader(status > 299 ? conn.getErrorStream() : conn.getInputStream());
             JsonObject response = new JsonParser().parse(streamReader).getAsJsonObject();
             return new HttpResponse(status, response);

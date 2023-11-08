@@ -75,7 +75,7 @@ public final class DiscordLinker extends JavaPlugin {
 
             if(Objects.equals(protocol, "websocket")) adapterManager = new AdapterManager(token, getPort());
             else adapterManager = new AdapterManager(getPort());
-            adapterManager.startAll(connected -> {
+            adapterManager.start(connected -> {
                 if(!connected) return;
                 adapterManager.chat("", ChatType.START, null);
                 adapterManager.updateStatsChannel(StatsUpdateEvent.ONLINE);
@@ -104,7 +104,7 @@ public final class DiscordLinker extends JavaPlugin {
         adapterManager.chat("", ChatType.CLOSE, null);
         adapterManager.updateStatsChannel(StatsUpdateEvent.OFFLINE);
         adapterManager.updateStatsChannel(StatsUpdateEvent.MEMBERS);
-        adapterManager.stopAll();
+        adapterManager.stop();
 
         getServer().getScheduler().cancelTasks(this);
         getLogger().info(ChatColor.RED + "Plugin disabled.");

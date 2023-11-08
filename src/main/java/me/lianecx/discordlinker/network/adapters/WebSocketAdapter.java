@@ -23,7 +23,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
-public class WebSocketAdapter {
+public class WebSocketAdapter implements NetworkAdapter {
 
     private final Socket socket;
     private static final DiscordLinker PLUGIN = DiscordLinker.getPlugin();
@@ -83,21 +83,27 @@ public class WebSocketAdapter {
         this.socket = socket;
     }
 
-    public void connect(Consumer<Boolean> callback) {
+    public void connect(int httpPort, Consumer<Boolean> callback) {
         //Add listeners and remove them after the first event
         AtomicReference<Emitter.Listener> connectListener = new AtomicReference<>();
         AtomicReference<Emitter.Listener> errorListener = new AtomicReference<>();
-        connectListener.set(args -> {
-            callback.accept(true);
-            socket.off(Socket.EVENT_CONNECT, connectListener.get());
-            socket.off(Socket.EVENT_CONNECT_ERROR, errorListener.get());
-            socket.off(Socket.EVENT_DISCONNECT, errorListener.get());
+        connectListener.set(new Emitter.Listener() {
+            @Override
+            public void call(Object... args) {
+                callback.accept(true);
+                socket.off(Socket.EVENT_CONNECT, this);
+                socket.off(Socket.EVENT_CONNECT_ERROR, this);
+                socket.off(Socket.EVENT_DISCONNECT, this);
+            }
         });
-        errorListener.set(args -> {
-            callback.accept(false);
-            socket.off(Socket.EVENT_CONNECT, connectListener.get());
-            socket.off(Socket.EVENT_CONNECT_ERROR, errorListener.get());
-            socket.off(Socket.EVENT_DISCONNECT, errorListener.get());
+        errorListener.set(new Emitter.Listener() {
+            @Override
+            public void call(Object... args) {
+                callback.accept(false);
+                socket.off(Socket.EVENT_CONNECT, connectListener.get());
+                socket.off(Socket.EVENT_CONNECT_ERROR, this);
+                socket.off(Socket.EVENT_DISCONNECT, this);
+            }
         });
 
         socket.on(Socket.EVENT_CONNECT, connectListener.get());
@@ -121,10 +127,6 @@ public class WebSocketAdapter {
 
     public void send(String event, JsonElement data, Ack ack) {
         socket.emit(event, data, ack);
-    }
-
-    public void send(String event, Ack ack) {
-        socket.emit(event, ack);
     }
 
     private JsonObject jsonFromStatus(Status status) {

@@ -485,7 +485,7 @@ public class Router {
             if(!connJson.has(jsonFieldName)) array = new JsonArray();
             else array = connJson.get(jsonFieldName).getAsJsonArray();
 
-            //Remove channels with the same id as added channel to prevent duplicates
+            //Remove channels with same id as entry
             for(JsonElement jsonEntry : array) {
                 if(jsonEntry.getAsJsonObject().get("id").getAsString().equals(entry.get("id").getAsString())) {
                     array.remove(jsonEntry);
