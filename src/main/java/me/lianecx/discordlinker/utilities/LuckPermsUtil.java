@@ -29,17 +29,15 @@ public class LuckPermsUtil {
         return LUCK_PERMS.getGroupManager().getLoadedGroups().stream().map(Group::getName).collect(Collectors.toList());
     }
 
-    public static Router.RouterResponse updateGroupMembers(String name, List<String> uuids) {
+    public static Router.RouterResponse updateGroupMembers(String name, List<String> uuids, boolean onlyAddMembers) {
         try {
             Group group = LUCK_PERMS.getGroupManager().getGroup(name);
-            if(group == null) {
-                return new Router.RouterResponse(Status._404, Router.INVALID_GROUP.toString());
-            }
+            if(group == null) return new Router.RouterResponse(Status._404, Router.INVALID_GROUP.toString());
 
-            if(uuids != null) {
-                NodeMatcher<InheritanceNode> matcher = NodeMatcher.key(InheritanceNode.builder(group).build());
+            NodeMatcher<InheritanceNode> matcher = NodeMatcher.key(InheritanceNode.builder(group).build());
 
-                LUCK_PERMS.getUserManager().searchAll(matcher).thenAccept((Map<UUID, Collection<InheritanceNode>> map) -> {
+            LUCK_PERMS.getUserManager().searchAll(matcher).thenAccept((Map<UUID, Collection<InheritanceNode>> map) -> {
+                if(!onlyAddMembers) {
                     map.keySet().forEach(uuid -> {
                         if(uuids.contains(uuid.toString())) return;
                         LUCK_PERMS.getUserManager().loadUser(uuid)
@@ -49,24 +47,28 @@ public class LuckPermsUtil {
                                     LUCK_PERMS.getUserManager().saveUser(user);
                                 });
                     });
+                }
 
-                    uuids.forEach(uuid -> {
-                        UUID uuidObj = UUID.fromString(uuid);
-                        if(map.containsKey(uuidObj)) return;
-                        LUCK_PERMS.getUserManager().loadUser(uuidObj)
-                                .thenAcceptAsync(user -> {
-                                    if(user == null) return;
-                                    user.data().add(InheritanceNode.builder(group).build());
-                                    LUCK_PERMS.getUserManager().saveUser(user);
-                                });
-                    });
+                uuids.forEach(uuid -> {
+                    UUID uuidObj = UUID.fromString(uuid);
+                    if(map.containsKey(uuidObj)) return;
+                    LUCK_PERMS.getUserManager().loadUser(uuidObj)
+                            .thenAcceptAsync(user -> {
+                                if(user == null) return;
+                                user.data().add(InheritanceNode.builder(group).build());
+                                LUCK_PERMS.getUserManager().saveUser(user);
+                            });
                 });
-            }
+            });
             return new Router.RouterResponse(Status._200, Router.SUCCESS.toString());
         }
         catch(Exception err) {
             return new Router.RouterResponse(Status._501, Router.LUCKPERMS_NOT_LOADED.toString());
         }
+    }
+
+    public static Router.RouterResponse updateGroupMembers(String name, List<String> uuids) {
+        return updateGroupMembers(name, uuids, false);
     }
 
     public static void getGroupMembers(String name, Consumer<List<String>> callback) {

@@ -374,17 +374,7 @@ public class Router {
     public static void addSyncedRole(JsonObject data, Consumer<RouterResponse> callback) {
         RouterResponse response = updateSyncedRoleMembers(data);
 
-        if(response.getStatus() == Status._200) {
-            if(!data.has("players") || data.get("players").isJsonNull()) {
-                getPlayers(data.get("name").getAsString(), data.get("isGroup").getAsBoolean(), players -> {
-                    JsonArray playersArray = new JsonArray();
-                    players.forEach(playersArray::add);
-                    data.add("players", playersArray);
-                    callback.accept(handleChangeArray(data, "synced-roles", true));
-                });
-            }
-            else callback.accept(handleChangeArray(data, "synced-roles", true));
-        }
+        if(response.getStatus() == Status._200) callback.accept(handleChangeArray(data, "synced-roles", true));
         else callback.accept(response);
     }
 
@@ -427,33 +417,42 @@ public class Router {
             if(!getPluginManager().isPluginEnabled("LuckPerms"))
                 return new RouterResponse(Status._501, LUCKPERMS_NOT_LOADED.toString());
 
-            List<String> uuids = data.get("players") != null && !data.get("players").isJsonNull() ?
-                    GSON.fromJson(data.get("players"), new TypeToken<List<String>>() {}.getType()) :
-                    null;
-            return LuckPermsUtil.updateGroupMembers(data.get("name").getAsString(), uuids);
+            List<String> uuids = GSON.fromJson(data.get("players"), new TypeToken<List<String>>() {}.getType());
+            if(data.get("override").isJsonNull())
+                return LuckPermsUtil.updateGroupMembers(data.get("name").getAsString(), uuids, true);
+            else if(data.get("override").getAsString().equals("minecraft"))
+                return LuckPermsUtil.updateGroupMembers(data.get("name").getAsString(), uuids);
+            else if(data.get("override").getAsString().equals("discord"))
+                return new RouterResponse(Status._200, SUCCESS.toString());
         }
         else {
             Team team = getServer().getScoreboardManager().getMainScoreboard().getTeam(data.get("name").getAsString());
             if(team == null) return new RouterResponse(Status._404, INVALID_TEAM.toString());
 
-            if(data.has("players") && !data.get("players").isJsonNull()) {
-                List<String> addedEntries = new ArrayList<>();
+            //Names of players that will be added to team
+            List<String> addedEntries = new ArrayList<>();
 
+            if(data.get("override").isJsonNull() || data.get("override").getAsString().equals("minecraft")) {
                 // Add players from json to team
                 for(JsonElement uuid : data.get("players").getAsJsonArray()) {
                     OfflinePlayer player = getServer().getOfflinePlayer(UUID.fromString(uuid.getAsString()));
+                    addedEntries.add(player.getName());
                     if(team.getEntries().contains(player.getName())) continue;
                     team.addEntry(player.getName());
-                    addedEntries.add(player.getName());
                 }
+            }
+            if(data.get("override").getAsString().equals("minecraft")) {
                 //Remove players from team that were not added (not in json)
                 for(String entry : team.getEntries()) {
                     if(addedEntries.contains(entry)) continue;
                     team.removeEntry(entry);
                 }
             }
+
             return new RouterResponse(Status._200, SUCCESS.toString());
         }
+
+        return new RouterResponse(Status._400, INVALID_PARAM.toString());
     }
 
     private static String markdownToColorCodes(String markdown) {
