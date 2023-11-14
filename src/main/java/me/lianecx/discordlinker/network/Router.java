@@ -213,7 +213,7 @@ public class Router {
         String targetUsername = "";
         try {
             msg = data.get("msg").getAsString();
-            replyMsg = data.get("reply_msg") != null && !data.get("reply_msg").isJsonNull() ? data.get("reply_msg").getAsString() : null;
+            replyMsg = data.has("reply_msg") && !data.get("reply_msg").isJsonNull() ? data.get("reply_msg").getAsString() : null;
             username = data.get("username").getAsString();
             privateMsg = data.get("private").getAsBoolean();
             if(replyMsg != null) replyUsername = data.get("reply_username").getAsString();
@@ -418,7 +418,7 @@ public class Router {
                 return new RouterResponse(Status._501, LUCKPERMS_NOT_LOADED.toString());
 
             List<String> uuids = GSON.fromJson(data.get("players"), new TypeToken<List<String>>() {}.getType());
-            if(data.get("override").isJsonNull())
+            if(data.get("override") == null)
                 return LuckPermsUtil.updateGroupMembers(data.get("name").getAsString(), uuids, true);
             else if(data.get("override").getAsString().equals("minecraft"))
                 return LuckPermsUtil.updateGroupMembers(data.get("name").getAsString(), uuids);
@@ -432,7 +432,7 @@ public class Router {
             //Names of players that will be added to team
             List<String> addedEntries = new ArrayList<>();
 
-            if(data.get("override").isJsonNull() || data.get("override").getAsString().equals("minecraft")) {
+            if(data.get("override") == null || data.get("override").getAsString().equals("minecraft")) {
                 // Add players from json to team
                 for(JsonElement uuid : data.get("players").getAsJsonArray()) {
                     OfflinePlayer player = getServer().getOfflinePlayer(UUID.fromString(uuid.getAsString()));
