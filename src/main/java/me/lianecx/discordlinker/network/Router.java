@@ -372,10 +372,13 @@ public class Router {
     }
 
     public static void addSyncedRole(JsonObject data, Consumer<RouterResponse> callback) {
-        RouterResponse response = updateSyncedRoleMembers(data);
-
-        if(response.getStatus() == Status._200) callback.accept(handleChangeArray(data, "synced-roles", true));
-        else callback.accept(response);
+        updateSyncedRoleMembers(data, response -> {
+            if(response.getStatus() == Status._200) {
+                data.add("players", DiscordLinker.getGson().fromJson(response.getMessage(), JsonArray.class));
+                callback.accept(handleChangeArray(data, "synced-roles", true));
+            }
+            else callback.accept(response);
+        });
     }
 
     public static void removeSyncedRole(JsonObject data, Consumer<RouterResponse> callback) {
@@ -383,10 +386,8 @@ public class Router {
     }
 
     public static void updateSyncedRole(JsonObject data, Consumer<RouterResponse> callback) {
-        RouterResponse response = updateSyncedRoleMembers(data);
-
-        if(response.getStatus() == Status._200) callback.accept(handleChangeArray(data, "synced-roles", true));
-        else callback.accept(response);
+        data.addProperty("override", "minecraft"); // We want to override the current players in the group
+        addSyncedRole(data, callback);
     }
 
     public static void listPlayers(JsonObject data, Consumer<RouterResponse> callback) {
@@ -412,22 +413,28 @@ public class Router {
         callback.accept(new RouterResponse(Status._200, response.toString()));
     }
 
-    private static RouterResponse updateSyncedRoleMembers(JsonObject data) {
+    private static void updateSyncedRoleMembers(JsonObject data, Consumer<RouterResponse> callback) {
         if(data.get("isGroup").getAsBoolean()) {
-            if(!getPluginManager().isPluginEnabled("LuckPerms"))
-                return new RouterResponse(Status._501, LUCKPERMS_NOT_LOADED.toString());
+            if(!getPluginManager().isPluginEnabled("LuckPerms")) {
+                callback.accept(new RouterResponse(Status._501, LUCKPERMS_NOT_LOADED.toString()));
+                return;
+            }
 
             List<String> uuids = GSON.fromJson(data.get("players"), new TypeToken<List<String>>() {}.getType());
             if(data.get("override") == null)
-                return LuckPermsUtil.updateGroupMembers(data.get("name").getAsString(), uuids, true);
+                LuckPermsUtil.updateGroupMembers(data.get("name").getAsString(), uuids, true, callback);
             else if(data.get("override").getAsString().equals("minecraft"))
-                return LuckPermsUtil.updateGroupMembers(data.get("name").getAsString(), uuids);
+                LuckPermsUtil.updateGroupMembers(data.get("name").getAsString(), uuids, callback);
             else if(data.get("override").getAsString().equals("discord"))
-                return new RouterResponse(Status._200, SUCCESS.toString());
+                LuckPermsUtil.getGroupMembers(data.get("name").getAsString(), players ->
+                        callback.accept(new RouterResponse(Status._200, DiscordLinker.getGson().toJson(players))));
         }
         else {
             Team team = getServer().getScoreboardManager().getMainScoreboard().getTeam(data.get("name").getAsString());
-            if(team == null) return new RouterResponse(Status._404, INVALID_TEAM.toString());
+            if(team == null) {
+                callback.accept(new RouterResponse(Status._404, INVALID_TEAM.toString()));
+                return;
+            }
 
             //Names of players that will be added to team
             List<String> addedEntries = new ArrayList<>();
@@ -449,10 +456,9 @@ public class Router {
                 }
             }
 
-            return new RouterResponse(Status._200, SUCCESS.toString());
+            getPlayers(team.getName(), false, players ->
+                    callback.accept(new RouterResponse(Status._200, DiscordLinker.getGson().toJson(players))));
         }
-
-        return new RouterResponse(Status._400, INVALID_PARAM.toString());
     }
 
     private static String markdownToColorCodes(String markdown) {
@@ -525,7 +531,7 @@ public class Router {
             List<String> players = new ArrayList<>();
             //Add uuids of all players in team to players list
             team.getEntries().forEach(entry -> {
-                OfflinePlayer player = getServer().getOfflinePlayer(entry);
+                @SuppressWarnings("deprecation") OfflinePlayer player = getServer().getOfflinePlayer(entry);
                 if(player != null) players.add(player.getUniqueId().toString());
             });
 

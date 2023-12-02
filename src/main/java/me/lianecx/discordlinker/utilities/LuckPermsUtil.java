@@ -1,6 +1,7 @@
 package me.lianecx.discordlinker.utilities;
 
 import express.utils.Status;
+import me.lianecx.discordlinker.DiscordLinker;
 import me.lianecx.discordlinker.events.luckperms.DeleteGroupEvent;
 import me.lianecx.discordlinker.events.luckperms.GroupMemberChangeEvent;
 import me.lianecx.discordlinker.network.Router;
@@ -29,14 +30,19 @@ public class LuckPermsUtil {
         return LUCK_PERMS.getGroupManager().getLoadedGroups().stream().map(Group::getName).collect(Collectors.toList());
     }
 
-    public static Router.RouterResponse updateGroupMembers(String name, List<String> uuids, boolean onlyAddMembers) {
+    public static void updateGroupMembers(String name, List<String> uuids, boolean onlyAddMembers, Consumer<Router.RouterResponse> callback) {
         try {
             Group group = LUCK_PERMS.getGroupManager().getGroup(name);
-            if(group == null) return new Router.RouterResponse(Status._404, Router.INVALID_GROUP.toString());
+            if(group == null) {
+                callback.accept(new Router.RouterResponse(Status._404, Router.INVALID_GROUP.toString()));
+                return;
+            }
 
             NodeMatcher<InheritanceNode> matcher = NodeMatcher.key(InheritanceNode.builder(group).build());
 
             LUCK_PERMS.getUserManager().searchAll(matcher).thenAccept((Map<UUID, Collection<InheritanceNode>> map) -> {
+                List<String> playersToAdd = new ArrayList<>();
+
                 if(!onlyAddMembers) {
                     map.keySet().forEach(uuid -> {
                         if(uuids.contains(uuid.toString())) return;
@@ -52,23 +58,34 @@ public class LuckPermsUtil {
                 uuids.forEach(uuid -> {
                     UUID uuidObj = UUID.fromString(uuid);
                     if(map.containsKey(uuidObj)) return;
-                    LUCK_PERMS.getUserManager().loadUser(uuidObj)
-                            .thenAcceptAsync(user -> {
-                                if(user == null) return;
-                                user.data().add(InheritanceNode.builder(group).build());
-                                LUCK_PERMS.getUserManager().saveUser(user);
-                            });
+                    playersToAdd.add(uuid);
                 });
+
+                Set<String> allPlayers = new HashSet<>(playersToAdd);
+
+                // If we're only adding members, previous players will be kept in the group so we have to fetch all group members
+                if(onlyAddMembers) getGroupMembers(name, players -> {
+                    allPlayers.addAll(players);
+                    callback.accept(new Router.RouterResponse(Status._200, DiscordLinker.getGson().toJson(allPlayers)));
+                });
+                    // Otherwise the members will match the uuids list
+                else callback.accept(new Router.RouterResponse(Status._200, DiscordLinker.getGson().toJson(uuids)));
+
+                playersToAdd.forEach(uuid -> LUCK_PERMS.getUserManager().loadUser(UUID.fromString(uuid))
+                        .thenAcceptAsync(user -> {
+                            if(user == null) return;
+                            user.data().add(InheritanceNode.builder(group).build());
+                            LUCK_PERMS.getUserManager().saveUser(user);
+                        }));
             });
-            return new Router.RouterResponse(Status._200, Router.SUCCESS.toString());
         }
         catch(Exception err) {
-            return new Router.RouterResponse(Status._501, Router.LUCKPERMS_NOT_LOADED.toString());
+            callback.accept(new Router.RouterResponse(Status._501, Router.LUCKPERMS_NOT_LOADED.toString()));
         }
     }
 
-    public static Router.RouterResponse updateGroupMembers(String name, List<String> uuids) {
-        return updateGroupMembers(name, uuids, false);
+    public static void updateGroupMembers(String name, List<String> uuids, Consumer<Router.RouterResponse> callback) {
+        updateGroupMembers(name, uuids, false, callback);
     }
 
     public static void getGroupMembers(String name, Consumer<List<String>> callback) {
