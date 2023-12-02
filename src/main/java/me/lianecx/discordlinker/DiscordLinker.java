@@ -37,6 +37,8 @@ public final class DiscordLinker extends JavaPlugin {
     private static AdapterManager adapterManager;
     private final FileConfiguration config = getConfig();
 
+    private static final Gson gson = new GsonBuilder().setPrettyPrinting().create();
+
 
     public static JsonObject getConnJson() {
         return connJson;
@@ -48,6 +50,10 @@ public final class DiscordLinker extends JavaPlugin {
 
     public static AdapterManager getAdapterManager() {
         return adapterManager;
+    }
+
+    public static Gson getGson() {
+        return gson;
     }
 
     public int getPort() {
