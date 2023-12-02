@@ -1,9 +1,6 @@
 package me.lianecx.discordlinker.network;
 
-import com.google.gson.Gson;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
+import com.google.gson.*;
 import com.google.gson.reflect.TypeToken;
 import express.utils.Status;
 import io.github.bananapuncher714.nbteditor.NBTEditor;
@@ -613,6 +610,10 @@ public class Router {
 
         public boolean isAttachment() {
             return isAttachment;
+        }
+
+        public JsonElement getJson() {
+            return new JsonParser().parse(message);
         }
     }
 }

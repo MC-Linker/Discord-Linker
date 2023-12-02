@@ -5,6 +5,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import express.http.RequestMethod;
+import express.utils.Status;
 import io.socket.client.AckWithTimeout;
 import me.lianecx.discordlinker.DiscordLinker;
 import me.lianecx.discordlinker.network.ChatType;
@@ -18,12 +19,8 @@ import org.bukkit.entity.Player;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.security.SecureRandom;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 public class AdapterManager {
@@ -147,27 +144,25 @@ public class AdapterManager {
         else HttpAdapter.send(method, route, body);
     }
 
-    public void send(RequestMethod method, String route, String event, JsonObject body, BiConsumer<Boolean, JsonObject> callback) {
+    public void send(RequestMethod method, String route, String event, JsonObject body, Consumer<Router.RouterResponse> callback) {
         if(isWebSocketConnected()) ((WebSocketAdapter) adapter).send(event, body, new AckWithTimeout(5000) {
             @Override
             public void onSuccess(Object... args) {
                 try {
-                    JsonObject body = new JsonParser().parse(args[0].toString()).getAsJsonObject();
-                    callback.accept(false, body);
+                    callback.accept(new Router.RouterResponse(Status._200, args[0].toString()));
                 }
                 catch(Exception e) {
-                    callback.accept(false, null);
+                    callback.accept(null);
                 }
             }
 
             @Override
             public void onTimeout() {
-                callback.accept(true, null);
+                callback.accept(null);
             }
         });
         else {
-            HttpAdapter.HttpResponse httpResponse = HttpAdapter.send(method, route, body);
-            callback.accept(httpResponse == null, httpResponse == null ? null : httpResponse.getBody());
+            callback.accept(HttpAdapter.send(method, route, body));
         }
     }
 
@@ -198,9 +193,33 @@ public class AdapterManager {
     }
 
     public void updateSyncedRole(String name, boolean isGroup) {
+        updateSyncedRole(name, isGroup, null, null);
+    }
+
+    public void updateSyncedRole(String name, boolean isGroup, Consumer<List<UUID>> notAddedPlayers, Consumer<List<UUID>> notRemovedPlayers) {
         getSyncedRole(name, isGroup, true, role -> {
             if(role == null) return;
-            send(RequestMethod.POST, "/update-synced-role", "update-synced-role", role);
+            send(RequestMethod.POST, "/update-synced-role", "update-synced-role", role, response -> {
+                if(notAddedPlayers == null && notRemovedPlayers == null) return;
+
+                JsonObject body = response.getJson().getAsJsonObject();
+                if(body.get("players") != null) {
+                    JsonArray expectedPlayers = role.get("players").getAsJsonArray();
+                    JsonArray actualPlayers = body.get("players").getAsJsonArray();
+
+                    List<UUID> notAdded = new ArrayList<>();
+                    List<UUID> notRemoved = new ArrayList<>();
+                    expectedPlayers.forEach(uuid -> {
+                        if(!actualPlayers.contains(uuid)) notAdded.add(UUID.fromString(uuid.getAsString()));
+                    });
+                    actualPlayers.forEach(uuid -> {
+                        if(!expectedPlayers.contains(uuid)) notRemoved.add(UUID.fromString(uuid.getAsString()));
+                    });
+
+                    if(notAddedPlayers != null) notAddedPlayers.accept(notAdded);
+                    if(notRemovedPlayers != null) notRemovedPlayers.accept(notRemoved);
+                }
+            });
         });
     }
 
@@ -250,11 +269,11 @@ public class AdapterManager {
         JsonObject verifyJson = new JsonObject();
         verifyJson.addProperty("uuid", uuid.toString());
 
-        send(RequestMethod.POST, "/has-required-role", "has-required-role", verifyJson, (timeout, body) -> {
-            if(timeout) callback.accept(HasRequiredRoleResponse.ERROR);
+        send(RequestMethod.POST, "/has-required-role", "has-required-role", verifyJson, body -> {
+            if(body == null) callback.accept(HasRequiredRoleResponse.ERROR);
             else {
                 try {
-                    HasRequiredRoleResponse response = HasRequiredRoleResponse.valueOf(body.get("response").getAsString().toUpperCase());
+                    HasRequiredRoleResponse response = HasRequiredRoleResponse.valueOf(body.getJson().getAsJsonObject().get("response").getAsString().toUpperCase());
                     callback.accept(response);
                 }
                 catch(Exception e) {
@@ -274,12 +293,13 @@ public class AdapterManager {
     }
 
     public void getInviteURL(Consumer<String> callback) {
-        send(RequestMethod.POST, "/invite-url", "invite-url", new JsonObject(), (timeout, body) -> {
-            if(timeout) callback.accept(null);
+        send(RequestMethod.POST, "/invite-url", "invite-url", new JsonObject(), body -> {
+            if(body == null) callback.accept(null);
             else {
                 try {
-                    if(body.get("url").isJsonNull()) callback.accept(null);
-                    else callback.accept(body.get("url").getAsString());
+                    JsonObject bodyObject = body.getJson().getAsJsonObject();
+                    if(bodyObject.get("url").isJsonNull()) callback.accept(null);
+                    else callback.accept(bodyObject.get("url").getAsString());
                 }
                 catch(Exception e) {
                     callback.accept(null);

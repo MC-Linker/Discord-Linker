@@ -68,7 +68,7 @@ public class HttpAdapter implements NetworkAdapter {
         }, port);
     }
 
-    public static HttpResponse send(RequestMethod method, String route, JsonElement body) {
+    public static Router.RouterResponse send(RequestMethod method, String route, JsonElement body) {
         try {
             if(body.isJsonObject()) {
                 body.getAsJsonObject().add("id", DiscordLinker.getConnJson().get("id"));
@@ -95,8 +95,7 @@ public class HttpAdapter implements NetworkAdapter {
             //Bot could not find a valid connection to this server
             if(status == 403) DiscordLinker.getPlugin().deleteConn();
             Reader streamReader = new InputStreamReader(status > 299 ? conn.getErrorStream() : conn.getInputStream());
-            JsonObject response = new JsonParser().parse(streamReader).getAsJsonObject();
-            return new HttpResponse(status, response);
+            return new Router.RouterResponse(Status.valueOf(status), new BufferedReader(streamReader).lines().collect(Collectors.joining("\n")));
         }
         catch(IOException ignored) {
             return null;
@@ -162,24 +161,5 @@ public class HttpAdapter implements NetworkAdapter {
 
         if(response.isAttachment()) res.sendAttachment(Paths.get(response.getMessage()));
         else res.send(response.getMessage());
-    }
-
-    public static class HttpResponse {
-
-        public int status;
-        public JsonObject body;
-
-        public HttpResponse(int status, JsonObject body) {
-            this.status = status;
-            this.body = body;
-        }
-
-        public int getStatus() {
-            return status;
-        }
-
-        public JsonObject getBody() {
-            return body;
-        }
     }
 }

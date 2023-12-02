@@ -102,4 +102,20 @@ public class LuckPermsUtil {
             callback.accept(players.stream().map(UUID::toString).collect(Collectors.toList()));
         });
     }
+
+    public static void removeGroupFromUser(UUID uuid, String name) {
+        LUCK_PERMS.getUserManager().loadUser(uuid).thenAcceptAsync(user -> {
+            if(user == null) return;
+            user.data().remove(InheritanceNode.builder(name).build());
+            LUCK_PERMS.getUserManager().saveUser(user);
+        });
+    }
+
+    public static void addGroupToUser(UUID uuid, String name) {
+        LUCK_PERMS.getUserManager().loadUser(uuid).thenAcceptAsync(user -> {
+            if(user == null) return;
+            user.data().add(InheritanceNode.builder(name).build());
+            LUCK_PERMS.getUserManager().saveUser(user);
+        });
+    }
 }
