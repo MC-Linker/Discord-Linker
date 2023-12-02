@@ -2,6 +2,7 @@ package me.lianecx.discordlinker.events;
 
 import me.lianecx.discordlinker.DiscordLinker;
 import me.lianecx.discordlinker.utilities.CommandUtil;
+import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
@@ -71,6 +72,18 @@ public class TeamChangeEvent implements Listener {
 
     private void sendRoleSyncUpdateFromTeam(Team team) {
         if(team == null) return;
-        DiscordLinker.getAdapterManager().updateSyncedRole(team.getName(), false);
+        DiscordLinker.getAdapterManager().updateSyncedRole(team.getName(), false, notAddedPlayers -> {
+            notAddedPlayers.forEach(uuid -> {
+                //Remove the user from the team
+                Player player = Bukkit.getPlayer(uuid);
+                if(player != null) team.removeEntry(player.getName());
+            });
+        }, notRemovedPlayers -> {
+            notRemovedPlayers.forEach(uuid -> {
+                //Add the user to the team
+                Player player = Bukkit.getPlayer(uuid);
+                if(player != null) team.addEntry(player.getName());
+            });
+        });
     }
 }

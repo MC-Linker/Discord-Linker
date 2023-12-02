@@ -35,13 +35,13 @@ public class GroupMemberChangeEvent {
     private static void sendRoleSyncUpdateFromGroup(Group group) {
         if(group == null) return;
         getScheduler().runTaskLater(DiscordLinker.getPlugin(), () -> {
-            DiscordLinker.getAdapterManager().updateSyncedRole(group.getName(), true, notAddedUsers -> {
-                notAddedUsers.forEach(uuid -> {
+            DiscordLinker.getAdapterManager().updateSyncedRole(group.getName(), true, notAddedPlayers -> {
+                notAddedPlayers.forEach(uuid -> {
                     //Remove the user from the group
                     LuckPermsUtil.removeGroupFromUser(uuid, group.getName());
                 });
-            }, notRemovedUsers -> {
-                notRemovedUsers.forEach(uuid -> {
+            }, notRemovedPlayers -> {
+                notRemovedPlayers.forEach(uuid -> {
                     //Add the user to the group
                     LuckPermsUtil.addGroupToUser(uuid, group.getName());
                 });
