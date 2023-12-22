@@ -33,10 +33,6 @@ permissions:
         description: "Allows the user to use the /linker reload command"
       discordlinker.linker.port:
         description: "Allows the user to use the /linker port command"
-      discordlinker.linker.message:
-        description: "Allows the user to use the /linker message command"
-      discordlinker.linker.private_message:
-        description: "Allows the user to use the /linker private_message command"
       discordlinker.linker.connect:
         description: "Allows the user to use the /linker connect command"
       discordlinker.linker.disconnect:

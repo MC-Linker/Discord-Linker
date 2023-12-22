@@ -6,8 +6,6 @@ import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 
-import java.util.Arrays;
-
 public class LinkerCommand implements CommandExecutor {
 
     private final DiscordLinker PLUGIN = DiscordLinker.getPlugin();
@@ -45,21 +43,6 @@ public class LinkerCommand implements CommandExecutor {
                 //Only start http server if it was already started
                 if(DiscordLinker.getAdapterManager().isHttpConnected()) DiscordLinker.getAdapterManager().startHttp();
                 sender.sendMessage(ChatColor.GREEN + "Successfully set port to " + ChatColor.DARK_AQUA + newPort + ChatColor.GREEN + ".");
-                break;
-            case "private_message":
-            case "message":
-                if(args.length == 1) {
-                    sender.sendMessage(ChatColor.GREEN + "The current " + args[0] + " is " + PLUGIN.getConfig().getString(args[0]) + ".");
-                    return true;
-                }
-
-                //Join all arguments except first one
-                String message = String.join(" ", Arrays.copyOfRange(args, 1, args.length));
-
-                PLUGIN.getConfig().set(args[0], message);
-                PLUGIN.saveConfig();
-
-                sender.sendMessage(ChatColor.GREEN + "Successfully set " + args[0] + " to " + ChatColor.RESET + ChatColor.translateAlternateColorCodes('&', message) + ChatColor.GREEN + ".");
                 break;
             case "connect":
                 if(args.length < 2) {
