@@ -44,6 +44,8 @@ public class AdapterManager {
     }
 
     public void start(Consumer<Boolean> callback) {
+        if(adapter == null) return;
+
         //Reconnect to websocket if it was connected before
         adapter.disconnect();
         adapter.connect(httpPort, callback);
@@ -51,7 +53,7 @@ public class AdapterManager {
 
     public void stop() {
         // This throws an error on reload and server stop, probably because spigot already started unloading some classes when this gets called
-        adapter.disconnect();
+        if(adapter != null) adapter.disconnect();
     }
 
     public void startHttp() {
