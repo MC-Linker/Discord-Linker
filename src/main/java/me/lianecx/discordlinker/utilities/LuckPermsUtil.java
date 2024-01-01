@@ -84,14 +84,10 @@ public class LuckPermsUtil {
         }
     }
 
-    public static void updateGroupMembers(String name, List<String> uuids, Consumer<Router.RouterResponse> callback) {
-        updateGroupMembers(name, uuids, false, callback);
-    }
-
     public static void getGroupMembers(String name, Consumer<List<String>> callback) {
         Group group = LUCK_PERMS.getGroupManager().getGroup(name);
         if(group == null) {
-            callback.accept(new ArrayList<>());
+            callback.accept(null);
             return;
         }
 
@@ -116,6 +112,26 @@ public class LuckPermsUtil {
             if(user == null) return;
             user.data().add(InheritanceNode.builder(name).build());
             LUCK_PERMS.getUserManager().saveUser(user);
+        });
+    }
+
+    public static void updateUserGroup(String name, UUID uuid, String addOrRemove, Consumer<Router.RouterResponse> callback) {
+        Group group = LUCK_PERMS.getGroupManager().getGroup(name);
+        if(group == null) {
+            callback.accept(new Router.RouterResponse(Status._404, Router.INVALID_GROUP.toString()));
+            return;
+        }
+
+        LUCK_PERMS.getUserManager().loadUser(uuid).thenAcceptAsync(user -> {
+            if(user == null) {
+                callback.accept(new Router.RouterResponse(Status._404, Router.INVALID_PLAYER.toString()));
+                return;
+            }
+
+            if(addOrRemove.equals("add")) user.data().add(InheritanceNode.builder(group).build());
+            else if(addOrRemove.equals("remove")) user.data().remove(InheritanceNode.builder(group).build());
+            LUCK_PERMS.getUserManager().saveUser(user);
+            callback.accept(new Router.RouterResponse(Status._200, Router.SUCCESS.toString()));
         });
     }
 }

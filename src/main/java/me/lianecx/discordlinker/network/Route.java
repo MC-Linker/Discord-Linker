@@ -23,7 +23,8 @@ public enum Route {
     STATS_CHANNEL_ADD("/stats-channel/add", "add-stats-channel", Router::addStatsChannel),
     SYNCED_ROLE_ADD("/synced-role/add", "add-synced-role", Router::addSyncedRole),
     SYNCED_ROLE_REMOVE("/synced-role/remove", "remove-synced-role", Router::removeSyncedRole),
-    SYNCED_ROLE_UPDATE("/synced-role/update", "update-synced-role", Router::updateSyncedRole),
+    SYNCED_ROLE_ADD_MEMBER("/synced-role/add-member", "add-synced-role-member", Router::addSyncedRoleMember),
+    SYNCED_ROLE_REMOVE_MEMBER("/synced-role/remove-member", "remove-synced-role-member", Router::removeSyncedRoleMember),
     LIST_PLAYERS("/players", "list-players", Router::listPlayers),
     LIST_TEAMS_AND_GROUPS("/teams-and-groups", "list-teams-and-groups", Router::listGroupsAndTeams),
     ROOT("/", null, null, false, false);

@@ -3,6 +3,7 @@ package me.lianecx.discordlinker.events;
 import me.lianecx.discordlinker.DiscordLinker;
 import me.lianecx.discordlinker.utilities.CommandUtil;
 import org.bukkit.Bukkit;
+import org.bukkit.OfflinePlayer;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
@@ -13,10 +14,6 @@ import org.bukkit.event.server.RemoteServerCommandEvent;
 import org.bukkit.event.server.ServerCommandEvent;
 import org.bukkit.scoreboard.Team;
 
-import java.util.HashSet;
-import java.util.Set;
-
-import static org.bukkit.Bukkit.getScheduler;
 import static org.bukkit.Bukkit.getServer;
 
 public class TeamChangeEvent implements Listener {
@@ -44,46 +41,42 @@ public class TeamChangeEvent implements Listener {
 
         switch(args[1]) {
             case "join":
-            case "empty":
-                //Delay to wait for the result of the command and the team to be updated
-                getScheduler().runTaskLater(DiscordLinker.getPlugin(), () -> sendRoleSyncUpdateFromTeam(getServer().getScoreboardManager().getMainScoreboard().getTeam(args[2])), 1);
-                break;
-            case "leave":
-                Entity[] selected = CommandUtil.getTargets(sender, args[2]);
-                if(selected == null) return;
+                Entity[] joinTargets = CommandUtil.getTargets(sender, args[2]);
+                if(joinTargets == null) return;
 
-                Set<Team> teams = new HashSet<>();
-                for(Entity entity : selected) {
+                for(Entity entity : joinTargets) {
                     if(!(entity instanceof Player)) continue;
                     Team team = getServer().getScoreboardManager().getMainScoreboard().getEntryTeam(entity.getName());
-                    if(team != null) teams.add(team);
+                    if(team != null)
+                        DiscordLinker.getAdapterManager().addSyncedRoleMember(team.getName(), false, entity.getUniqueId());
                 }
+                break;
+            case "empty":
+                Team emptiedTeam = getServer().getScoreboardManager().getMainScoreboard().getTeam(args[2]);
+                if(emptiedTeam == null) return;
 
-                getScheduler().runTaskLater(DiscordLinker.getPlugin(), () -> {
-                    for(Team team : teams) sendRoleSyncUpdateFromTeam(team);
-                }, 1);
+                for(String entry : emptiedTeam.getEntries()) {
+                    OfflinePlayer player = Bukkit.getOfflinePlayer(entry);
+                    if(player == null) continue;
+                    DiscordLinker.getAdapterManager().removeSyncedRoleMember(emptiedTeam.getName(), false, player.getUniqueId());
+                }
+                break;
+            case "leave":
+                Entity[] leaveTargets = CommandUtil.getTargets(sender, args[2]);
+                if(leaveTargets == null) return;
+
+                for(Entity entity : leaveTargets) {
+                    if(!(entity instanceof Player)) continue;
+                    Team team = getServer().getScoreboardManager().getMainScoreboard().getEntryTeam(entity.getName());
+                    if(team != null)
+                        DiscordLinker.getAdapterManager().removeSyncedRoleMember(team.getName(), false, entity.getUniqueId());
+                }
                 break;
             case "remove":
-                Team team = getServer().getScoreboardManager().getMainScoreboard().getTeam(args[2]);
-                if(team != null) DiscordLinker.getAdapterManager().removeSyncedRole(team.getName(), false);
+                Team removedTeam = getServer().getScoreboardManager().getMainScoreboard().getTeam(args[2]);
+                if(removedTeam != null)
+                    DiscordLinker.getAdapterManager().removeSyncedRole(removedTeam.getName(), false);
                 break;
         }
-    }
-
-    private void sendRoleSyncUpdateFromTeam(Team team) {
-        if(team == null) return;
-        DiscordLinker.getAdapterManager().updateSyncedRole(team.getName(), false, notAddedPlayers -> {
-            notAddedPlayers.forEach(uuid -> {
-                //Remove the user from the team
-                Player player = Bukkit.getPlayer(uuid);
-                if(player != null) team.removeEntry(player.getName());
-            });
-        }, notRemovedPlayers -> {
-            notRemovedPlayers.forEach(uuid -> {
-                //Add the user to the team
-                Player player = Bukkit.getPlayer(uuid);
-                if(player != null) team.addEntry(player.getName());
-            });
-        });
     }
 }

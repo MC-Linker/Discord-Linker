@@ -1,6 +1,9 @@
 package me.lianecx.discordlinker.network;
 
-import com.google.gson.*;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import com.google.gson.reflect.TypeToken;
 import express.utils.Status;
 import io.github.bananapuncher714.nbteditor.NBTEditor;
@@ -60,7 +63,6 @@ public class Router {
     public static final JsonObject ALREADY_CONNECTED = new JsonObject();
     public static final JsonObject LUCKPERMS_NOT_LOADED = new JsonObject();
     public static final JsonObject SUCCESS = new JsonObject();
-    public static final Gson GSON = new Gson();
     private static final ConsoleLogger cmdLogger = new ConsoleLogger();
     private static final String URL_REGEX = "https?://[-\\w_.]{2,}\\.[a-z]{2,4}/\\S*?";
     private static final String MD_URL_REGEX = "(?i)\\[([^]]+)]\\((" + URL_REGEX + ")\\)";
@@ -369,62 +371,23 @@ public class Router {
     }
 
     public static void addSyncedRole(JsonObject data, Consumer<RouterResponse> callback) {
-        updateSyncedRoleMembers(data, response -> {
-            if(response.getStatus() == Status._200) {
-                data.add("players", DiscordLinker.getGson().fromJson(response.getMessage(), JsonArray.class));
-                callback.accept(handleChangeArray(data, "synced-roles", true));
-            }
-            else callback.accept(response);
-        });
-    }
-
-    public static void removeSyncedRole(JsonObject data, Consumer<RouterResponse> callback) {
-        callback.accept(handleChangeArray(data, "synced-roles", false));
-    }
-
-    public static void updateSyncedRole(JsonObject data, Consumer<RouterResponse> callback) {
-        data.addProperty("override", "minecraft"); // We want to override the current players in the group
-        addSyncedRole(data, callback);
-    }
-
-    public static void listPlayers(JsonObject data, Consumer<RouterResponse> callback) {
-        List<String> onlinePlayers = getServer().getOnlinePlayers().stream()
-                .map(Player::getName)
-                .collect(Collectors.toList());
-        callback.accept(new RouterResponse(Status._200, GSON.toJson(onlinePlayers, new TypeToken<List<String>>() {}.getType())));
-    }
-
-    public static void listGroupsAndTeams(JsonObject data, Consumer<RouterResponse> callback) {
-        List<String> groups = new ArrayList<>();
-        List<String> teams = new ArrayList<>();
-
-        if(getPluginManager().isPluginEnabled("LuckPerms")) {
-            groups = LuckPermsUtil.getGroupNames();
-        }
-
-        getServer().getScoreboardManager().getMainScoreboard().getTeams().forEach(team -> teams.add(team.getName()));
-
-        JsonObject response = new JsonObject();
-        response.add("groups", GSON.toJsonTree(groups, new TypeToken<List<String>>() {}.getType()));
-        response.add("teams", GSON.toJsonTree(teams, new TypeToken<List<String>>() {}.getType()));
-        callback.accept(new RouterResponse(Status._200, response.toString()));
-    }
-
-    private static void updateSyncedRoleMembers(JsonObject data, Consumer<RouterResponse> callback) {
         if(data.get("isGroup").getAsBoolean()) {
             if(!getPluginManager().isPluginEnabled("LuckPerms")) {
                 callback.accept(new RouterResponse(Status._501, LUCKPERMS_NOT_LOADED.toString()));
                 return;
             }
 
-            List<String> uuids = GSON.fromJson(data.get("players"), new TypeToken<List<String>>() {}.getType());
-            if(data.get("override") == null)
-                LuckPermsUtil.updateGroupMembers(data.get("name").getAsString(), uuids, true, callback);
-            else if(data.get("override").getAsString().equals("minecraft"))
-                LuckPermsUtil.updateGroupMembers(data.get("name").getAsString(), uuids, callback);
-            else if(data.get("override").getAsString().equals("discord"))
-                LuckPermsUtil.getGroupMembers(data.get("name").getAsString(), players ->
-                        callback.accept(new RouterResponse(Status._200, DiscordLinker.getGson().toJson(players))));
+            LuckPermsUtil.updateGroupMembers(data.get("name").getAsString(), DiscordLinker.getGson().fromJson(data.get("players"), new TypeToken<List<String>>() {}.getType()), true, response -> {
+                getPlayers(data.get("name").getAsString(), true, players -> {
+                    if(players == null) {
+                        callback.accept(new RouterResponse(Status._404, INVALID_GROUP.toString()));
+                        return;
+                    }
+
+                    data.addProperty("players", DiscordLinker.getGson().toJson(players));
+                    callback.accept(handleChangeArray(data, "synced-roles", true));
+                });
+            });
         }
         else {
             Team team = getServer().getScoreboardManager().getMainScoreboard().getTeam(data.get("name").getAsString());
@@ -433,29 +396,55 @@ public class Router {
                 return;
             }
 
-            //Names of players that will be added to team
-            List<String> addedEntries = new ArrayList<>();
-
-            if(data.get("override") == null || data.get("override").getAsString().equals("minecraft")) {
-                // Add players from json to team
-                for(JsonElement uuid : data.get("players").getAsJsonArray()) {
-                    OfflinePlayer player = getServer().getOfflinePlayer(UUID.fromString(uuid.getAsString()));
-                    addedEntries.add(player.getName());
-                    if(team.getEntries().contains(player.getName())) continue;
-                    team.addEntry(player.getName());
-                }
-            }
-            if(data.get("override").getAsString().equals("minecraft")) {
-                //Remove players from team that were not added (not in json)
-                for(String entry : team.getEntries()) {
-                    if(addedEntries.contains(entry)) continue;
-                    team.removeEntry(entry);
-                }
+            for(JsonElement uuid : data.get("players").getAsJsonArray()) {
+                OfflinePlayer player = getServer().getOfflinePlayer(UUID.fromString(uuid.getAsString()));
+                if(team.getEntries().contains(player.getName())) continue;
+                team.addEntry(player.getName());
             }
 
-            getPlayers(team.getName(), false, players ->
-                    callback.accept(new RouterResponse(Status._200, DiscordLinker.getGson().toJson(players))));
+            getPlayers(data.get("name").getAsString(), false, players -> {
+                if(players == null) {
+                    callback.accept(new RouterResponse(Status._404, INVALID_TEAM.toString()));
+                    return;
+                }
+
+                data.addProperty("players", DiscordLinker.getGson().toJson(players));
+                callback.accept(handleChangeArray(data, "synced-roles", true));
+            });
         }
+    }
+
+    public static void removeSyncedRole(JsonObject data, Consumer<RouterResponse> callback) {
+        callback.accept(handleChangeArray(data, "synced-roles", false));
+    }
+
+    public static void listPlayers(JsonObject data, Consumer<RouterResponse> callback) {
+        List<String> onlinePlayers = getServer().getOnlinePlayers().stream()
+                .map(Player::getName)
+                .collect(Collectors.toList());
+        callback.accept(new RouterResponse(Status._200, DiscordLinker.getGson().toJson(onlinePlayers)));
+    }
+
+    public static void addSyncedRoleMember(JsonObject data, Consumer<RouterResponse> callback) {
+        updateSyncedRoleMember(data.get("name").getAsString(), UUID.fromString(data.get("uuid").getAsString()), data.get("isGroup").getAsBoolean(), "add", callback);
+    }
+
+    public static void removeSyncedRoleMember(JsonObject data, Consumer<RouterResponse> callback) {
+        updateSyncedRoleMember(data.get("name").getAsString(), UUID.fromString(data.get("uuid").getAsString()), data.get("isGroup").getAsBoolean(), "remove", callback);
+    }
+
+    public static void listGroupsAndTeams(JsonObject data, Consumer<RouterResponse> callback) {
+        List<String> groups = new ArrayList<>();
+        List<String> teams = new ArrayList<>();
+
+        if(getPluginManager().isPluginEnabled("LuckPerms")) groups = LuckPermsUtil.getGroupNames();
+
+        getServer().getScoreboardManager().getMainScoreboard().getTeams().forEach(team -> teams.add(team.getName()));
+
+        JsonObject response = new JsonObject();
+        response.add("groups", DiscordLinker.getGson().toJsonTree(groups));
+        response.add("teams", DiscordLinker.getGson().toJsonTree(teams));
+        callback.accept(new RouterResponse(Status._200, response.toString()));
     }
 
     private static String markdownToColorCodes(String markdown) {
@@ -509,6 +498,33 @@ public class Router {
         }
     }
 
+    private static void updateSyncedRoleMember(String name, UUID uuid, boolean isGroup, String addOrRemove, Consumer<RouterResponse> callback) {
+        if(isGroup) {
+            if(!getPluginManager().isPluginEnabled("LuckPerms")) {
+                callback.accept(new RouterResponse(Status._501, LUCKPERMS_NOT_LOADED.toString()));
+                return;
+            }
+
+            LuckPermsUtil.updateUserGroup(name, uuid, addOrRemove, callback);
+        }
+        else {
+            Team team = getServer().getScoreboardManager().getMainScoreboard().getTeam(name);
+            if(team == null) {
+                callback.accept(new RouterResponse(Status._404, INVALID_TEAM.toString()));
+                return;
+            }
+
+            OfflinePlayer player = getServer().getOfflinePlayer(uuid);
+            if(addOrRemove.equals("add") && !team.getEntries().contains(player.getName()))
+                team.addEntry(player.getName());
+            else if(addOrRemove.equals("remove") && team.getEntries().contains(player.getName()))
+                team.removeEntry(player.getName());
+
+            getPlayers(team.getName(), false, players ->
+                    callback.accept(new RouterResponse(Status._200, DiscordLinker.getGson().toJson(players))));
+        }
+    }
+
     public static void getPlayers(String name, boolean isGroup, Consumer<List<String>> callback) {
         if(isGroup) {
             if(!getPluginManager().isPluginEnabled("LuckPerms")) {
@@ -521,7 +537,7 @@ public class Router {
         else {
             Team team = getServer().getScoreboardManager().getMainScoreboard().getTeam(name);
             if(team == null) {
-                callback.accept(new ArrayList<>());
+                callback.accept(null);
                 return;
             }
 

@@ -19,7 +19,10 @@ import org.bukkit.entity.Player;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.security.SecureRandom;
-import java.util.*;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
@@ -194,34 +197,23 @@ public class AdapterManager {
         send(RequestMethod.POST, "/update-stats-channels", "update-stats-channels", statsJson);
     }
 
-    public void updateSyncedRole(String name, boolean isGroup) {
-        updateSyncedRole(name, isGroup, null, null);
+    public void addSyncedRoleMember(String name, boolean isGroup, UUID uuid) {
+        updateSyncedRole(name, isGroup, uuid, "add");
     }
 
-    public void updateSyncedRole(String name, boolean isGroup, Consumer<List<UUID>> notAddedPlayers, Consumer<List<UUID>> notRemovedPlayers) {
+    public void removeSyncedRoleMember(String name, boolean isGroup, UUID uuid) {
+        updateSyncedRole(name, isGroup, uuid, "remove");
+    }
+
+    private void updateSyncedRole(String name, boolean isGroup, UUID uuid, String addOrRemove) {
         getSyncedRole(name, isGroup, true, role -> {
             if(role == null) return;
-            send(RequestMethod.POST, "/update-synced-role", "update-synced-role", role, response -> {
-                if(notAddedPlayers == null && notRemovedPlayers == null) return;
-
-                JsonObject body = response.getJson().getAsJsonObject();
-                if(body.get("players") != null) {
-                    JsonArray expectedPlayers = role.get("players").getAsJsonArray();
-                    JsonArray actualPlayers = body.get("players").getAsJsonArray();
-
-                    List<UUID> notAdded = new ArrayList<>();
-                    List<UUID> notRemoved = new ArrayList<>();
-                    expectedPlayers.forEach(uuid -> {
-                        if(!actualPlayers.contains(uuid)) notAdded.add(UUID.fromString(uuid.getAsString()));
-                    });
-                    actualPlayers.forEach(uuid -> {
-                        if(!expectedPlayers.contains(uuid)) notRemoved.add(UUID.fromString(uuid.getAsString()));
-                    });
-
-                    if(notAddedPlayers != null) notAddedPlayers.accept(notAdded);
-                    if(notRemovedPlayers != null) notRemovedPlayers.accept(notRemoved);
-                }
-            });
+            JsonObject payload = new JsonObject();
+            payload.add("id", role.get("id"));
+            payload.addProperty("uuid", uuid.toString());
+            if(addOrRemove.equals("add")) send(RequestMethod.POST, "/add-synced-role", "add-synced-role", payload);
+            else if(addOrRemove.equals("remove"))
+                send(RequestMethod.POST, "/remove-synced-role", "remove-synced-role", payload);
         });
     }
 
@@ -248,6 +240,11 @@ public class AdapterManager {
         }
 
         Router.getPlayers(name, isGroup, uuids -> {
+            if(uuids == null) {
+                callback.accept(null);
+                return;
+            }
+
             JsonArray players = new JsonArray();
             uuids.forEach(players::add);
             role.get().add("players", players);
