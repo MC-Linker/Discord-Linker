@@ -384,7 +384,7 @@ public class Router {
                         return;
                     }
 
-                    data.addProperty("players", DiscordLinker.getGson().toJson(players));
+                    data.add("players", DiscordLinker.getGson().toJsonTree(players));
                     callback.accept(handleChangeArray(data, "synced-roles", true));
                 });
             });
@@ -408,7 +408,7 @@ public class Router {
                     return;
                 }
 
-                data.addProperty("players", DiscordLinker.getGson().toJson(players));
+                data.add("players", DiscordLinker.getGson().toJsonTree(players));
                 callback.accept(handleChangeArray(data, "synced-roles", true));
             });
         }
