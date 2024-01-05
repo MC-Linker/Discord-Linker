@@ -32,6 +32,7 @@ public class TeamChangeEvent implements Listener {
     public void onRemoteCommand(RemoteServerCommandEvent event) {
         handleCommand(event.getSender(), event.getCommand());
     }
+    //TODO: Add support for other plugins that use teams (possibly timer)
 
     private void handleCommand(CommandSender sender, String command) {
         if(!command.startsWith("/team") && !command.startsWith("team")) return;
@@ -46,9 +47,12 @@ public class TeamChangeEvent implements Listener {
 
                 for(Entity entity : joinTargets) {
                     if(!(entity instanceof Player)) continue;
-                    Team team = getServer().getScoreboardManager().getMainScoreboard().getEntryTeam(entity.getName());
-                    if(team != null)
-                        DiscordLinker.getAdapterManager().addSyncedRoleMember(team.getName(), false, entity.getUniqueId());
+                    // Delay to ensure the player is added to the team before the role is added
+                    Bukkit.getScheduler().runTaskLater(DiscordLinker.getPlugin(), () -> {
+                        Team team = getServer().getScoreboardManager().getMainScoreboard().getEntryTeam(entity.getName());
+                        if(team != null)
+                            DiscordLinker.getAdapterManager().addSyncedRoleMember(team.getName(), false, entity.getUniqueId());
+                    }, 1L);
                 }
                 break;
             case "empty":
@@ -67,9 +71,15 @@ public class TeamChangeEvent implements Listener {
 
                 for(Entity entity : leaveTargets) {
                     if(!(entity instanceof Player)) continue;
-                    Team team = getServer().getScoreboardManager().getMainScoreboard().getEntryTeam(entity.getName());
-                    if(team != null)
-                        DiscordLinker.getAdapterManager().removeSyncedRoleMember(team.getName(), false, entity.getUniqueId());
+
+                    Team previousTeam = getServer().getScoreboardManager().getMainScoreboard().getEntryTeam(entity.getName());
+
+                    // Delay to ensure the player is removed from the team before the role is removed
+                    Bukkit.getScheduler().runTaskLater(DiscordLinker.getPlugin(), () -> {
+                        Team team = getServer().getScoreboardManager().getMainScoreboard().getEntryTeam(entity.getName());
+                        if(team == null)
+                            DiscordLinker.getAdapterManager().removeSyncedRoleMember(previousTeam.getName(), false, entity.getUniqueId());
+                    }, 1L);
                 }
                 break;
             case "remove":
