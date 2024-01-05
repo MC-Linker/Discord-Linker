@@ -198,22 +198,23 @@ public class AdapterManager {
     }
 
     public void addSyncedRoleMember(String name, boolean isGroup, UUID uuid) {
-        updateSyncedRole(name, isGroup, uuid, "add");
+        updateSyncedRoleMember(name, isGroup, uuid, "add");
     }
 
     public void removeSyncedRoleMember(String name, boolean isGroup, UUID uuid) {
-        updateSyncedRole(name, isGroup, uuid, "remove");
+        updateSyncedRoleMember(name, isGroup, uuid, "remove");
     }
 
-    private void updateSyncedRole(String name, boolean isGroup, UUID uuid, String addOrRemove) {
+    private void updateSyncedRoleMember(String name, boolean isGroup, UUID uuid, String addOrRemove) {
         getSyncedRole(name, isGroup, true, role -> {
             if(role == null) return;
             JsonObject payload = new JsonObject();
             payload.add("id", role.get("id"));
             payload.addProperty("uuid", uuid.toString());
-            if(addOrRemove.equals("add")) send(RequestMethod.POST, "/add-synced-role", "add-synced-role", payload);
+            if(addOrRemove.equals("add"))
+                send(RequestMethod.POST, "/add-synced-role-member", "add-synced-role-member", payload);
             else if(addOrRemove.equals("remove"))
-                send(RequestMethod.POST, "/remove-synced-role", "remove-synced-role", payload);
+                send(RequestMethod.POST, "/remove-synced-role-member", "remove-synced-role-member", payload);
         });
     }
 
