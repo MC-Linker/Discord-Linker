@@ -99,6 +99,8 @@ public final class DiscordLinker extends JavaPlugin {
             getCommand("verify").setExecutor(new VerifyCommand());
             getCommand("discord").setExecutor(new DiscordCommand());
 
+            if(hasTeamSyncedRole())
+                TeamChangeEvent.startTeamCheck();
             if(getServer().getPluginManager().isPluginEnabled("LuckPerms")) LuckPermsUtil.init();
 
             getLogger().info(ChatColor.GREEN + "Plugin enabled.");
@@ -173,5 +175,15 @@ public final class DiscordLinker extends JavaPlugin {
         }
 
         return filteredChannels;
+    }
+
+    public boolean hasTeamSyncedRole() {
+        if(connJson == null || !connJson.has("synced-roles")) return false;
+
+        for(JsonElement syncedRole : connJson.getAsJsonArray("synced-roles")) {
+            if(!syncedRole.getAsJsonObject().get("isGroup").getAsBoolean()) return true;
+        }
+
+        return false;
     }
 }

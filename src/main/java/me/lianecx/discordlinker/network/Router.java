@@ -9,6 +9,7 @@ import express.utils.Status;
 import io.github.bananapuncher714.nbteditor.NBTEditor;
 import me.lianecx.discordlinker.DiscordLinker;
 import me.lianecx.discordlinker.commands.VerifyCommand;
+import me.lianecx.discordlinker.events.TeamChangeEvent;
 import me.lianecx.discordlinker.utilities.ConsoleLogger;
 import me.lianecx.discordlinker.utilities.LuckPermsUtil;
 import net.md_5.bungee.api.chat.ClickEvent;
@@ -355,22 +356,24 @@ public class Router {
     }
 
     public static void addChatChannel(JsonObject data, Consumer<RouterResponse> callback) {
-        callback.accept(handleChangeArray(data, "channels", true));
+        callback.accept(handleChangeArray(data, "channels", "add"));
     }
 
     public static void removeChatChannel(JsonObject data, Consumer<RouterResponse> callback) {
-        callback.accept(handleChangeArray(data, "channels", false));
+        callback.accept(handleChangeArray(data, "channels", "remove"));
     }
 
     public static void addStatsChannel(JsonObject data, Consumer<RouterResponse> callback) {
-        callback.accept(handleChangeArray(data, "stats-channels", true));
+        callback.accept(handleChangeArray(data, "stats-channels", "add"));
     }
 
     public static void removeStatsChannel(JsonObject data, Consumer<RouterResponse> callback) {
-        callback.accept(handleChangeArray(data, "stats-channels", false));
+        callback.accept(handleChangeArray(data, "stats-channels", "remove"));
     }
 
     public static void addSyncedRole(JsonObject data, Consumer<RouterResponse> callback) {
+        boolean hadTeamSyncedRole = DiscordLinker.getPlugin().hasTeamSyncedRole();
+
         if(data.get("isGroup").getAsBoolean()) {
             if(!getPluginManager().isPluginEnabled("LuckPerms")) {
                 callback.accept(new RouterResponse(Status._501, LUCKPERMS_NOT_LOADED.toString()));
@@ -385,7 +388,7 @@ public class Router {
                     }
 
                     data.add("players", DiscordLinker.getGson().toJsonTree(players));
-                    callback.accept(handleChangeArray(data, "synced-roles", true));
+                    callback.accept(handleChangeArray(data, "synced-roles", "add"));
                 });
             });
         }
@@ -409,13 +412,22 @@ public class Router {
                 }
 
                 data.add("players", DiscordLinker.getGson().toJsonTree(players));
-                callback.accept(handleChangeArray(data, "synced-roles", true));
+                callback.accept(handleChangeArray(data, "synced-roles", "add"));
             });
         }
+
+        // If a team synced role was added, start the team check
+        boolean hasTeamSyncedRole = DiscordLinker.getPlugin().hasTeamSyncedRole();
+        if(!hadTeamSyncedRole && hasTeamSyncedRole) TeamChangeEvent.startTeamCheck();
     }
 
     public static void removeSyncedRole(JsonObject data, Consumer<RouterResponse> callback) {
-        callback.accept(handleChangeArray(data, "synced-roles", false));
+        boolean hadTeamSyncedRole = DiscordLinker.getPlugin().hasTeamSyncedRole();
+        callback.accept(handleChangeArray(data, "synced-roles", "remove"));
+
+        // If a team synced role was removed, stop the team check
+        boolean hasTeamSyncedRole = DiscordLinker.getPlugin().hasTeamSyncedRole();
+        if(hadTeamSyncedRole && !hasTeamSyncedRole) TeamChangeEvent.stopTeamCheck();
     }
 
     public static void listPlayers(JsonObject data, Consumer<RouterResponse> callback) {
@@ -437,13 +449,16 @@ public class Router {
         List<String> groups = new ArrayList<>();
         List<String> teams = new ArrayList<>();
 
+        System.out.println("list");
         if(getPluginManager().isPluginEnabled("LuckPerms")) groups = LuckPermsUtil.getGroupNames();
-
+        System.out.println(groups);
         getServer().getScoreboardManager().getMainScoreboard().getTeams().forEach(team -> teams.add(team.getName()));
+        System.out.println(teams);
 
         JsonObject response = new JsonObject();
         response.add("groups", DiscordLinker.getGson().toJsonTree(groups));
         response.add("teams", DiscordLinker.getGson().toJsonTree(teams));
+        System.out.println(response);
         callback.accept(new RouterResponse(Status._200, response.toString()));
     }
 
@@ -469,21 +484,22 @@ public class Router {
         return markdown;
     }
 
-    public static RouterResponse handleChangeArray(JsonObject entry, String jsonFieldName, boolean addEntry) {
+    public static RouterResponse handleChangeArray(JsonObject entry, String jsonFieldName, String addOrRemove) {
         try {
             JsonObject connJson = DiscordLinker.getConnJson();
             JsonArray array;
             if(!connJson.has(jsonFieldName)) array = new JsonArray();
             else array = connJson.get(jsonFieldName).getAsJsonArray();
 
-            //Remove channels with same id as entry
+            //Remove channels with same id as entry (to remove entry and prevent duplicates)
             for(JsonElement jsonEntry : array) {
                 if(jsonEntry.getAsJsonObject().get("id").getAsString().equals(entry.get("id").getAsString())) {
                     array.remove(jsonEntry);
                     break;
                 }
             }
-            if(addEntry) array.add(entry);
+            //Add new entry if addOrRemove is "add"
+            if(addOrRemove.equals("add")) array.add(entry);
 
             //Update connJson with new channels
             connJson.add(jsonFieldName, array);
@@ -505,7 +521,22 @@ public class Router {
                 return;
             }
 
-            LuckPermsUtil.updateUserGroup(name, uuid, addOrRemove, callback);
+            LuckPermsUtil.updateUserGroup(name, uuid, addOrRemove, response -> {
+                if(response.getStatus() != Status._200) {
+                    callback.accept(response);
+                    return;
+                }
+
+                // getSyncedRole will update the players list
+                DiscordLinker.getAdapterManager().getSyncedRole(name, true, syncedRole -> {
+                    if(syncedRole == null) {
+                        callback.accept(new RouterResponse(Status._404, INVALID_GROUP.toString()));
+                        return;
+                    }
+
+                    callback.accept(new RouterResponse(Status._200, DiscordLinker.getGson().toJson(syncedRole.getAsJsonArray("players"))));
+                });
+            });
         }
         else {
             Team team = getServer().getScoreboardManager().getMainScoreboard().getTeam(name);
@@ -520,8 +551,15 @@ public class Router {
             else if(addOrRemove.equals("remove") && team.getEntries().contains(player.getName()))
                 team.removeEntry(player.getName());
 
-            getPlayers(team.getName(), false, players ->
-                    callback.accept(new RouterResponse(Status._200, DiscordLinker.getGson().toJson(players))));
+            // getSyncedRole will update the players list
+            DiscordLinker.getAdapterManager().getSyncedRole(name, false, syncedRole -> {
+                if(syncedRole == null) {
+                    callback.accept(new RouterResponse(Status._404, INVALID_TEAM.toString()));
+                    return;
+                }
+
+                callback.accept(new RouterResponse(Status._200, DiscordLinker.getGson().toJson(syncedRole.getAsJsonArray("players"))));
+            });
         }
     }
 

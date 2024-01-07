@@ -8,6 +8,7 @@ import express.http.RequestMethod;
 import express.utils.Status;
 import io.socket.client.AckWithTimeout;
 import me.lianecx.discordlinker.DiscordLinker;
+import me.lianecx.discordlinker.events.TeamChangeEvent;
 import me.lianecx.discordlinker.network.ChatType;
 import me.lianecx.discordlinker.network.HasRequiredRoleResponse;
 import me.lianecx.discordlinker.network.Router;
@@ -206,7 +207,7 @@ public class AdapterManager {
     }
 
     private void updateSyncedRoleMember(String name, boolean isGroup, UUID uuid, String addOrRemove) {
-        getSyncedRole(name, isGroup, true, role -> {
+        getSyncedRole(name, isGroup, role -> {
             if(role == null) return;
             JsonObject payload = new JsonObject();
             payload.add("id", role.get("id"));
@@ -219,13 +220,22 @@ public class AdapterManager {
     }
 
     public void removeSyncedRole(String name, boolean isGroup) {
-        getSyncedRole(name, isGroup, false, role -> {
+        boolean hadTeamSyncedRole = DiscordLinker.getPlugin().hasTeamSyncedRole();
+        getSyncedRole(name, isGroup, role -> {
             if(role == null) return;
             send(RequestMethod.POST, "/remove-synced-role", "remove-synced-role", role);
+            Router.handleChangeArray(role, "synced-roles", "remove");
+
+            boolean hasTeamSyncedRole = DiscordLinker.getPlugin().hasTeamSyncedRole();
+            if(hadTeamSyncedRole && !hasTeamSyncedRole) TeamChangeEvent.stopTeamCheck();
         });
     }
 
-    private void getSyncedRole(String name, boolean isGroup, boolean addEntry, Consumer<JsonObject> callback) {
+    public void getSyncedRole(String name, boolean isGroup, Consumer<JsonObject> callback) {
+        if(DiscordLinker.getConnJson() == null) {
+            callback.accept(null);
+            return;
+        }
         JsonArray syncedRoles = DiscordLinker.getConnJson().get("synced-roles").getAsJsonArray();
 
         // Check if the team/group is synced
@@ -251,7 +261,7 @@ public class AdapterManager {
             role.get().add("players", players);
 
             //Update connJson
-            Router.handleChangeArray(role.get(), "synced-roles", addEntry);
+            Router.handleChangeArray(role.get(), "synced-roles", "add");
 
             callback.accept(role.get());
         });
