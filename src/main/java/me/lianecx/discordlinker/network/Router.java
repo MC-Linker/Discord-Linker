@@ -449,16 +449,12 @@ public class Router {
         List<String> groups = new ArrayList<>();
         List<String> teams = new ArrayList<>();
 
-        System.out.println("list");
         if(getPluginManager().isPluginEnabled("LuckPerms")) groups = LuckPermsUtil.getGroupNames();
-        System.out.println(groups);
         getServer().getScoreboardManager().getMainScoreboard().getTeams().forEach(team -> teams.add(team.getName()));
-        System.out.println(teams);
 
         JsonObject response = new JsonObject();
         response.add("groups", DiscordLinker.getGson().toJsonTree(groups));
         response.add("teams", DiscordLinker.getGson().toJsonTree(teams));
-        System.out.println(response);
         callback.accept(new RouterResponse(Status._200, response.toString()));
     }
 
