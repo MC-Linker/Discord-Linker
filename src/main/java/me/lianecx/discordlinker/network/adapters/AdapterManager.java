@@ -102,6 +102,8 @@ public class AdapterManager {
             connJson.addProperty("id", code.split(":")[0]);
             connJson.addProperty("token", token);
             connJson.add("channels", new JsonArray());
+            connJson.add("synced-roles", new JsonArray());
+            connJson.add("stats-channels", new JsonArray());
             if(dataObject.has("requiredRoleToJoin") && !dataObject.get("requiredRoleToJoin").isJsonNull())
                 connJson.add("requiredRoleToJoin", dataObject.get("requiredRoleToJoin"));
 
