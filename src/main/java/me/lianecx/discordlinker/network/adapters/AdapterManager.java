@@ -149,7 +149,7 @@ public class AdapterManager {
 
     public void send(RequestMethod method, String route, String event, JsonObject body) {
         if(isWebSocketConnected()) ((WebSocketAdapter) adapter).send(event, body);
-        else HttpAdapter.send(method, route, body);
+        else if(isHttpConnected()) HttpAdapter.send(method, route, body);
     }
 
     public void send(RequestMethod method, String route, String event, JsonObject body, Consumer<Router.RouterResponse> callback) {
