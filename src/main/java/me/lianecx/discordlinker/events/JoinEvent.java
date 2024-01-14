@@ -18,7 +18,7 @@ public class JoinEvent implements Listener {
 
             DiscordLinker.getAdapterManager().hasRequiredRole(event.getPlayer().getUniqueId(), hasRequiredRoleResponse -> {
                 if(hasRequiredRoleResponse == HasRequiredRoleResponse.FALSE)
-                    kickPlayerSynchronized(player, ChatColor.RED + "You do not have the required role to join this server.");
+                    kickPlayerSynchronized(player, ChatColor.RED + "You do not have the required role(s) to join this server.");
                 else if(hasRequiredRoleResponse == HasRequiredRoleResponse.NOT_CONNECTED) {
                     // random 4 digit code
                     int randomCode = (int) (Math.random() * 9000) + 1000;
