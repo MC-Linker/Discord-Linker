@@ -87,15 +87,17 @@ public class WebSocketAdapter implements NetworkAdapter {
         //Add listeners and remove them after the first event
         AtomicReference<Emitter.Listener> connectListener = new AtomicReference<>();
         AtomicReference<Emitter.Listener> errorListener = new AtomicReference<>();
+
         connectListener.set(new Emitter.Listener() {
             @Override
             public void call(Object... args) {
                 callback.accept(true);
                 socket.off(Socket.EVENT_CONNECT, this);
-                socket.off(Socket.EVENT_CONNECT_ERROR, this);
-                socket.off(Socket.EVENT_DISCONNECT, this);
+                socket.off(Socket.EVENT_CONNECT_ERROR, errorListener.get());
+                socket.off(Socket.EVENT_DISCONNECT, errorListener.get());
             }
         });
+
         errorListener.set(new Emitter.Listener() {
             @Override
             public void call(Object... args) {
