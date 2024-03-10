@@ -50,7 +50,7 @@ public class WebSocketAdapter implements NetworkAdapter {
         });
 
         socket.on(Socket.EVENT_DISCONNECT, args -> {
-            if(args[0].equals("io server disconnect") || args[0].equals("io client disconnect")) {
+            if(args[0].equals("io server disconnect")) {
                 PLUGIN.getLogger().info(ChatColor.RED + "Disconnected from the Discord Bot!");
                 PLUGIN.deleteConn();
                 DiscordLinker.getAdapterManager().startHttp();
