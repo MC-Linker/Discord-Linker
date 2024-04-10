@@ -6,6 +6,7 @@ import me.lianecx.discordlinker.network.StatsUpdateEvent;
 import org.bukkit.ChatColor;
 import org.bukkit.command.ConsoleCommandSender;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.player.*;
@@ -13,43 +14,43 @@ import org.bukkit.event.server.ServerCommandEvent;
 
 public class ChatListeners implements Listener {
 
-    @EventHandler
+    @EventHandler(priority = EventPriority.MONITOR)
     public void onChatMessage(AsyncPlayerChatEvent event) {
         //Remove color codes
         String replacedMessage = ChatColor.stripColor(event.getMessage().replaceAll("(?i)&[0-9A-FK-OR]", ""));
         sendChatAsync(replacedMessage, ChatType.CHAT, event.getPlayer().getName());
     }
 
-    @EventHandler
+    @EventHandler(priority = EventPriority.MONITOR)
     public void onPlayerJoin(PlayerJoinEvent event) {
         sendChatAsync(event.getJoinMessage(), ChatType.JOIN, event.getPlayer().getName());
         sendStatsAsync(StatsUpdateEvent.MEMBERS);
     }
 
-    @EventHandler
+    @EventHandler(priority = EventPriority.MONITOR)
     public void onPlayerQuit(PlayerQuitEvent event) {
         sendChatAsync(event.getQuitMessage(), ChatType.QUIT, event.getPlayer().getName());
         sendStatsAsync(StatsUpdateEvent.MEMBERS);
     }
 
-    @EventHandler
+    @EventHandler(priority = EventPriority.MONITOR)
     public void onAdvancement(PlayerAdvancementDoneEvent event) {
         //Dont process recipes
         if(event.getAdvancement().getKey().toString().startsWith("minecraft:recipes/")) return;
         sendChatAsync(event.getAdvancement().getKey().toString(), ChatType.ADVANCEMENT, event.getPlayer().getName());
     }
 
-    @EventHandler
+    @EventHandler(priority = EventPriority.MONITOR)
     public void onPlayerDeath(PlayerDeathEvent event) {
         sendChatAsync(event.getDeathMessage(), ChatType.DEATH, event.getEntity().getName());
     }
 
-    @EventHandler
+    @EventHandler(priority = EventPriority.MONITOR)
     public void onPlayerCommand(PlayerCommandPreprocessEvent event) {
         sendChatAsync(event.getMessage(), ChatType.PLAYER_COMMAND, event.getPlayer().getName());
     }
 
-    @EventHandler
+    @EventHandler(priority = EventPriority.MONITOR)
     public void onConsoleCommand(ServerCommandEvent event) {
         //Command sender either from the console or a command block
         ChatType commandType = event.getSender() instanceof ConsoleCommandSender ? ChatType.CONSOLE_COMMAND : ChatType.BLOCK_COMMAND;
