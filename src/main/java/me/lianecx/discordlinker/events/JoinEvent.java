@@ -19,6 +19,8 @@ public class JoinEvent implements Listener {
             DiscordLinker.getAdapterManager().hasRequiredRole(event.getPlayer().getUniqueId(), hasRequiredRoleResponse -> {
                 if(hasRequiredRoleResponse == HasRequiredRoleResponse.FALSE)
                     kickPlayerSynchronized(player, ChatColor.RED + "You do not have the required role(s) to join this server.");
+                else if(hasRequiredRoleResponse == HasRequiredRoleResponse.ERROR)
+                    kickPlayerSynchronized(player, ChatColor.RED + "Your roles could not be verified. Please try again later.");
                 else if(hasRequiredRoleResponse == HasRequiredRoleResponse.NOT_CONNECTED) {
                     // random 4 digit code
                     int randomCode = (int) (Math.random() * 9000) + 1000;
@@ -36,11 +38,9 @@ public class JoinEvent implements Listener {
                                 ChatColor.AQUA + ChatColor.UNDERLINE + url + ChatColor.YELLOW + " and DM " +
                                 ChatColor.AQUA + "@MC Linker#7784" + ChatColor.YELLOW + " with the code " +
                                 ChatColor.AQUA + randomCode + ChatColor.YELLOW +
-                                " in the next" + ChatColor.BOLD + " 3 minutes.");
+                                " in the next" + ChatColor.BOLD + " 3 minutes." + ChatColor.YELLOW + " and rejoin.");
                     });
                 }
-                else if(hasRequiredRoleResponse == HasRequiredRoleResponse.ERROR)
-                    kickPlayerSynchronized(player, ChatColor.RED + "Your roles could not be verified. Please try again later.");
             });
         }
     }
