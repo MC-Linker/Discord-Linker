@@ -16,6 +16,7 @@ public class ChatListeners implements Listener {
 
     @EventHandler(priority = EventPriority.MONITOR)
     public void onChatMessage(AsyncPlayerChatEvent event) {
+        if(event.isCancelled()) return;
         //Remove color codes
         String replacedMessage = ChatColor.stripColor(event.getMessage().replaceAll("(?i)&[0-9A-FK-OR]", ""));
         sendChatAsync(replacedMessage, ChatType.CHAT, event.getPlayer().getName());
@@ -47,11 +48,13 @@ public class ChatListeners implements Listener {
 
     @EventHandler(priority = EventPriority.MONITOR)
     public void onPlayerCommand(PlayerCommandPreprocessEvent event) {
+        if(event.isCancelled()) return;
         sendChatAsync(event.getMessage(), ChatType.PLAYER_COMMAND, event.getPlayer().getName());
     }
 
     @EventHandler(priority = EventPriority.MONITOR)
     public void onConsoleCommand(ServerCommandEvent event) {
+        if(event.isCancelled()) return;
         //Command sender either from the console or a command block
         ChatType commandType = event.getSender() instanceof ConsoleCommandSender ? ChatType.CONSOLE_COMMAND : ChatType.BLOCK_COMMAND;
         sendChatAsync(event.getCommand(), commandType, event.getSender().getName());
