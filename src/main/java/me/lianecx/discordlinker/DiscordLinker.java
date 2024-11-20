@@ -115,6 +115,7 @@ public final class DiscordLinker extends JavaPlugin {
         adapterManager.stop();
 
         getServer().getScheduler().cancelTasks(this);
+        getLogger().warning("**You can safely ignore any previous or following error messages!**");
         getLogger().info(ChatColor.RED + "Plugin disabled.");
     }
 

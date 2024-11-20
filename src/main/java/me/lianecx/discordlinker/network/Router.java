@@ -603,11 +603,13 @@ public class Router {
     public static JsonObject getConnectResponse() {
         try {
             boolean isMinehut = getPluginManager().isPluginEnabled("MinehutPlugin");
+            boolean usesOfflineUUIDs = getServer().getOfflinePlayers()[0] != null &&
+                    getServer().getOfflinePlayers()[0].getUniqueId().version() == 3;
 
             JsonObject response = new JsonObject();
             response.addProperty("version", getServer().getBukkitVersion().split("-")[0]);
             // Minehut servers have online mode disabled in the server.properties file, because a proxy handles authentication
-            response.addProperty("online", isMinehut || getServer().getOnlineMode());
+            response.addProperty("online", isMinehut || !usesOfflineUUIDs || getServer().getOnlineMode());
             response.addProperty("worldPath", URLEncoder.encode(getWorldPath(), "utf-8"));
             response.addProperty("path", URLEncoder.encode(getServer().getWorldContainer().getCanonicalPath(), "utf-8"));
             response.addProperty("floodgatePrefix", getFloodgatePrefix());
