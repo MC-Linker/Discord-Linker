@@ -1,98 +1,134 @@
-package me.lianecx.discordlinker.network.adapters;
+package me.lianecx.discordlinker.network;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import express.http.RequestMethod;
 import express.utils.Status;
+import io.socket.client.Ack;
 import io.socket.client.AckWithTimeout;
+import io.socket.client.IO;
+import io.socket.client.Socket;
+import io.socket.emitter.Emitter;
 import me.lianecx.discordlinker.DiscordLinker;
 import me.lianecx.discordlinker.events.TeamChangeEvent;
-import me.lianecx.discordlinker.network.ChatType;
-import me.lianecx.discordlinker.network.HasRequiredRoleResponse;
-import me.lianecx.discordlinker.network.Router;
-import me.lianecx.discordlinker.network.StatsUpdateEvent;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.math.BigInteger;
+import java.net.HttpURLConnection;
+import java.net.URI;
+import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.security.SecureRandom;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
-public class AdapterManager {
+public class WebSocketConnection {
 
-    private int httpPort;
+    //If the port is not set in the config, default to 80
+    public static final int BOT_PORT = DiscordLinker.getPlugin().getConfig().getInt("bot-port", -1) > 0 ? DiscordLinker.getPlugin().getConfig().getInt("bot-port") : 80;
+    public static final URI BOT_URI = URI.create("http://api.mclinker.com:" + BOT_PORT);
+    private static final String PLUGIN_VERSION = DiscordLinker.getPlugin().getDescription().getVersion();
 
-    private NetworkAdapter adapter;
+    private static final DiscordLinker PLUGIN = DiscordLinker.getPlugin();
+    private Socket socket;
 
-    public AdapterManager(String token, int httpPort) {
-        this.httpPort = httpPort;
-        adapter = new WebSocketAdapter(Collections.singletonMap("token", token));
+    public WebSocketConnection(String token) {
+        this(Collections.singletonMap("token", token));
     }
 
-    public AdapterManager(int httpPort) {
-        this.httpPort = httpPort;
-        adapter = new HttpAdapter();
+    public WebSocketConnection(Map<String, String> auth) {
+        Set<Map.Entry<String, JsonElement>> queries = Router.getConnectResponse().entrySet();
+        String queryString = queries.stream()
+                .filter(e -> !e.getValue().isJsonNull())
+                .map(e -> e.getKey() + "=" + e.getValue().getAsString())
+                .collect(Collectors.joining("&"));
+
+        IO.Options ioOptions = IO.Options.builder()
+                .setAuth(auth)
+                .setQuery(queryString)
+                .setReconnectionDelayMax(10000)
+                .build();
+
+        Socket socket = IO.socket(BOT_URI, ioOptions);
+
+        socket.on(Socket.EVENT_CONNECT_ERROR, args -> PLUGIN.getLogger().info(ChatColor.RED + "Could not reach the Discord Bot! Reconnecting..."));
+        socket.on(Socket.EVENT_CONNECT, args -> PLUGIN.getLogger().info(ChatColor.GREEN + "Connected to the Discord Bot!"));
+
+        socket.on(Socket.EVENT_DISCONNECT, args -> {
+            if(args[0].equals("io server disconnect")) {
+                PLUGIN.getLogger().info(ChatColor.RED + "Disconnected from the Discord Bot!");
+                PLUGIN.deleteConn();
+            }
+            else PLUGIN.getLogger().info(ChatColor.RED + "Disconnected from the Discord Bot! Reconnecting...");
+        });
+
+        socket.onAnyIncoming(args -> {
+            String eventName = (String) args[0];
+            JsonObject data = new JsonParser().parse(args[1].toString()).getAsJsonObject();
+
+            AtomicReference<Ack> ack = new AtomicReference<>(null);
+            if(args[args.length - 1] instanceof Ack) ack.set((Ack) args[args.length - 1]); //Optional ack
+
+            Route route = Route.getRouteByEventName(eventName);
+            if(route == null) {
+                if(ack.get() != null) ack.get().call(jsonFromStatus(Status._404));
+                return;
+            }
+
+            if(route == Route.PUT_FILE) {
+                //Special case: File upload (pass body as input stream to function)
+                Router.putFile(data, (InputStream) args[2], routerResponse -> this.respond(routerResponse, ack.get()));
+            }
+            else {
+                route.execute(data, routerResponse -> this.respond(routerResponse, ack.get()));
+            }
+        });
+
+        this.socket = socket;
     }
 
-    public void setHttpPort(int httpPort) {
-        this.httpPort = httpPort;
-    }
+    public static void checkVersion() {
+        try {
+            HttpURLConnection conn = (HttpURLConnection) new URL(BOT_URI + "/version").openConnection();
+            InputStream inputStream = conn.getInputStream();
+            String latestVersion = new BufferedReader(new InputStreamReader(inputStream)).lines().collect(Collectors.joining("\n"));
+            if(!latestVersion.equals(PLUGIN_VERSION))
+                DiscordLinker.getPlugin().getLogger().info(ChatColor.AQUA + "Please update to the latest Discord-Linker version (" + latestVersion + ") for a bug-free and feature-rich experience.");
 
-    public void start(Consumer<Boolean> callback) {
-        if(adapter == null) return;
-
-        //Reconnect to websocket if it was connected before
-        adapter.disconnect();
-        adapter.connect(httpPort, callback);
-    }
-
-    public void stop() {
-        // This throws an error on reload and server stop, probably because spigot already started unloading some classes when this gets called
-        if(adapter != null) adapter.disconnect();
-    }
-
-    public void startHttp() {
-        stop();
-        adapter = new HttpAdapter();
-        start(bool -> {});
-    }
-
-    public void stopHttp() {
-        if(isHttpConnected()) {
-            adapter.disconnect();
-            adapter = null;
         }
+        catch(IOException ignored) {}
     }
 
     /**
      * Connects to the websocket server with a verification code.
+     *
      * @param code     The verification code to connect with.
      * @param callback The callback to run when the connection is established or fails.
      */
     public void connectWebsocket(String code, Consumer<Boolean> callback) {
-        stop();
-
         //Create random 32-character hex string
         String token = new BigInteger(130, new SecureRandom()).toString(16);
         Map<String, String> auth = new HashMap<>();
         auth.put("code", code);
         auth.put("token", token);
 
-        WebSocketAdapter tempAdapter = new WebSocketAdapter(auth);
+        WebSocketConnection tempAdapter = new WebSocketConnection(auth);
 
         //Set listeners
         tempAdapter.getSocket().on("auth-success", data -> {
             //Code is valid, set the adapter to the new one
-            adapter = tempAdapter;
+            this.socket = tempAdapter.getSocket();
+            tempAdapter.socket = null;
 
             JsonObject dataObject = new JsonParser().parse(data[0].toString()).getAsJsonObject();
 
@@ -115,45 +151,29 @@ public class AdapterManager {
                 DiscordLinker.getPlugin().getLogger().info(ChatColor.RED + "Failed to save connection data.");
                 err.printStackTrace();
 
-                stop();
-                startHttp();
+                disconnect();
                 callback.accept(false);
             }
 
             tempAdapter.getSocket().off("auth-success"); // Only run once
         });
-
-        tempAdapter.connect(httpPort, connected -> {
-            //If connected, the bot will call auth-success above
-            if(connected) return;
-
-            tempAdapter.disconnect();
-            callback.accept(false);
-            //Connect to old adapter if it exists
-            if(adapter != null) adapter.connect(httpPort, bool -> {});
-        });
     }
 
     public void disconnectForce() {
-        send(RequestMethod.GET, "/disconnect-force", "disconnect-force", new JsonObject());
+        send("disconnect-force", new JsonObject());
         DiscordLinker.getPlugin().deleteConn();
     }
 
     public boolean isWebSocketConnected() {
-        return adapter instanceof WebSocketAdapter && ((WebSocketAdapter) adapter).getSocket().connected();
+        return this.getSocket().connected();
     }
 
-    public boolean isHttpConnected() {
-        return adapter instanceof HttpAdapter;
+    public void send(String event, JsonObject body) {
+        if(isWebSocketConnected()) socket.emit(event, body);
     }
 
-    public void send(RequestMethod method, String route, String event, JsonObject body) {
-        if(isWebSocketConnected()) ((WebSocketAdapter) adapter).send(event, body);
-        else if(isHttpConnected()) HttpAdapter.send(method, route, body);
-    }
-
-    public void send(RequestMethod method, String route, String event, JsonObject body, Consumer<Router.RouterResponse> callback) {
-        if(isWebSocketConnected()) ((WebSocketAdapter) adapter).send(event, body, new AckWithTimeout(5000) {
+    public void send(String event, JsonObject body, Consumer<Router.RouterResponse> callback) {
+        if(isWebSocketConnected()) socket.emit(event, body, new AckWithTimeout(5000) {
             @Override
             public void onSuccess(Object... args) {
                 try {
@@ -169,9 +189,6 @@ public class AdapterManager {
                 callback.accept(null);
             }
         });
-        else {
-            callback.accept(HttpAdapter.send(method, route, body));
-        }
     }
 
     public void chat(String message, ChatType type, String player) {
@@ -184,7 +201,7 @@ public class AdapterManager {
         chatJson.addProperty("message", ChatColor.stripColor(message));
         chatJson.add("channels", channels);
 
-        send(RequestMethod.POST, "/chat", "chat", chatJson);
+        send("chat", chatJson);
     }
 
     public void updateStatsChannel(StatsUpdateEvent event) {
@@ -197,7 +214,7 @@ public class AdapterManager {
 
         if(event == StatsUpdateEvent.MEMBERS) statsJson.addProperty("members", Bukkit.getOnlinePlayers().size());
 
-        send(RequestMethod.POST, "/update-stats-channels", "update-stats-channels", statsJson);
+        send("update-stats-channels", statsJson);
     }
 
     public void addSyncedRoleMember(String name, boolean isGroup, UUID uuid) {
@@ -215,9 +232,9 @@ public class AdapterManager {
             payload.add("id", role.get("id"));
             payload.addProperty("uuid", uuid.toString());
             if(addOrRemove.equals("add"))
-                send(RequestMethod.POST, "/add-synced-role-member", "add-synced-role-member", payload);
+                send("add-synced-role-member", payload);
             else if(addOrRemove.equals("remove"))
-                send(RequestMethod.POST, "/remove-synced-role-member", "remove-synced-role-member", payload);
+                send("remove-synced-role-member", payload);
         });
     }
 
@@ -225,7 +242,7 @@ public class AdapterManager {
         boolean hadTeamSyncedRole = DiscordLinker.getPlugin().hasTeamSyncedRole();
         getSyncedRole(name, isGroup, role -> {
             if(role == null) return;
-            send(RequestMethod.POST, "/remove-synced-role", "remove-synced-role", role);
+            send("remove-synced-role", role);
             Router.handleChangeArray(role, "synced-roles", "remove");
 
             boolean hasTeamSyncedRole = DiscordLinker.getPlugin().hasTeamSyncedRole();
@@ -274,14 +291,14 @@ public class AdapterManager {
         verifyJson.addProperty("code", code);
         verifyJson.addProperty("uuid", uuid.toString());
 
-        send(RequestMethod.POST, "/verify/response", "verify-response", verifyJson);
+        send("verify-response", verifyJson);
     }
 
     public void hasRequiredRole(UUID uuid, Consumer<HasRequiredRoleResponse> callback) {
         JsonObject verifyJson = new JsonObject();
         verifyJson.addProperty("uuid", uuid.toString());
 
-        send(RequestMethod.POST, "/has-required-role", "has-required-role", verifyJson, body -> {
+        send("has-required-role", verifyJson, body -> {
             if(body == null) callback.accept(HasRequiredRoleResponse.ERROR);
             else {
                 try {
@@ -301,11 +318,11 @@ public class AdapterManager {
         verifyJson.addProperty("uuid", player.getUniqueId().toString());
         verifyJson.addProperty("username", player.getName());
 
-        send(RequestMethod.POST, "/verify-user", "verify-user", verifyJson);
+        send("verify-user", verifyJson);
     }
 
     public void getInviteURL(Consumer<String> callback) {
-        send(RequestMethod.POST, "/invite-url", "invite-url", new JsonObject(), body -> {
+        send("invite-url", new JsonObject(), body -> {
             if(body == null) callback.accept(null);
             else {
                 try {
@@ -318,5 +335,78 @@ public class AdapterManager {
                 }
             }
         });
+    }
+
+    public void disconnect() {
+        socket.disconnect();
+    }
+
+    public Socket getSocket() {
+        return socket;
+    }
+
+    private JsonObject jsonFromStatus(Status status) {
+        JsonObject json = new JsonObject();
+        json.addProperty("status", status.getCode());
+        return json;
+    }
+
+    private void respond(Router.RouterResponse response, Ack ack) {
+        if(ack == null) return;
+
+        if(response.isAttachment()) {
+            //Read files from response and send them
+            String path = response.getMessage();
+            try {
+                byte[] file = Files.readAllBytes(Paths.get(path));
+                ack.call(file);
+            }
+            catch(IOException err) {
+                JsonObject error = jsonFromStatus(Status._500);
+                error.addProperty("message", err.toString());
+                ack.call(error);
+            }
+
+            return;
+        }
+
+        JsonObject json = jsonFromStatus(response.getStatus());
+        if(response.getMessage() != null) {
+            JsonElement data = new JsonParser().parse(response.getMessage());
+            json.add("data", data);
+        }
+        ack.call(json);
+    }
+
+    public void connect(Consumer<Boolean> callback) {
+        //Add listeners and remove them after the first event
+        AtomicReference<Emitter.Listener> connectListener = new AtomicReference<>();
+        AtomicReference<Emitter.Listener> errorListener = new AtomicReference<>();
+
+        connectListener.set(new Emitter.Listener() {
+            @Override
+            public void call(Object... args) {
+                callback.accept(true);
+                socket.off(Socket.EVENT_CONNECT, this);
+                socket.off(Socket.EVENT_CONNECT_ERROR, errorListener.get());
+                socket.off(Socket.EVENT_DISCONNECT, errorListener.get());
+            }
+        });
+
+        errorListener.set(new Emitter.Listener() {
+            @Override
+            public void call(Object... args) {
+                callback.accept(false);
+                socket.off(Socket.EVENT_CONNECT, connectListener.get());
+                socket.off(Socket.EVENT_CONNECT_ERROR, this);
+                socket.off(Socket.EVENT_DISCONNECT, this);
+            }
+        });
+
+        socket.on(Socket.EVENT_CONNECT, connectListener.get());
+        socket.on(Socket.EVENT_CONNECT_ERROR, errorListener.get());
+        socket.on(Socket.EVENT_DISCONNECT, errorListener.get());
+
+        socket.connect();
     }
 }

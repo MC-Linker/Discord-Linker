@@ -41,12 +41,12 @@ public class TeamChangeEvent implements Listener {
                     @SuppressWarnings("deprecation") OfflinePlayer player = Bukkit.getOfflinePlayer(entry);
                     if(syncedRoleObj.get("players").getAsJsonArray().contains(new JsonPrimitive(player.getUniqueId().toString())))
                         continue;
-                    DiscordLinker.getAdapterManager().addSyncedRoleMember(team.getName(), false, player.getUniqueId());
+                    DiscordLinker.getWebSocketConnection().addSyncedRoleMember(team.getName(), false, player.getUniqueId());
                 }
                 for(JsonElement uuid : syncedRoleObj.get("players").getAsJsonArray()) {
                     OfflinePlayer offlinePlayer = Bukkit.getOfflinePlayer(UUID.fromString(uuid.getAsString()));
                     if(team.getEntries().contains(offlinePlayer.getName())) continue;
-                    DiscordLinker.getAdapterManager().removeSyncedRoleMember(team.getName(), false, offlinePlayer.getUniqueId());
+                    DiscordLinker.getWebSocketConnection().removeSyncedRoleMember(team.getName(), false, offlinePlayer.getUniqueId());
                 }
             }
         }, 20 * 60, 20 * 60);
@@ -96,7 +96,7 @@ public class TeamChangeEvent implements Listener {
                     Bukkit.getScheduler().runTaskLater(DiscordLinker.getPlugin(), () -> {
                         Team team = getServer().getScoreboardManager().getMainScoreboard().getEntryTeam(player.getName());
                         if(team != null)
-                            DiscordLinker.getAdapterManager().addSyncedRoleMember(team.getName(), false, player.getUniqueId());
+                            DiscordLinker.getWebSocketConnection().addSyncedRoleMember(team.getName(), false, player.getUniqueId());
                     }, 1L);
                 }
                 break;
@@ -108,7 +108,7 @@ public class TeamChangeEvent implements Listener {
 
                 for(String entry : emptiedTeam.getEntries()) {
                     @SuppressWarnings("deprecation") OfflinePlayer player = Bukkit.getOfflinePlayer(entry);
-                    DiscordLinker.getAdapterManager().removeSyncedRoleMember(emptiedTeam.getName(), false, player.getUniqueId());
+                    DiscordLinker.getWebSocketConnection().removeSyncedRoleMember(emptiedTeam.getName(), false, player.getUniqueId());
                 }
                 break;
             case "leave":
@@ -126,7 +126,7 @@ public class TeamChangeEvent implements Listener {
                     Bukkit.getScheduler().runTaskLater(DiscordLinker.getPlugin(), () -> {
                         Team team = getServer().getScoreboardManager().getMainScoreboard().getEntryTeam(entity.getName());
                         if(team == null)
-                            DiscordLinker.getAdapterManager().removeSyncedRoleMember(previousTeam.getName(), false, entity.getUniqueId());
+                            DiscordLinker.getWebSocketConnection().removeSyncedRoleMember(previousTeam.getName(), false, entity.getUniqueId());
                     }, 1L);
                 }
                 break;
@@ -135,7 +135,7 @@ public class TeamChangeEvent implements Listener {
 
                 Team removedTeam = getServer().getScoreboardManager().getMainScoreboard().getTeam(args[2]);
                 if(removedTeam != null)
-                    DiscordLinker.getAdapterManager().removeSyncedRole(removedTeam.getName(), false);
+                    DiscordLinker.getWebSocketConnection().removeSyncedRole(removedTeam.getName(), false);
                 break;
         }
     }

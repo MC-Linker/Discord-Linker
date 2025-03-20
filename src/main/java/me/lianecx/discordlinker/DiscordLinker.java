@@ -11,8 +11,7 @@ import me.lianecx.discordlinker.events.TeamChangeEvent;
 import me.lianecx.discordlinker.network.ChatType;
 import me.lianecx.discordlinker.network.Router;
 import me.lianecx.discordlinker.network.StatsUpdateEvent;
-import me.lianecx.discordlinker.network.adapters.AdapterManager;
-import me.lianecx.discordlinker.network.adapters.HttpAdapter;
+import me.lianecx.discordlinker.network.WebSocketConnection;
 import me.lianecx.discordlinker.utilities.LuckPermsUtil;
 import org.bstats.bukkit.Metrics;
 import org.bstats.charts.SimplePie;
@@ -34,7 +33,7 @@ public final class DiscordLinker extends JavaPlugin {
     private static final int PLUGIN_ID = 17143;
     private static JsonObject connJson;
     private static DiscordLinker plugin;
-    private static AdapterManager adapterManager;
+    private static WebSocketConnection webSocketConnection;
     private final FileConfiguration config = getConfig();
 
     private static final Gson gson = new GsonBuilder().setPrettyPrinting().create();
@@ -48,8 +47,8 @@ public final class DiscordLinker extends JavaPlugin {
         return plugin;
     }
 
-    public static AdapterManager getAdapterManager() {
-        return adapterManager;
+    public static WebSocketConnection getWebSocketConnection() {
+        return webSocketConnection;
     }
 
     public static Gson getGson() {
@@ -66,7 +65,7 @@ public final class DiscordLinker extends JavaPlugin {
         saveDefaultConfig();
 
         getServer().getScheduler().runTaskAsynchronously(this, () -> {
-            HttpAdapter.checkVersion();
+            WebSocketConnection.checkVersion();
 
             try(Reader connReader = Files.newBufferedReader(Paths.get(getDataFolder() + "/connection.conn"))) {
                 Router.init(); //Try-catch the init
@@ -76,15 +75,24 @@ public final class DiscordLinker extends JavaPlugin {
             }
             catch(IOException ignored) {}
 
-            String protocol = connJson != null && connJson.get("protocol") != null ? connJson.get("protocol").getAsString() : null;
-            String token = Objects.equals(protocol, "websocket") ? connJson.get("token").getAsString() : null;
+            if(connJson == null) {
+                getLogger().warning("No connection file found! Please connect your server using `/connect` in Discord.");
+                return;
+            }
 
-            if(Objects.equals(protocol, "websocket")) adapterManager = new AdapterManager(token, getPort());
-            else adapterManager = new AdapterManager(getPort());
-            adapterManager.start(connected -> {
+            String protocol = connJson.get("protocol") != null ? connJson.get("protocol").getAsString() : null;
+            if(Objects.equals(protocol, "http")) {
+                getLogger().warning("HTTP protocol is deprecated and cannot be used anymore! Please reconnect your server using `/connect` in Discord.");
+                deleteConn();
+                return;
+            }
+            String token = connJson.get("token").getAsString();
+
+            webSocketConnection = new WebSocketConnection(token);
+            webSocketConnection.connect(connected -> {
                 if(!connected) return;
-                adapterManager.chat("", ChatType.START, null);
-                adapterManager.updateStatsChannel(StatsUpdateEvent.ONLINE);
+                webSocketConnection.chat("", ChatType.START, null);
+                webSocketConnection.updateStatsChannel(StatsUpdateEvent.ONLINE);
             });
 
             Metrics metrics = new Metrics(this, PLUGIN_ID);
@@ -109,10 +117,10 @@ public final class DiscordLinker extends JavaPlugin {
 
     @Override
     public void onDisable() {
-        adapterManager.chat("", ChatType.CLOSE, null);
-        adapterManager.updateStatsChannel(StatsUpdateEvent.OFFLINE);
-        adapterManager.updateStatsChannel(StatsUpdateEvent.MEMBERS);
-        adapterManager.stop();
+        webSocketConnection.chat("", ChatType.CLOSE, null);
+        webSocketConnection.updateStatsChannel(StatsUpdateEvent.OFFLINE);
+        webSocketConnection.updateStatsChannel(StatsUpdateEvent.MEMBERS);
+        webSocketConnection.disconnect();
 
         getServer().getScheduler().cancelTasks(this);
         getLogger().warning("**You can safely ignore any previous or following error messages!**");

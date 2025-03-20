@@ -524,7 +524,7 @@ public class Router {
                 }
 
                 // getSyncedRole will update the players list
-                DiscordLinker.getAdapterManager().getSyncedRole(name, true, syncedRole -> {
+                DiscordLinker.getWebSocketConnection().getSyncedRole(name, true, syncedRole -> {
                     if(syncedRole == null) {
                         callback.accept(new RouterResponse(Status._404, INVALID_GROUP.toString()));
                         return;
@@ -548,7 +548,7 @@ public class Router {
                 team.removeEntry(player.getName());
 
             // getSyncedRole will update the players list
-            DiscordLinker.getAdapterManager().getSyncedRole(name, false, syncedRole -> {
+            DiscordLinker.getWebSocketConnection().getSyncedRole(name, false, syncedRole -> {
                 if(syncedRole == null) {
                     callback.accept(new RouterResponse(Status._404, INVALID_TEAM.toString()));
                     return;
@@ -613,6 +613,7 @@ public class Router {
             response.addProperty("worldPath", URLEncoder.encode(getWorldPath(), "utf-8"));
             response.addProperty("path", URLEncoder.encode(getServer().getWorldContainer().getCanonicalPath(), "utf-8"));
             response.addProperty("floodgatePrefix", getFloodgatePrefix());
+            response.addProperty("port", DiscordLinker.getPlugin().getServer().getPort());
 
             return response;
         }

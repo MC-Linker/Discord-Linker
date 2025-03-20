@@ -52,7 +52,7 @@ public class VerifyCommand implements CommandExecutor {
         }
 
         playersAwaitingVerification.remove(uuid);
-        DiscordLinker.getAdapterManager().sendVerificationResponse(code, uuid); // Send verification response to the bot
+        DiscordLinker.getWebSocketConnection().sendVerificationResponse(code, uuid); // Send verification response to the bot
         sender.sendMessage(ChatColor.GREEN + "You have been verified successfully. You can now go back to discord.");
 
         return true;

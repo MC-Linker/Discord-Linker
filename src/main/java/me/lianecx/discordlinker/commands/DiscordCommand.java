@@ -17,7 +17,7 @@ public class DiscordCommand implements CommandExecutor {
             return true;
         }
 
-        DiscordLinker.getAdapterManager().getInviteURL(url -> {
+        DiscordLinker.getWebSocketConnection().getInviteURL(url -> {
             if(url == null) {
                 sender.sendMessage(ChatColor.RED + "An error occurred while getting the invite URL. Please try again later.");
                 return;

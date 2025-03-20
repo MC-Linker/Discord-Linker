@@ -6,6 +6,6 @@ import net.luckperms.api.event.group.GroupDeleteEvent;
 public class DeleteGroupEvent {
 
     public static void onGroupDelete(GroupDeleteEvent event) {
-        DiscordLinker.getAdapterManager().removeSyncedRole(event.getGroupName(), true);
+        DiscordLinker.getWebSocketConnection().removeSyncedRole(event.getGroupName(), true);
     }
 }

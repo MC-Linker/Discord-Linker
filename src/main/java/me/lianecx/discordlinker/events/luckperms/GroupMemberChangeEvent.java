@@ -26,7 +26,7 @@ public class GroupMemberChangeEvent {
                 .collect(Collectors.toSet());
         if(addedInheritance.isEmpty() && removedInheritance.isEmpty()) return;
 
-        addedInheritance.forEach(node -> DiscordLinker.getAdapterManager().addSyncedRoleMember(node.getGroupName(), true, user.getUniqueId()));
-        removedInheritance.forEach(node -> DiscordLinker.getAdapterManager().removeSyncedRoleMember(node.getGroupName(), true, user.getUniqueId()));
+        addedInheritance.forEach(node -> DiscordLinker.getWebSocketConnection().addSyncedRoleMember(node.getGroupName(), true, user.getUniqueId()));
+        removedInheritance.forEach(node -> DiscordLinker.getWebSocketConnection().removeSyncedRoleMember(node.getGroupName(), true, user.getUniqueId()));
     }
 }

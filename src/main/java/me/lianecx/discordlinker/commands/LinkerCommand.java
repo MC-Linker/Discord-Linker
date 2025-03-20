@@ -18,8 +18,7 @@ public class LinkerCommand implements CommandExecutor {
             case "reload":
                 PLUGIN.reloadConfig();
 
-                DiscordLinker.getAdapterManager().setHttpPort(PLUGIN.getPort());
-                DiscordLinker.getAdapterManager().start(connected -> sender.sendMessage(ChatColor.GREEN + "Successfully reloaded config."));
+                DiscordLinker.getWebSocketConnection().connect(connected -> sender.sendMessage(ChatColor.GREEN + "Successfully reloaded config."));
                 break;
             case "port":
                 if(args.length == 1) {
@@ -39,9 +38,10 @@ public class LinkerCommand implements CommandExecutor {
                 PLUGIN.getConfig().set("port", newPort);
                 PLUGIN.saveConfig();
 
-                DiscordLinker.getAdapterManager().setHttpPort(newPort);
+                DiscordLinker.getWebSocketConnection().setHttpPort(newPort);
                 //Only start http server if it was already started
-                if(DiscordLinker.getAdapterManager().isHttpConnected()) DiscordLinker.getAdapterManager().startHttp();
+                if(DiscordLinker.getWebSocketConnection().isHttpConnected())
+                    DiscordLinker.getWebSocketConnection().startHttp();
                 sender.sendMessage(ChatColor.GREEN + "Successfully set port to " + ChatColor.DARK_AQUA + newPort + ChatColor.GREEN + ".");
                 break;
             case "connect":
@@ -57,7 +57,7 @@ public class LinkerCommand implements CommandExecutor {
 
                 String code = args[1];
                 sender.sendMessage(ChatColor.YELLOW + "Attempting to connect to the Discord bot...");
-                DiscordLinker.getAdapterManager().connectWebsocket(code, success -> {
+                DiscordLinker.getWebSocketConnection().connectWebsocket(code, success -> {
                     if(success)
                         sender.sendMessage(ChatColor.GREEN + "Successfully connected to Discord!");
                     else
@@ -70,7 +70,7 @@ public class LinkerCommand implements CommandExecutor {
                     return true;
                 }
 
-                DiscordLinker.getAdapterManager().disconnectForce();
+                DiscordLinker.getWebSocketConnection().disconnectForce();
                 sender.sendMessage(ChatColor.GREEN + "Successfully disconnected from Discord!");
                 break;
             default:
