@@ -93,6 +93,7 @@ public final class DiscordLinker extends JavaPlugin {
                     adapterManager.disconnectForce();
                 }
             }
+            else adapterManager = new AdapterManager(getPort());
 
             Metrics metrics = new Metrics(this, PLUGIN_ID);
             metrics.addCustomChart(new SimplePie("server_connected_with_discord", () -> connJson != null ? "true" : "false"));
