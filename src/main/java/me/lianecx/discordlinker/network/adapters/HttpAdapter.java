@@ -61,11 +61,12 @@ public class HttpAdapter implements NetworkAdapter {
         });
     }
 
+    @Deprecated
     public void connect(int port, Consumer<Boolean> callback) {
-        app.listen(() -> {
-            callback.accept(true);
-            DiscordLinker.getPlugin().getLogger().info("Listening on port " + port);
-        }, port);
+//        app.listen(() -> {
+//            callback.accept(true);
+//            DiscordLinker.getPlugin().getLogger().info("Listening on port " + port);
+//        }, port);
     }
 
     public static Router.RouterResponse send(RequestMethod method, String route, JsonElement body) {
