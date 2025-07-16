@@ -6,7 +6,7 @@
 
     <groupId>me.lianecx</groupId>
     <artifactId>Discord-Linker</artifactId>
-    <version>3.5.1</version>
+    <version>3.6-SNAPSHOT</version>
     <packaging>jar</packaging>
 
     <name>Discord-Linker</name>
@@ -75,6 +75,10 @@
             <id>CodeMC</id>
             <url>https://repo.codemc.org/repository/maven-public/</url>
         </repository>
+        <repository>
+            <id>jcenter</id>
+            <url>https://jcenter.bintray.com/</url>
+        </repository>
     </repositories>
 
     <dependencies>
@@ -96,9 +100,9 @@
             <scope>compile</scope>
         </dependency>
         <dependency>
-            <groupId>com.github.Simonwep</groupId>
+            <groupId>io.vacco.java-express</groupId>
             <artifactId>java-express</artifactId>
-            <version>0.1.1</version>
+            <version>0.2.1</version>
         </dependency>
         <dependency>
             <groupId>io.socket</groupId>
@@ -108,7 +112,7 @@
         <dependency>
             <groupId>io.github.bananapuncher714</groupId>
             <artifactId>nbteditor</artifactId>
-            <version>7.19.3</version>
+            <version>7.19.7</version>
         </dependency>
         <dependency>
             <groupId>net.luckperms</groupId>
