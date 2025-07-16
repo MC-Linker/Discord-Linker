@@ -77,15 +77,22 @@ public final class DiscordLinker extends JavaPlugin {
             catch(IOException ignored) {}
 
             String protocol = connJson != null && connJson.get("protocol") != null ? connJson.get("protocol").getAsString() : null;
-            String token = Objects.equals(protocol, "websocket") ? connJson.get("token").getAsString() : null;
+            if(protocol != null) {
+                if(protocol.equals("websocket")) {
+                    String token = connJson.get("token").getAsString();
 
-            if(Objects.equals(protocol, "websocket")) adapterManager = new AdapterManager(token, getPort());
-            else adapterManager = new AdapterManager(getPort());
-            adapterManager.start(connected -> {
-                if(!connected) return;
-                adapterManager.chat("", ChatType.START, null);
-                adapterManager.updateStatsChannel(StatsUpdateEvent.ONLINE);
-            });
+                    adapterManager = new AdapterManager(token, getPort());
+                    adapterManager.start(connected -> {
+                        if(!connected) return;
+                        adapterManager.chat("", ChatType.START, null);
+                        adapterManager.updateStatsChannel(StatsUpdateEvent.ONLINE);
+                    });
+                }
+                else {
+                    getLogger().warning("**Your server is using the deprecated backup connection method and will be disconnected. Please reconnect in Discord using `/connect`.**");
+                    adapterManager.disconnectForce();
+                }
+            }
 
             Metrics metrics = new Metrics(this, PLUGIN_ID);
             metrics.addCustomChart(new SimplePie("server_connected_with_discord", () -> connJson != null ? "true" : "false"));
