@@ -21,6 +21,7 @@ import java.security.NoSuchAlgorithmException;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
+@Deprecated
 public class HttpAdapter implements NetworkAdapter {
 
     private final Express app;
