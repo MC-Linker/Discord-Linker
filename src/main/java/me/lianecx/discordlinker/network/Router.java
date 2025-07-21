@@ -14,7 +14,6 @@ import me.lianecx.discordlinker.utilities.ConsoleLogger;
 import me.lianecx.discordlinker.utilities.LuckPermsUtil;
 import net.md_5.bungee.api.chat.ClickEvent;
 import net.md_5.bungee.api.chat.ComponentBuilder;
-import org.apache.commons.lang.RandomStringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.core.Logger;
 import org.bukkit.Bukkit;
@@ -142,20 +141,6 @@ public class Router {
         catch(IOException err) {
             callback.accept(new RouterResponse(Status._200, new JsonArray().toString()));
         }
-    }
-
-    public static void verifyGuild(JsonObject data, Consumer<RouterResponse> callback) {
-        //If plugin is already connected to a different guild, respond with 409: Conflict
-        if(DiscordLinker.getConnJson() != null && !DiscordLinker.getConnJson().get("id").getAsString().equals(data.get("id").getAsString())) {
-            callback.accept(new RouterResponse(Status._409, ALREADY_CONNECTED.toString()));
-            return;
-        }
-
-        verifyCode = RandomStringUtils.randomAlphanumeric(6);
-        DiscordLinker.getPlugin().getLogger().info(ChatColor.YELLOW + "Verification Code: " + verifyCode);
-
-        getServer().getScheduler().runTaskLater(DiscordLinker.getPlugin(), () -> verifyCode = null, 3600);
-        callback.accept(new RouterResponse(Status._200, SUCCESS.toString()));
     }
 
     public static void verifyUser(JsonObject data, Consumer<RouterResponse> callback) {

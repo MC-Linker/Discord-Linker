@@ -10,7 +10,6 @@ public enum Route {
     GET_FILE("/file/get", "get-file", Router::getFile),
     PUT_FILE("/file/put", "put-file", null),
     LIST_FILE("/file/list", "list-file", Router::listFile),
-    VERIFY_GUILD("/verify/guild", null, Router::verifyGuild, false),
     VERIFY_USER("/verify/user", "verify-user", Router::verifyUser),
     COMMAND("/command", "command", Router::command),
     GET_PLAYER_NBT("/player/nbt", "get-player-nbt", Router::getPlayerNBT),
