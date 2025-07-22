@@ -56,7 +56,6 @@ public class AdapterManager {
     }
 
     public void stop() {
-        // This throws an error on reload and server stop, probably because spigot already started unloading some classes when this gets called
         if(adapter != null) adapter.disconnect();
     }
 

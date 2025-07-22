@@ -89,7 +89,7 @@ public final class DiscordLinker extends JavaPlugin {
                     });
                 }
                 else {
-                    getLogger().warning("**Your server is using the deprecated backup connection method and will be disconnected. Please reconnect in Discord using `/connect`.**");
+                    getLogger().warning(ChatColor.GOLD + "**Your server is using the deprecated backup connection method and will be disconnected. Please reconnect in Discord using `/connect`.**");
                     adapterManager.disconnectForce();
                 }
             }
@@ -123,7 +123,6 @@ public final class DiscordLinker extends JavaPlugin {
         adapterManager.stop();
 
         getServer().getScheduler().cancelTasks(this);
-        getLogger().warning(ChatColor.GOLD + "**You can safely ignore any previous or following error messages!**");
         getLogger().info(ChatColor.RED + "Plugin disabled.");
     }
 

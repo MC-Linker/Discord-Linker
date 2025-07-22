@@ -11,6 +11,9 @@ import io.socket.emitter.Emitter;
 import me.lianecx.discordlinker.DiscordLinker;
 import me.lianecx.discordlinker.network.Route;
 import me.lianecx.discordlinker.network.Router;
+import okhttp3.Dispatcher;
+import okhttp3.OkHttpClient;
+import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 
 import java.io.IOException;
@@ -19,27 +22,40 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 public class WebSocketAdapter implements NetworkAdapter {
 
+    private final ExecutorService executor = Executors.newSingleThreadExecutor();
     private final Socket socket;
+    private final Dispatcher dispatcher = new Dispatcher();
+    private final ExecutorService pool = dispatcher.executorService();
     private static final DiscordLinker PLUGIN = DiscordLinker.getPlugin();
 
     public WebSocketAdapter(Map<String, String> auth) {
+
+        OkHttpClient okHttpClient = new OkHttpClient.Builder()
+                .dispatcher(dispatcher)
+                .readTimeout(1, TimeUnit.MINUTES) // important for HTTP long-polling
+                .build();
+
         Set<Map.Entry<String, JsonElement>> queries = Router.getConnectResponse().entrySet();
         String queryString = queries.stream()
                 .filter(e -> !e.getValue().isJsonNull())
                 .map(e -> e.getKey() + "=" + e.getValue().getAsString())
                 .collect(Collectors.joining("&"));
 
-        IO.Options ioOptions = IO.Options.builder()
-                .setAuth(auth)
-                .setQuery(queryString)
-                .setReconnectionDelayMax(10000)
-                .build();
+        IO.Options ioOptions = new IO.Options();
+        ioOptions.callFactory = okHttpClient;
+        ioOptions.webSocketFactory = okHttpClient;
+        ioOptions.auth = auth;
+        ioOptions.query = queryString;
+        ioOptions.reconnectionDelayMax = 10000;
 
         Socket socket = IO.socket(HttpAdapter.BOT_URI, ioOptions);
 
@@ -117,6 +133,24 @@ public class WebSocketAdapter implements NetworkAdapter {
 
     public void disconnect() {
         socket.disconnect();
+
+        // https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/concurrent/ExecutorService.html#:~:text=Further%20customization%20is%20also%20possible.%20For%20example%2C%20the%20following%20method%20shuts%20down%20an%20ExecutorService%20in%20two%20phases%2C%20first%20by%20calling%20shutdown%20to%20reject%20incoming%20tasks%2C%20and%20then%20calling%20shutdownNow%2C%20if%20necessary%2C%20to%20cancel%20any%20lingering%20tasks%3A
+        pool.shutdown(); // Disable new tasks from being submitted
+        try {
+            // Wait a while for existing tasks to terminate
+            if(!pool.awaitTermination(60, TimeUnit.SECONDS)) {
+                pool.shutdownNow(); // Cancel currently executing tasks
+                // Wait a while for tasks to respond to being cancelled
+                if(!pool.awaitTermination(60, TimeUnit.SECONDS))
+                    Bukkit.getLogger().severe("Pool did not terminate");
+            }
+        }
+        catch(InterruptedException ex) {
+            // (Re-)Cancel if current thread also interrupted
+            pool.shutdownNow();
+            // Preserve interrupt status
+            Thread.currentThread().interrupt();
+        }
     }
 
     public Socket getSocket() {
