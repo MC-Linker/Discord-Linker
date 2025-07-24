@@ -19,6 +19,7 @@ import org.bukkit.entity.Player;
 
 import java.io.IOException;
 import java.math.BigInteger;
+import java.net.URI;
 import java.security.SecureRandom;
 import java.util.Collections;
 import java.util.HashMap;
@@ -29,6 +30,10 @@ import java.util.function.Consumer;
 
 public class AdapterManager {
 
+    //If snapshot version, request test-bot at port 81 otherwise request main-bot at port 80/config-port
+    public static int BOT_PORT = DiscordLinker.getPluginVersion().contains("SNAPSHOT") ? 81 :
+            DiscordLinker.getPlugin().getConfig().getInt("bot_port", 80);
+    public static URI BOT_URI = URI.create("http://api.mclinker.com:" + BOT_PORT);
     private int httpPort;
 
     private NetworkAdapter adapter;
@@ -41,6 +46,10 @@ public class AdapterManager {
     public AdapterManager(int httpPort) {
         this.httpPort = httpPort;
         adapter = new HttpAdapter();
+    }
+
+    public static void setBotPort(int botPort) {
+        AdapterManager.BOT_PORT = botPort;
     }
 
     public void setHttpPort(int httpPort) {
@@ -89,7 +98,7 @@ public class AdapterManager {
         WebSocketAdapter tempAdapter = new WebSocketAdapter(auth);
 
         //Set listeners
-        tempAdapter.getSocket().on("auth-success", data -> {
+        tempAdapter.getSocket().once("auth-success", data -> {
             //Code is valid, set the adapter to the new one
             adapter = tempAdapter;
 
@@ -118,8 +127,6 @@ public class AdapterManager {
                 startHttp();
                 callback.accept(false);
             }
-
-            tempAdapter.getSocket().off("auth-success"); // Only run once
         });
 
         tempAdapter.connect(httpPort, connected -> {

@@ -32,6 +32,7 @@ import java.util.Objects;
 public final class DiscordLinker extends JavaPlugin {
 
     private static final int PLUGIN_ID = 17143;
+
     private static JsonObject connJson;
     private static DiscordLinker plugin;
     private static AdapterManager adapterManager;
@@ -39,6 +40,9 @@ public final class DiscordLinker extends JavaPlugin {
 
     private static final Gson gson = new GsonBuilder().setPrettyPrinting().create();
 
+    public static String getPluginVersion() {
+        return DiscordLinker.getPlugin().getDescription().getVersion();
+    }
 
     public static JsonObject getConnJson() {
         return connJson;

@@ -23,7 +23,6 @@ import java.nio.file.Paths;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
@@ -31,7 +30,6 @@ import java.util.stream.Collectors;
 
 public class WebSocketAdapter implements NetworkAdapter {
 
-    private final ExecutorService executor = Executors.newSingleThreadExecutor();
     private final Socket socket;
     private final Dispatcher dispatcher = new Dispatcher();
     private final ExecutorService pool = dispatcher.executorService();
@@ -55,9 +53,9 @@ public class WebSocketAdapter implements NetworkAdapter {
         ioOptions.webSocketFactory = okHttpClient;
         ioOptions.auth = auth;
         ioOptions.query = queryString;
-        ioOptions.reconnectionDelayMax = 10000;
+        ioOptions.reconnectionDelayMax = 30000;
 
-        Socket socket = IO.socket(HttpAdapter.BOT_URI, ioOptions);
+        Socket socket = IO.socket(AdapterManager.BOT_URI, ioOptions);
 
         socket.on(Socket.EVENT_CONNECT_ERROR, args -> PLUGIN.getLogger().info(ChatColor.RED + "Could not reach the Discord Bot! Reconnecting..."));
         socket.on(Socket.EVENT_CONNECT, args -> {
@@ -78,6 +76,8 @@ public class WebSocketAdapter implements NetworkAdapter {
             String eventName = (String) args[0];
             JsonObject data = new JsonParser().parse(args[1].toString()).getAsJsonObject();
 
+            Bukkit.getLogger().fine("[Socket.io] Event: " + eventName + ", Data: " + data.toString());
+
             AtomicReference<Ack> ack = new AtomicReference<>(null);
             if(args[args.length - 1] instanceof Ack) ack.set((Ack) args[args.length - 1]); //Optional ack
 
@@ -89,10 +89,16 @@ public class WebSocketAdapter implements NetworkAdapter {
 
             if(route == Route.PUT_FILE) {
                 //Special case: File upload (pass body as input stream to function)
-                Router.putFile(data, (InputStream) args[2], routerResponse -> this.respond(routerResponse, ack.get()));
+                Router.putFile(data, (InputStream) args[2], routerResponse -> {
+                    Bukkit.getLogger().fine("[Socket.io] Event: " + eventName + ", Response: [" + routerResponse.getStatus() + "] " + routerResponse.getMessage());
+                    this.respond(routerResponse, ack.get());
+                });
             }
             else {
-                route.execute(data, routerResponse -> this.respond(routerResponse, ack.get()));
+                route.execute(data, routerResponse -> {
+                    Bukkit.getLogger().fine("[Socket.io] Event: " + eventName + ", Response: [" + routerResponse.getStatus() + "] " + routerResponse.getMessage());
+                    this.respond(routerResponse, ack.get());
+                });
             }
         });
 

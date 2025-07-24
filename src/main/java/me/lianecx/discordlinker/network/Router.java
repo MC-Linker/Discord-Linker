@@ -156,7 +156,7 @@ public class Router {
                 String cmd = URLDecoder.decode(data.get("cmd").getAsString(), "utf-8");
                 DiscordLinker.getPlugin().getLogger().info(ChatColor.AQUA + "Command from Discord: /" + cmd);
                 cmdLogger.startLogging();
-                getServer().dispatchCommand(Bukkit.getConsoleSender(), cmd);
+                getServer().dispatchCommand(Bukkit.getConsoleSender(), cmd.trim());
             }
             catch(UnsupportedEncodingException | IllegalArgumentException | CommandException err) {
                 responseJson.addProperty("message", err.toString());

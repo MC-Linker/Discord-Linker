@@ -14,7 +14,10 @@ import me.lianecx.discordlinker.network.Router;
 import org.bukkit.ChatColor;
 
 import java.io.*;
-import java.net.*;
+import java.net.HttpURLConnection;
+import java.net.InetAddress;
+import java.net.URL;
+import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Paths;
 import java.security.NoSuchAlgorithmException;
@@ -25,11 +28,6 @@ import java.util.stream.Collectors;
 public class HttpAdapter implements NetworkAdapter {
 
     private final Express app;
-    private static final String PLUGIN_VERSION = DiscordLinker.getPlugin().getDescription().getVersion();
-
-    //If snapshot version, request test-bot at port 81 otherwise request main-bot at port 80
-    public static final int BOT_PORT = PLUGIN_VERSION.contains("SNAPSHOT") ? 81 : 80;
-    public static final URI BOT_URI = URI.create("http://api.mclinker.com:" + BOT_PORT);
 
     public HttpAdapter() {
         this.app = new Express();
@@ -77,7 +75,7 @@ public class HttpAdapter implements NetworkAdapter {
                 body.getAsJsonObject().add("ip", DiscordLinker.getConnJson().get("ip"));
             }
 
-            HttpURLConnection conn = (HttpURLConnection) new URL(BOT_URI + route).openConnection();
+            HttpURLConnection conn = (HttpURLConnection) new URL(AdapterManager.BOT_URI + route).openConnection();
 
             byte[] out = body.toString().getBytes(StandardCharsets.UTF_8);
             int length = out.length;
@@ -134,10 +132,10 @@ public class HttpAdapter implements NetworkAdapter {
 
     public static void checkVersion() {
         try {
-            HttpURLConnection conn = (HttpURLConnection) new URL(BOT_URI + "/version").openConnection();
+            HttpURLConnection conn = (HttpURLConnection) new URL(AdapterManager.BOT_URI + "/version").openConnection();
             InputStream inputStream = conn.getInputStream();
             String latestVersion = new BufferedReader(new InputStreamReader(inputStream)).lines().collect(Collectors.joining("\n"));
-            if(!latestVersion.equals(PLUGIN_VERSION))
+            if(!latestVersion.equals(DiscordLinker.getPluginVersion()))
                 DiscordLinker.getPlugin().getLogger().info(ChatColor.AQUA + "Please update to the latest Discord-Linker version (" + latestVersion + ") for a bug-free and feature-rich experience.");
 
         }
@@ -150,7 +148,7 @@ public class HttpAdapter implements NetworkAdapter {
 
     private boolean checkIp(String ip) {
         try {
-            String correctIp = InetAddress.getByName(BOT_URI.getHost()).getHostAddress();
+            String correctIp = InetAddress.getByName(AdapterManager.BOT_URI.getHost()).getHostAddress();
             return ip.equals(correctIp);
         }
         catch(UnknownHostException e) {

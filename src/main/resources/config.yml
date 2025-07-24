@@ -1,5 +1,5 @@
-# The port the plugin should listen on. Deprecated!
-port: 11111
+# The port to reach the discord bot. Never change this unless you are using a custom discord bot (https://discord.com/discovery/applications/712759741528408064)!
+bot_port: 80
 
 # The formatting of chat messages that are sent from discord to minecraft
 message: "&l&9Discord &8| &l&7%username% &8>>&r %message%"

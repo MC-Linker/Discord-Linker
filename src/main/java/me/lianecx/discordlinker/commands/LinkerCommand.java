@@ -1,6 +1,7 @@
 package me.lianecx.discordlinker.commands;
 
 import me.lianecx.discordlinker.DiscordLinker;
+import me.lianecx.discordlinker.network.adapters.AdapterManager;
 import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -21,9 +22,9 @@ public class LinkerCommand implements CommandExecutor {
                 DiscordLinker.getAdapterManager().setHttpPort(PLUGIN.getPort());
                 DiscordLinker.getAdapterManager().start(connected -> sender.sendMessage(ChatColor.GREEN + "Successfully reloaded config."));
                 break;
-            case "port":
+            case "bot_port":
                 if(args.length == 1) {
-                    sender.sendMessage(ChatColor.GREEN + "The current port is " + PLUGIN.getConfig().getInt("port") + ".");
+                    sender.sendMessage(ChatColor.GREEN + "The current bot_port is " + PLUGIN.getConfig().getInt("bot_port") + ".");
                     return true;
                 }
 
@@ -36,13 +37,16 @@ public class LinkerCommand implements CommandExecutor {
                     return true;
                 }
 
-                PLUGIN.getConfig().set("port", newPort);
+                if(newPort < 1 || newPort > 65535) {
+                    sender.sendMessage(ChatColor.RED + "Please specify a port between 1 and 65535!");
+                    return true;
+                }
+
+                PLUGIN.getConfig().set("bot_port", newPort);
                 PLUGIN.saveConfig();
 
-                DiscordLinker.getAdapterManager().setHttpPort(newPort);
-                //Only start http server if it was already started
-                if(DiscordLinker.getAdapterManager().isHttpConnected()) DiscordLinker.getAdapterManager().startHttp();
-                sender.sendMessage(ChatColor.GREEN + "Successfully set port to " + ChatColor.DARK_AQUA + newPort + ChatColor.GREEN + ".");
+                AdapterManager.setBotPort(newPort);
+                sender.sendMessage(ChatColor.GREEN + "Successfully set bot_port to " + ChatColor.DARK_AQUA + newPort + ChatColor.GREEN + ".");
                 break;
             case "connect":
                 if(args.length < 2) {

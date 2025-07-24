@@ -14,7 +14,7 @@ public class LinkerTabCompleter implements TabCompleter {
 
     public LinkerTabCompleter() {
         suggestions.add("reload");
-        suggestions.add("port");
+        suggestions.add("bot_port");
         suggestions.add("connect");
         suggestions.add("disconnect");
     }
