@@ -141,7 +141,10 @@ public class AdapterManager {
     }
 
     public void disconnectForce() {
-        send(RequestMethod.GET, "/disconnect-force", "disconnect-force", new JsonObject());
+        if(adapter instanceof WebSocketAdapter && !((WebSocketAdapter) adapter).getSocket().connected()) {
+            adapter.disconnect(); // If the WebSocket is not connected, it might be trying to reconnect, so we disconnect it to stop that.
+        }
+        else send(RequestMethod.GET, "/disconnect-force", "disconnect-force", new JsonObject());
         DiscordLinker.getPlugin().deleteConn();
     }
 
