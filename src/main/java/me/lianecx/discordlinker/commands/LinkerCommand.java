@@ -24,7 +24,13 @@ public class LinkerCommand implements CommandExecutor {
                 break;
             case "bot_port":
                 if(args.length == 1) {
-                    sender.sendMessage(ChatColor.GREEN + "The current bot_port is " + PLUGIN.getConfig().getInt("bot_port") + ".");
+                    sender.sendMessage(
+                            ChatColor.GREEN + "The current bot_port is " +
+                                    ChatColor.DARK_AQUA + PLUGIN.getConfig().getInt("bot_port") +
+                                    ChatColor.GREEN + ". The default ist " +
+                                    ChatColor.DARK_AQUA + PLUGIN.getConfig().getDefaults().getInt("bot_port") +
+                                    ChatColor.GREEN + "."
+                    );
                     return true;
                 }
 
