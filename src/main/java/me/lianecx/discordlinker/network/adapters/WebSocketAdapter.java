@@ -35,8 +35,13 @@ public class WebSocketAdapter implements NetworkAdapter {
     private final ExecutorService pool = dispatcher.executorService();
     private static final DiscordLinker PLUGIN = DiscordLinker.getPlugin();
 
-    public WebSocketAdapter(Map<String, String> auth) {
+    private static final int DEFAULT_RECONNECTION_ATTEMPTS = 0; // Default to unlimited reconnection attempts
 
+    public WebSocketAdapter(Map<String, String> auth) {
+        this(auth, DEFAULT_RECONNECTION_ATTEMPTS);
+    }
+
+    public WebSocketAdapter(Map<String, String> auth, int reconnectionAttempts) {
         OkHttpClient okHttpClient = new OkHttpClient.Builder()
                 .dispatcher(dispatcher)
                 .readTimeout(1, TimeUnit.MINUTES) // important for HTTP long-polling
@@ -54,6 +59,7 @@ public class WebSocketAdapter implements NetworkAdapter {
         ioOptions.auth = auth;
         ioOptions.query = queryString;
         ioOptions.reconnectionDelayMax = 30000;
+        ioOptions.reconnectionAttempts = reconnectionAttempts;
 
         Socket socket = IO.socket(AdapterManager.BOT_URI, ioOptions);
 
@@ -115,7 +121,6 @@ public class WebSocketAdapter implements NetworkAdapter {
             public void call(Object... args) {
                 callback.accept(true);
                 socket.off(Socket.EVENT_CONNECT, this);
-                socket.off(Socket.EVENT_CONNECT_ERROR, errorListener.get());
                 socket.off(Socket.EVENT_DISCONNECT, errorListener.get());
             }
         });
@@ -125,19 +130,19 @@ public class WebSocketAdapter implements NetworkAdapter {
             public void call(Object... args) {
                 callback.accept(false);
                 socket.off(Socket.EVENT_CONNECT, connectListener.get());
-                socket.off(Socket.EVENT_CONNECT_ERROR, this);
                 socket.off(Socket.EVENT_DISCONNECT, this);
             }
         });
 
         socket.on(Socket.EVENT_CONNECT, connectListener.get());
-        socket.on(Socket.EVENT_CONNECT_ERROR, errorListener.get());
         socket.on(Socket.EVENT_DISCONNECT, errorListener.get());
 
         socket.connect();
     }
 
     public void disconnect() {
+        if(!socket.connected()) return;
+
         socket.disconnect();
 
         // https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/concurrent/ExecutorService.html#:~:text=Further%20customization%20is%20also%20possible.%20For%20example%2C%20the%20following%20method%20shuts%20down%20an%20ExecutorService%20in%20two%20phases%2C%20first%20by%20calling%20shutdown%20to%20reject%20incoming%20tasks%2C%20and%20then%20calling%20shutdownNow%2C%20if%20necessary%2C%20to%20cancel%20any%20lingering%20tasks%3A

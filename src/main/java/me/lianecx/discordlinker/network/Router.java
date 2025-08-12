@@ -62,6 +62,7 @@ public class Router {
     public static final JsonObject INVALID_GROUP = new JsonObject();
     public static final JsonObject ALREADY_CONNECTED = new JsonObject();
     public static final JsonObject LUCKPERMS_NOT_LOADED = new JsonObject();
+    public static final JsonObject NBT_PARSE_ERROR = new JsonObject();
     public static final JsonObject SUCCESS = new JsonObject();
     private static final ConsoleLogger cmdLogger = new ConsoleLogger();
     private static final String URL_REGEX = "https?://[-\\w_.]{2,}\\.[a-z]{2,4}/\\S*?";
@@ -79,6 +80,7 @@ public class Router {
         ALREADY_CONNECTED.addProperty("message", "This plugin is already connected with a different guild.");
         INVALID_CODE.addProperty("message", "Invalid verification code");
         LUCKPERMS_NOT_LOADED.addProperty("message", "LuckPerms is not loaded");
+        NBT_PARSE_ERROR.addProperty("message", "Could not parse NBT data");
 
         Logger log = (Logger) LogManager.getRootLogger();
         log.addAppender(cmdLogger);
@@ -186,6 +188,11 @@ public class Router {
 
         JsonObject responseJson = new JsonObject();
         responseJson.addProperty("data", NBTEditor.getNBTCompound(player).toString());
+        if(responseJson.get("data").getAsString().isEmpty()) {
+            callback.accept(new RouterResponse(Status._500, NBT_PARSE_ERROR.toString()));
+            return;
+        }
+
         callback.accept(new RouterResponse(Status._200, responseJson.toString()));
     }
 

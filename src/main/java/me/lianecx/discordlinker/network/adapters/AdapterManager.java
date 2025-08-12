@@ -95,7 +95,7 @@ public class AdapterManager {
         auth.put("code", code);
         auth.put("token", token);
 
-        WebSocketAdapter tempAdapter = new WebSocketAdapter(auth);
+        WebSocketAdapter tempAdapter = new WebSocketAdapter(auth, 5);
 
         //Set listeners
         tempAdapter.getSocket().once("auth-success", data -> {
