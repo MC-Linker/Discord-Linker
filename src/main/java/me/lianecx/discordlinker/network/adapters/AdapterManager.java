@@ -100,6 +100,7 @@ public class AdapterManager {
         //Set listeners
         tempAdapter.getSocket().once("auth-success", data -> {
             //Code is valid, set the adapter to the new one
+            tempAdapter.setReconnectionAttempts(WebSocketAdapter.DEFAULT_RECONNECTION_ATTEMPTS);
             adapter = tempAdapter;
 
             JsonObject dataObject = new JsonParser().parse(data[0].toString()).getAsJsonObject();

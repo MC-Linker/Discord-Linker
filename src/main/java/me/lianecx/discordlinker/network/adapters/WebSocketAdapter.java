@@ -30,12 +30,13 @@ import java.util.stream.Collectors;
 
 public class WebSocketAdapter implements NetworkAdapter {
 
+    public static final int DEFAULT_RECONNECTION_ATTEMPTS = 0; // Default to unlimited reconnection attempts
+
+    private static final DiscordLinker PLUGIN = DiscordLinker.getPlugin();
+
     private final Socket socket;
     private final Dispatcher dispatcher = new Dispatcher();
     private final ExecutorService pool = dispatcher.executorService();
-    private static final DiscordLinker PLUGIN = DiscordLinker.getPlugin();
-
-    private static final int DEFAULT_RECONNECTION_ATTEMPTS = 0; // Default to unlimited reconnection attempts
 
     public WebSocketAdapter(Map<String, String> auth) {
         this(auth, DEFAULT_RECONNECTION_ATTEMPTS);
@@ -109,6 +110,10 @@ public class WebSocketAdapter implements NetworkAdapter {
         });
 
         this.socket = socket;
+    }
+
+    public void setReconnectionAttempts(int reconnectionAttempts) {
+        socket.io().reconnectionAttempts(reconnectionAttempts);
     }
 
     public void connect(int httpPort, Consumer<Boolean> callback) {
