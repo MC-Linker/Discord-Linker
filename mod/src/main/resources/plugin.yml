@@ -1,0 +1,6 @@
+name: ${name}
+main: ${main}
+version: ${version}
+author: ${author}
+website: ${website}
+description: ${description}

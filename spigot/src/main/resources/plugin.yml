@@ -1,0 +1,45 @@
+name: Discord-Linker
+version: ${project.version}
+main: me.lianecx.discordlinker.spigot.DiscordLinker
+api-version: 1.12
+authors: [ Lianecx ]
+softdepend:
+  - LuckPerms
+description: Official plugin for the MC Linker Discord Bot.
+website: https://mclinker.com
+prefix: Discord-Linker
+commands:
+  linker:
+    description: "Settings for the Discord-Linker plugin"
+    usage: "/linker reload|port|message|private_message|connect|disconnect"
+    permission: "discordlinker.linker"
+    permission-message: "You do not have permission to use this command."
+  verify:
+    description: "Verify your account with the bot. Start a verification process by executing \"/account connect\" in the discord server."
+    usage: "/verify <code>"
+    permission: "discordlinker.verify"
+    permission-message: "You do not have permission to use this command."
+  discord:
+    description: "Displays an invite link to the connected discord server."
+    usage: "/discord"
+    permission: "discordlinker.discord"
+    permission-message: "You do not have permission to use this command."
+permissions:
+  discordlinker.linker:
+    description: "Allows the user to use the /linker command"
+    default: op
+    children:
+      discordlinker.linker.reload:
+        description: "Allows the user to use the /linker reload command"
+      discordlinker.linker.port:
+        description: "Allows the user to use the /linker port command"
+      discordlinker.linker.connect:
+        description: "Allows the user to use the /linker connect command"
+      discordlinker.linker.disconnect:
+        description: "Allows the user to use the /linker disconnect command"
+  discordlinker.verify:
+    description: "Allows the user to use the /verify command"
+    default: true
+  discordlinker.discord:
+    description: "Allows the user to use the /discord command"
+    default: true

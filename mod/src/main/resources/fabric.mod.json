@@ -1,0 +1,24 @@
+{
+    "schemaVersion": 1,
+    "id": "${id}",
+    "version": "${version}",
+    "name": "${name}",
+    "description": "${description}",
+    "authors": [
+        "${authors}"
+    ],
+    "contact": {
+        "homepage": "${website}",
+        "sources": "${source_url}",
+        "issues": "${issue_tracker}"
+    },
+    "license": "${license}",
+    "icon": "${icon}",
+    "environment": "*",
+    "entrypoints": {
+        "main": [
+            "${fabric_common_entry}"
+        ]
+    },
+    ${ dependencies_field }
+}
