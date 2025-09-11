@@ -1,7 +1,23 @@
-import java.util.*
+import java.util.Optional
 import java.util.function.BiConsumer
 import java.util.function.Consumer
 import java.util.function.Predicate
+import kotlin.collections.ArrayList
+import kotlin.collections.List
+import kotlin.collections.arrayListOf
+import kotlin.collections.component1
+import kotlin.collections.component2
+import kotlin.collections.forEach
+import kotlin.collections.listOf
+import kotlin.collections.mapOf
+import kotlin.text.indexOf
+import kotlin.text.isEmpty
+import kotlin.text.isNotEmpty
+import kotlin.text.lastIndexOf
+import kotlin.text.lowercase
+import kotlin.text.split
+import kotlin.text.startsWith
+import kotlin.text.substring
 
 // Baseline code. Minimal edits necessary.
 plugins {
@@ -239,7 +255,7 @@ class APISource(
 val apis = arrayListOf(
     APISource(
         DepType.API,
-        APIModInfo(if (env.atMost("1.16.5")) "fabric" else "fabric-api", "fabric-api"),
+        APIModInfo("fabric", "fabric-api"),
         "net.fabricmc.fabric-api:fabric-api",
         optionalVersionProperty("deps.api.fabric")
     ) { src ->
@@ -260,8 +276,7 @@ val apis = arrayListOf(
  * Fabric requires that the mod's client and common main() entry points be included in the fabric.mod.json file.
  */
 class ModFabric {
-    val commonEntry = "${group}.${env.archivesBaseName}.fabric.${property("mod.fabric.entry.common").toString()}"
-    val clientEntry = "${group}.${env.archivesBaseName}.fabric.${property("mod.fabric.entry.client").toString()}"
+    val serverEntry = "${group}.${env.archivesBaseName}.fabric.${property("mod.fabric.entry.server").toString()}"
 }
 
 // acknowledge this controller and the relevant API tokens if you intend to auto-publish (HIGHLY RECOMMENDED)
@@ -325,9 +340,9 @@ class ModDependencies {
         if (env.isNeo) {
             cons.accept("neoforge", env.neoforgeVersion)
         }
-        if (env.isFabric) {
-            cons.accept("fabric", env.fabricLoaderVersion)
-        }
+        /*        if (env.isFabric) {
+                    cons.accept("fabric", env.fabricLoaderVersion)
+                }*/
         apis.forEach { src ->
             if (src.enabled && !src.type.isOptional() && src.type.includeInDepsList()) src.versionRange.ifPresent { ver ->
                 src.modInfo.modid?.let {
@@ -369,17 +384,17 @@ class SpecialMultiversionedConstants {
     }
 
     private fun fabricDependencyList(): String {
-        var out = "  \"depends\":{"
+        var out = "\"depends\": {"
         var useComma = false
         dependencies.forEachRequired { modid, ver ->
             if (useComma) {
                 out += ","
             }
             out += "\n"
-            out += "    \"${modid}\": \"${ver.asFabric()}\""
+            out += "        \"${modid}\": \"${ver.asFabric()}\""
             useComma = true
         }
-        return "$out\n  }"
+        return "$out\n    }"
 
     }
 
@@ -542,8 +557,7 @@ tasks.processResources {
         "source_url" to mod.sourceUrl,
         "website" to mod.generalWebsite,
         "icon" to mod.icon,
-        "fabric_common_entry" to modFabric.commonEntry,
-        "fabric_client_entry" to modFabric.clientEntry,
+        "fabric_server_entry" to modFabric.serverEntry,
         "mc_min" to env.mcVersion.min,
         "mc_max" to env.mcVersion.max,
         "issue_tracker" to mod.issueTracker,

@@ -2,11 +2,12 @@
 package me.lianecx.discordlinker.fabric;
 
 import me.lianecx.discordlinker.common.DiscordLinkerCommon;
-import net.fabricmc.api.ModInitializer;
+import net.fabricmc.api.DedicatedServerModInitializer;
 
-public class DiscordLinkerFabric implements ModInitializer {
+public class DiscordLinkerFabric implements DedicatedServerModInitializer {
+
     @Override
-    public void onInitialize() {
+    public void onInitializeServer() {
         DiscordLinkerCommon.init();
     }
 }

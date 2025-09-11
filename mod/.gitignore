@@ -1,5 +1,8 @@
-.gradle
+.gradle/
+gradle/
 build/
+gradlew
+gradlew.bat
 !gradle/wrapper/gradle-wrapper.jar
 !**/src/main/**/build/
 !**/src/test/**/build/

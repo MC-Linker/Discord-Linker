@@ -14,10 +14,10 @@
     },
     "license": "${license}",
     "icon": "${icon}",
-    "environment": "*",
+    "environment": "server",
     "entrypoints": {
-        "main": [
-            "${fabric_common_entry}"
+        "server": [
+            "${fabric_server_entry}"
         ]
     },
     ${ dependencies_field }
