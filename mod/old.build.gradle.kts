@@ -1,15 +1,12 @@
-import java.util.Optional
+import java.util.*
 import java.util.function.BiConsumer
 import java.util.function.Consumer
 import java.util.function.Predicate
 import kotlin.collections.*
-import kotlin.text.indexOf
-import kotlin.text.lastIndexOf
-import kotlin.text.split
-import kotlin.text.substring
 
 plugins {
-    kotlin("jvm")
+    maven - publish
+    kotlin("jvm") version "2.2.20"
     id("dev.architectury.loom")
     id("architectury-plugin")
     id("dev.kikugie.j52j")
@@ -37,12 +34,13 @@ repositories {
     maven("https://panel.ryuutech.com/nexus/repository/maven-releases/")
 }
 
+// Enums und Datenklassen
 enum class EnvType { FABRIC, FORGE, NEOFORGE }
 
-class Env(private val project: Project, val compare: (String, String) -> Int) {
-    val archivesBaseName = project.property("archives_base_name").toString()
-    val mcVersion = project.versionProperty("deps.core.mc.version_range")
-    val loader = project.property("loom.platform").toString()
+class Env {
+    val archivesBaseName = property("archives_base_name").toString()
+    val mcVersion = versionProperty("deps.core.mc.version_range")
+    val loader = property("loom.platform").toString()
     val isFabric = loader == "fabric"
     val isForge = loader == "forge"
     val isNeo = loader == "neoforge"
@@ -58,17 +56,19 @@ class Env(private val project: Project, val compare: (String, String) -> Int) {
         atMost("1.20.4") -> 17
         else -> 21
     }
-    val fabricLoaderVersion = project.versionProperty("deps.core.fabric.loader.version_range")
-    val forgeMavenVersion = project.versionProperty("deps.core.forge.version_range")
+    val fabricLoaderVersion = versionProperty("deps.core.fabric.loader.version_range")
+    val forgeMavenVersion = versionProperty("deps.core.forge.version_range")
     val forgeVersion = VersionRange(extractForgeVer(forgeMavenVersion.min), extractForgeVer(forgeMavenVersion.max))
     private val fgl: String =
         if (isForge) forgeMavenVersion.min.substring(forgeMavenVersion.min.lastIndexOf("-")) else ""
     val forgeLanguageVersion = VersionRange(if (isForge) fgl.substring(0, fgl.indexOf(".")) else "", "")
-    val neoforgeVersion = project.versionProperty("deps.core.neoforge.version_range")
-    val neoforgeLoaderVersion = project.versionProperty("deps.core.neoforge.loader.version_range")
+    val neoforgeVersion = versionProperty("deps.core.neoforge.version_range")
+    val neoforgeLoaderVersion = versionProperty("deps.core.neoforge.loader.version_range")
 
-    fun atLeast(version: String) = compare(mcVersion.min, version) >= 0
-    fun atMost(version: String) = compare(mcVersion.min, version) <= 0
+    fun atLeast(version: String) = stonecutter.compare(mcVersion.min, version) >= 0
+    fun atMost(version: String) = stonecutter.compare(mcVersion.min, version) <= 0
+    fun isNot(version: String) = stonecutter.compare(mcVersion.min, version) != 0
+    fun isExact(version: String) = stonecutter.compare(mcVersion.min, version) == 0
 
     private fun extractForgeVer(str: String): String {
         val split = str.split("-")
@@ -80,7 +80,7 @@ class Env(private val project: Project, val compare: (String, String) -> Int) {
     }
 }
 
-val env = Env(project, stonecutter::compare)
+val env = Env()
 
 enum class DepType {
     API,
@@ -142,6 +142,7 @@ class ModPublish {
     val curseforgeProjectToken = property("publish.token.curseforge").toString()
     val mavenURL = optionalStrProperty("publish.maven.url")
     val dryRunMode = boolProperty("publish.dry_run")
+
     init {
         val tempmcTargets = listProperty("publish_acceptable_mc_versions")
         if (tempmcTargets.isEmpty()) {
@@ -151,6 +152,7 @@ class ModPublish {
         }
     }
 }
+
 val modPublish = ModPublish()
 
 class ModDependencies {
@@ -159,15 +161,18 @@ class ModDependencies {
         forEachRequired(cons)
         forEachOptional(cons)
     }
+
     fun forEachBefore(cons: Consumer<String>) {
         loadBefore.forEach(cons)
     }
+
     fun forEachOptional(cons: BiConsumer<String, VersionRange>) {
         apis.forEach { src ->
             if (src.enabled && src.type.isOptional() && src.type.includeInDepsList())
                 src.versionRange.ifPresent { ver -> src.modInfo.modid?.let { cons.accept(it, ver) } }
         }
     }
+
     fun forEachRequired(cons: BiConsumer<String, VersionRange>) {
         cons.accept("minecraft", env.mcVersion)
         if (env.isForge) cons.accept("forge", env.forgeVersion)
@@ -178,6 +183,7 @@ class ModDependencies {
         }
     }
 }
+
 val dependencies = ModDependencies()
 
 class SpecialMultiversionedConstants {
@@ -239,6 +245,7 @@ class ModProperties {
     val sourceUrl = optionalStrProperty("mod.source_url").orElse("")
     val generalWebsite = optionalStrProperty("mod.general_website").orElse(sourceUrl)
 }
+
 val mod = ModProperties()
 val modFabric = ModFabric()
 val dynamics = SpecialMultiversionedConstants()
@@ -278,7 +285,6 @@ dependencies {
     if (env.isFabric) modImplementation("net.fabricmc:fabric-loader:${env.fabricLoaderVersion.min}")
     if (env.isForge) "forge"("net.minecraftforge:forge:${env.forgeMavenVersion.min}")
     if (env.isNeo) "neoForge"("net.neoforged:neoforge:${env.neoforgeVersion.min}")
-
     apis.forEach { src ->
         if (src.enabled) {
             src.versionRange.ifPresent { ver ->
@@ -296,13 +302,8 @@ dependencies {
     }
 }
 
-configurations.all {
-    resolutionStrategy {
-        force("net.fabricmc:fabric-loader:${env.fabricLoaderVersion.min}")
-    }
-}
-
 java {
+    withSourcesJar()
     val java = when (env.javaVer) {
         8 -> JavaVersion.VERSION_1_8
         17 -> JavaVersion.VERSION_17
@@ -310,16 +311,6 @@ java {
     }
     targetCompatibility = java
     sourceCompatibility = java
-    toolchain {
-        languageVersion.set(JavaLanguageVersion.of(env.javaVer))
-    }
-}
-
-// Force all JavaExec-based run configurations (created by Loom/ForgeGradle) to use the defined toolchain
-tasks.withType<JavaExec>().configureEach {
-    javaLauncher.set(javaToolchains.launcherFor {
-        languageVersion.set(JavaLanguageVersion.of(env.javaVer))
-    })
 }
 
 tasks.processResources {

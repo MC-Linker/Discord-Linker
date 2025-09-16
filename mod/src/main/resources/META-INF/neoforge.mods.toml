@@ -16,7 +16,7 @@ authors = "${authors}"
 description = '''
 ${description}
 '''
-environment = "SERVER"
+side = "SERVER"
 
 ${ dependencies_field }
 
