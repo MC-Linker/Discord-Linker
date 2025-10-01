@@ -1,6 +1,7 @@
 plugins {
     kotlin("jvm")
     id("com.github.johnrengelman.shadow") version "8.1.1"
+    id("xyz.jpenilla.run-paper") version "2.3.1"
 }
 
 java {
@@ -29,7 +30,6 @@ dependencies {
     compileOnly("org.spigotmc:spigot-api:${properties["spigot_version_range"]}-R0.1-SNAPSHOT")
     implementation("org.apache.logging.log4j:log4j-core:2.19.0")
     implementation("io.socket:socket.io-client:2.1.2")
-//    implementation("io.vacco.java-express:java-express:0.2.1")
     implementation("io.github.bananapuncher714:nbteditor:7.19.10")
     implementation("org.bstats:bstats-bukkit:3.0.0")
     compileOnly("net.luckperms:api:5.4")
@@ -57,4 +57,5 @@ stonecutter {
     constants["forge"] = false
     constants["neoforge"] = false
     constants["spigot"] = true
+    constants["mod"] = false
 }
