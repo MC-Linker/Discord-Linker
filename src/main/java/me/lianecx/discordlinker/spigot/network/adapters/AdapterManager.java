@@ -33,7 +33,6 @@ public class AdapterManager {
     //If snapshot version, request test-bot at port 81 otherwise request main-bot at port 80/config-port
     public static int BOT_PORT = DiscordLinker.getPluginVersion().contains("SNAPSHOT") ? 81 :
             DiscordLinker.getPlugin().getConfig().getInt("bot_port", 80);
-    public static URI BOT_URI = URI.create("http://api.mclinker.com:" + BOT_PORT);
     private int httpPort;
 
     private NetworkAdapter adapter;
@@ -50,6 +49,10 @@ public class AdapterManager {
 
     public static void setBotPort(int botPort) {
         AdapterManager.BOT_PORT = botPort;
+    }
+
+    public static URI getBotURI() {
+        return URI.create("http://api.mclinker.com:" + BOT_PORT);
     }
 
     public void setHttpPort(int httpPort) {

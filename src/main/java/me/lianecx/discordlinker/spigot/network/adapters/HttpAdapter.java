@@ -75,7 +75,7 @@ public class HttpAdapter implements NetworkAdapter {
                 body.getAsJsonObject().add("ip", DiscordLinker.getConnJson().get("ip"));
             }
 
-            HttpURLConnection conn = (HttpURLConnection) new URL(AdapterManager.BOT_URI + route).openConnection();
+            HttpURLConnection conn = (HttpURLConnection) new URL(AdapterManager.getBotURI() + route).openConnection();
 
             byte[] out = body.toString().getBytes(StandardCharsets.UTF_8);
             int length = out.length;
@@ -132,7 +132,7 @@ public class HttpAdapter implements NetworkAdapter {
 
     public static void checkVersion() {
         try {
-            HttpURLConnection conn = (HttpURLConnection) new URL(AdapterManager.BOT_URI + "/version").openConnection();
+            HttpURLConnection conn = (HttpURLConnection) new URL(AdapterManager.getBotURI() + "/version").openConnection();
             InputStream inputStream = conn.getInputStream();
             String latestVersion = new BufferedReader(new InputStreamReader(inputStream)).lines().collect(Collectors.joining("\n"));
             if(!latestVersion.equals(DiscordLinker.getPluginVersion()))
@@ -148,7 +148,7 @@ public class HttpAdapter implements NetworkAdapter {
 
     private boolean checkIp(String ip) {
         try {
-            String correctIp = InetAddress.getByName(AdapterManager.BOT_URI.getHost()).getHostAddress();
+            String correctIp = InetAddress.getByName(AdapterManager.getBotURI().getHost()).getHostAddress();
             return ip.equals(correctIp);
         }
         catch(UnknownHostException e) {

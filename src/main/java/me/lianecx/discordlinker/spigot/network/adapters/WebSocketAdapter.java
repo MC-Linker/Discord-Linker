@@ -62,7 +62,7 @@ public class WebSocketAdapter implements NetworkAdapter {
         ioOptions.reconnectionDelayMax = 30000;
         ioOptions.reconnectionAttempts = reconnectionAttempts;
 
-        Socket socket = IO.socket(AdapterManager.BOT_URI, ioOptions);
+        Socket socket = IO.socket(AdapterManager.getBotURI(), ioOptions);
 
         socket.on(Socket.EVENT_CONNECT_ERROR, args -> PLUGIN.getLogger().info(ChatColor.RED + "Could not reach the Discord Bot! Reconnecting..."));
         socket.on(Socket.EVENT_CONNECT, args -> {
