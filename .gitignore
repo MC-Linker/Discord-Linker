@@ -110,3 +110,11 @@ buildNumber.properties
 
 # Common working directory
 run/
+
+# Gradle
+.gradle/
+build/
+gradle/
+.gradle-cache/
+gradlew
+gradlew.bat
