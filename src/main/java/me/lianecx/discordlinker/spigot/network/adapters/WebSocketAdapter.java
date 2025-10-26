@@ -30,7 +30,7 @@ import java.util.stream.Collectors;
 
 public class WebSocketAdapter implements NetworkAdapter {
 
-    public static final int DEFAULT_RECONNECTION_ATTEMPTS = 0; // Default to unlimited reconnection attempts
+    public static final int DEFAULT_RECONNECTION_ATTEMPTS = Integer.MAX_VALUE; // Default to unlimited reconnection attempts
 
     private static final DiscordLinker PLUGIN = DiscordLinker.getPlugin();
 
