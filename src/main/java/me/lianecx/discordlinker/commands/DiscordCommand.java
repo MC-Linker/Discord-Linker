@@ -23,11 +23,11 @@ public class DiscordCommand implements CommandExecutor {
                 return;
             }
 
-            //TODO fix style
-            ComponentBuilder builder = new ComponentBuilder("Click here to join the Discord server: " + url)
-                    .color(ChatColor.GREEN)
+            ComponentBuilder builder = new ComponentBuilder("Click here to join the Discord server: ")
+                    .color(ChatColor.AQUA)
                     .event(new ClickEvent(ClickEvent.Action.OPEN_URL, url))
-                    .color(ChatColor.DARK_GREEN);
+                    .append(url, ComponentBuilder.FormatRetention.EVENTS)
+                    .color(ChatColor.DARK_AQUA);
 
             sender.spigot().sendMessage(builder.create());
         });
