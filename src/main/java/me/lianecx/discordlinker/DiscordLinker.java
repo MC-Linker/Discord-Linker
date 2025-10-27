@@ -1,19 +1,19 @@
-package me.lianecx.discordlinker.spigot;
+package me.lianecx.discordlinker;
 
 import com.google.gson.*;
-import me.lianecx.discordlinker.spigot.commands.DiscordCommand;
-import me.lianecx.discordlinker.spigot.commands.LinkerCommand;
-import me.lianecx.discordlinker.spigot.commands.LinkerTabCompleter;
-import me.lianecx.discordlinker.spigot.commands.VerifyCommand;
-import me.lianecx.discordlinker.spigot.events.ChatListeners;
-import me.lianecx.discordlinker.spigot.events.JoinEvent;
-import me.lianecx.discordlinker.spigot.events.TeamChangeEvent;
-import me.lianecx.discordlinker.spigot.network.ChatType;
-import me.lianecx.discordlinker.spigot.network.Router;
-import me.lianecx.discordlinker.spigot.network.StatsUpdateEvent;
-import me.lianecx.discordlinker.spigot.network.adapters.AdapterManager;
-import me.lianecx.discordlinker.spigot.network.adapters.HttpAdapter;
-import me.lianecx.discordlinker.spigot.utilities.LuckPermsUtil;
+import me.lianecx.discordlinker.commands.DiscordCommand;
+import me.lianecx.discordlinker.commands.LinkerCommand;
+import me.lianecx.discordlinker.commands.LinkerTabCompleter;
+import me.lianecx.discordlinker.commands.VerifyCommand;
+import me.lianecx.discordlinker.events.ChatListeners;
+import me.lianecx.discordlinker.events.JoinEvent;
+import me.lianecx.discordlinker.events.TeamChangeEvent;
+import me.lianecx.discordlinker.network.ChatType;
+import me.lianecx.discordlinker.network.Router;
+import me.lianecx.discordlinker.network.StatsUpdateEvent;
+import me.lianecx.discordlinker.network.adapters.AdapterManager;
+import me.lianecx.discordlinker.network.adapters.HttpAdapter;
+import me.lianecx.discordlinker.utilities.LuckPermsUtil;
 import org.bstats.bukkit.Metrics;
 import org.bstats.charts.SimplePie;
 import org.bukkit.ChatColor;
@@ -32,13 +32,11 @@ import java.util.Objects;
 public final class DiscordLinker extends JavaPlugin {
 
     private static final int PLUGIN_ID = 17143;
-
+    private static final Gson gson = new GsonBuilder().setPrettyPrinting().create();
     private static JsonObject connJson;
     private static DiscordLinker plugin;
     private static AdapterManager adapterManager;
     private final FileConfiguration config = getConfig();
-
-    private static final Gson gson = new GsonBuilder().setPrettyPrinting().create();
 
     public static String getPluginVersion() {
         return DiscordLinker.getPlugin().getDescription().getVersion();

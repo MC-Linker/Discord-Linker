@@ -1,4 +1,4 @@
-package me.lianecx.discordlinker.spigot.network.adapters;
+package me.lianecx.discordlinker.network.adapters;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -8,9 +8,9 @@ import io.socket.client.Ack;
 import io.socket.client.IO;
 import io.socket.client.Socket;
 import io.socket.emitter.Emitter;
-import me.lianecx.discordlinker.spigot.DiscordLinker;
-import me.lianecx.discordlinker.spigot.network.Route;
-import me.lianecx.discordlinker.spigot.network.Router;
+import me.lianecx.discordlinker.DiscordLinker;
+import me.lianecx.discordlinker.network.Route;
+import me.lianecx.discordlinker.network.Router;
 import okhttp3.Dispatcher;
 import okhttp3.OkHttpClient;
 import org.bukkit.Bukkit;

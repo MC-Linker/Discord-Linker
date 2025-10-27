@@ -1,6 +1,6 @@
-package me.lianecx.discordlinker.spigot.events.luckperms;
+package me.lianecx.discordlinker.events.luckperms;
 
-import me.lianecx.discordlinker.spigot.DiscordLinker;
+import me.lianecx.discordlinker.DiscordLinker;
 import net.luckperms.api.event.group.GroupDeleteEvent;
 
 public class DeleteGroupEvent {

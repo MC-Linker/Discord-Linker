@@ -1,4 +1,4 @@
-package me.lianecx.discordlinker.spigot.network;
+package me.lianecx.discordlinker.network;
 
 public enum StatsUpdateEvent {
 

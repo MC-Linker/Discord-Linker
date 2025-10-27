@@ -1,4 +1,4 @@
-package me.lianecx.discordlinker.spigot.utilities;
+package me.lianecx.discordlinker.utilities;
 
 import org.apache.logging.log4j.core.LogEvent;
 import org.apache.logging.log4j.core.appender.AbstractAppender;
@@ -10,8 +10,8 @@ import java.util.List;
 
 @Plugin(name = "Log4JAppender", category = "Core", elementType = "appender", printObject = true)
 public class ConsoleLogger extends AbstractAppender {
-    private boolean isLogging;
     private final List<String> loggedData;
+    private boolean isLogging;
 
     public ConsoleLogger() {
         super("Discord-Linker", null, PatternLayout.newBuilder().withPattern("[%d{HH:mm:ss} %level]: %msg").build(), true, null);

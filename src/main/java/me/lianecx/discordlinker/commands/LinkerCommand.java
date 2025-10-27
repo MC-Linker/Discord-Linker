@@ -1,7 +1,7 @@
-package me.lianecx.discordlinker.spigot.commands;
+package me.lianecx.discordlinker.commands;
 
-import me.lianecx.discordlinker.spigot.DiscordLinker;
-import me.lianecx.discordlinker.spigot.network.adapters.AdapterManager;
+import me.lianecx.discordlinker.DiscordLinker;
+import me.lianecx.discordlinker.network.adapters.AdapterManager;
 import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;

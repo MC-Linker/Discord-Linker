@@ -1,4 +1,4 @@
-package me.lianecx.discordlinker.spigot.network.adapters;
+package me.lianecx.discordlinker.network.adapters;
 
 import java.util.function.Consumer;
 

@@ -1,6 +1,6 @@
-package me.lianecx.discordlinker.spigot.commands;
+package me.lianecx.discordlinker.commands;
 
-import me.lianecx.discordlinker.spigot.DiscordLinker;
+import me.lianecx.discordlinker.DiscordLinker;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
@@ -21,7 +21,7 @@ public class VerifyCommand implements CommandExecutor {
 
         // Remove the player from the queue after 3 minutes
         Bukkit.getScheduler().scheduleSyncDelayedTask(DiscordLinker.getPlugin(), () -> {
-            if (playersAwaitingVerification.containsKey(uuid)) {
+            if(playersAwaitingVerification.containsKey(uuid)) {
                 playersAwaitingVerification.remove(uuid);
 
                 Player player = Bukkit.getPlayer(uuid);
@@ -33,20 +33,20 @@ public class VerifyCommand implements CommandExecutor {
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
-        if (!(sender instanceof Player)) {
+        if(!(sender instanceof Player)) {
             sender.sendMessage("You must be a player to use this command.");
             return true;
         }
-        else if (args.length == 0) return false;
+        else if(args.length == 0) return false;
 
         UUID uuid = ((Player) sender).getUniqueId();
         String code = args[0];
-        if (!playersAwaitingVerification.containsKey(uuid)) {
+        if(!playersAwaitingVerification.containsKey(uuid)) {
             sender.sendMessage(ChatColor.YELLOW + "You are not awaiting verification. Please execute \"/account connect\" in discord first");
             return true;
         }
 
-        if (!playersAwaitingVerification.get(uuid).equals(code)) {
+        if(!playersAwaitingVerification.get(uuid).equals(code)) {
             sender.sendMessage(ChatColor.RED + "The code you specified is incorrect. Please try again.");
             return true;
         }

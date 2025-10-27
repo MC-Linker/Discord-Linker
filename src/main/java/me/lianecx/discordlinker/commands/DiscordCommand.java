@@ -1,6 +1,6 @@
-package me.lianecx.discordlinker.spigot.commands;
+package me.lianecx.discordlinker.commands;
 
-import me.lianecx.discordlinker.spigot.DiscordLinker;
+import me.lianecx.discordlinker.DiscordLinker;
 import net.md_5.bungee.api.ChatColor;
 import net.md_5.bungee.api.chat.ClickEvent;
 import net.md_5.bungee.api.chat.ComponentBuilder;

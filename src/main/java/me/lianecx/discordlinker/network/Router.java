@@ -1,4 +1,4 @@
-package me.lianecx.discordlinker.spigot.network;
+package me.lianecx.discordlinker.network;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
@@ -7,11 +7,11 @@ import com.google.gson.JsonParser;
 import com.google.gson.reflect.TypeToken;
 import express.utils.Status;
 import io.github.bananapuncher714.nbteditor.NBTEditor;
-import me.lianecx.discordlinker.spigot.DiscordLinker;
-import me.lianecx.discordlinker.spigot.commands.VerifyCommand;
-import me.lianecx.discordlinker.spigot.events.TeamChangeEvent;
-import me.lianecx.discordlinker.spigot.utilities.ConsoleLogger;
-import me.lianecx.discordlinker.spigot.utilities.LuckPermsUtil;
+import me.lianecx.discordlinker.DiscordLinker;
+import me.lianecx.discordlinker.commands.VerifyCommand;
+import me.lianecx.discordlinker.events.TeamChangeEvent;
+import me.lianecx.discordlinker.utilities.ConsoleLogger;
+import me.lianecx.discordlinker.utilities.LuckPermsUtil;
 import net.md_5.bungee.api.chat.ClickEvent;
 import net.md_5.bungee.api.chat.ComponentBuilder;
 import org.apache.logging.log4j.LogManager;

@@ -1,10 +1,10 @@
-package me.lianecx.discordlinker.spigot.utilities;
+package me.lianecx.discordlinker.utilities;
 
 import express.utils.Status;
-import me.lianecx.discordlinker.spigot.DiscordLinker;
-import me.lianecx.discordlinker.spigot.events.luckperms.DeleteGroupEvent;
-import me.lianecx.discordlinker.spigot.events.luckperms.GroupMemberChangeEvent;
-import me.lianecx.discordlinker.spigot.network.Router;
+import me.lianecx.discordlinker.DiscordLinker;
+import me.lianecx.discordlinker.events.luckperms.DeleteGroupEvent;
+import me.lianecx.discordlinker.events.luckperms.GroupMemberChangeEvent;
+import me.lianecx.discordlinker.network.Router;
 import net.luckperms.api.LuckPerms;
 import net.luckperms.api.LuckPermsProvider;
 import net.luckperms.api.event.group.GroupDeleteEvent;

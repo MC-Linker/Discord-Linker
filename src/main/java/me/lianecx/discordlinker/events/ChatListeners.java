@@ -1,8 +1,8 @@
-package me.lianecx.discordlinker.spigot.events;
+package me.lianecx.discordlinker.events;
 
-import me.lianecx.discordlinker.spigot.DiscordLinker;
-import me.lianecx.discordlinker.spigot.network.ChatType;
-import me.lianecx.discordlinker.spigot.network.StatsUpdateEvent;
+import me.lianecx.discordlinker.DiscordLinker;
+import me.lianecx.discordlinker.network.ChatType;
+import me.lianecx.discordlinker.network.StatsUpdateEvent;
 import org.bukkit.ChatColor;
 import org.bukkit.command.ConsoleCommandSender;
 import org.bukkit.event.EventHandler;

@@ -1,4 +1,4 @@
-package me.lianecx.discordlinker.spigot.network.adapters;
+package me.lianecx.discordlinker.network.adapters;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
@@ -7,12 +7,12 @@ import com.google.gson.JsonParser;
 import express.http.RequestMethod;
 import express.utils.Status;
 import io.socket.client.AckWithTimeout;
-import me.lianecx.discordlinker.spigot.DiscordLinker;
-import me.lianecx.discordlinker.spigot.events.TeamChangeEvent;
-import me.lianecx.discordlinker.spigot.network.ChatType;
-import me.lianecx.discordlinker.spigot.network.HasRequiredRoleResponse;
-import me.lianecx.discordlinker.spigot.network.Router;
-import me.lianecx.discordlinker.spigot.network.StatsUpdateEvent;
+import me.lianecx.discordlinker.DiscordLinker;
+import me.lianecx.discordlinker.events.TeamChangeEvent;
+import me.lianecx.discordlinker.network.ChatType;
+import me.lianecx.discordlinker.network.HasRequiredRoleResponse;
+import me.lianecx.discordlinker.network.Router;
+import me.lianecx.discordlinker.network.StatsUpdateEvent;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
@@ -86,6 +86,7 @@ public class AdapterManager {
 
     /**
      * Connects to the websocket server with a verification code.
+     *
      * @param code     The verification code to connect with.
      * @param callback The callback to run when the connection is established or fails.
      */

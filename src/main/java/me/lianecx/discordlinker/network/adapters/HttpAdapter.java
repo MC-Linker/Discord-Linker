@@ -1,4 +1,4 @@
-package me.lianecx.discordlinker.spigot.network.adapters;
+package me.lianecx.discordlinker.network.adapters;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -8,9 +8,9 @@ import express.http.RequestMethod;
 import express.http.request.Request;
 import express.http.response.Response;
 import express.utils.Status;
-import me.lianecx.discordlinker.spigot.DiscordLinker;
-import me.lianecx.discordlinker.spigot.network.Route;
-import me.lianecx.discordlinker.spigot.network.Router;
+import me.lianecx.discordlinker.DiscordLinker;
+import me.lianecx.discordlinker.network.Route;
+import me.lianecx.discordlinker.network.Router;
 import org.bukkit.ChatColor;
 
 import java.io.*;
@@ -60,14 +60,6 @@ public class HttpAdapter implements NetworkAdapter {
         });
     }
 
-    @Deprecated
-    public void connect(int port, Consumer<Boolean> callback) {
-/*        app.listen(() -> {
-            callback.accept(true);
-            DiscordLinker.getPlugin().getLogger().info("Listening on port " + port);
-        }, port);*/
-    }
-
     public static Router.RouterResponse send(RequestMethod method, String route, JsonElement body) {
         try {
             if(body.isJsonObject()) {
@@ -102,6 +94,26 @@ public class HttpAdapter implements NetworkAdapter {
         }
     }
 
+    public static void checkVersion() {
+        try {
+            HttpURLConnection conn = (HttpURLConnection) new URL(AdapterManager.getBotURI() + "/version").openConnection();
+            InputStream inputStream = conn.getInputStream();
+            String latestVersion = new BufferedReader(new InputStreamReader(inputStream)).lines().collect(Collectors.joining("\n"));
+            if(!latestVersion.equals(DiscordLinker.getPluginVersion()))
+                DiscordLinker.getPlugin().getLogger().info(ChatColor.AQUA + "Please update to the latest Discord-Linker version (" + latestVersion + ") for a bug-free and feature-rich experience.");
+
+        }
+        catch(IOException ignored) {}
+    }
+
+    @Deprecated
+    public void connect(int port, Consumer<Boolean> callback) {
+/*        app.listen(() -> {
+            callback.accept(true);
+            DiscordLinker.getPlugin().getLogger().info("Listening on port " + port);
+        }, port);*/
+    }
+
     private boolean checkToken(Request req) {
         try {
             if(DiscordLinker.getConnJson().get("hash") == null) return false;
@@ -128,18 +140,6 @@ public class HttpAdapter implements NetworkAdapter {
         req.getParams().forEach(data::addProperty);
 
         return data;
-    }
-
-    public static void checkVersion() {
-        try {
-            HttpURLConnection conn = (HttpURLConnection) new URL(AdapterManager.getBotURI() + "/version").openConnection();
-            InputStream inputStream = conn.getInputStream();
-            String latestVersion = new BufferedReader(new InputStreamReader(inputStream)).lines().collect(Collectors.joining("\n"));
-            if(!latestVersion.equals(DiscordLinker.getPluginVersion()))
-                DiscordLinker.getPlugin().getLogger().info(ChatColor.AQUA + "Please update to the latest Discord-Linker version (" + latestVersion + ") for a bug-free and feature-rich experience.");
-
-        }
-        catch(IOException ignored) {}
     }
 
     public void disconnect() {

@@ -1,10 +1,10 @@
-package me.lianecx.discordlinker.spigot.events;
+package me.lianecx.discordlinker.events;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
-import me.lianecx.discordlinker.spigot.DiscordLinker;
-import me.lianecx.discordlinker.spigot.utilities.CommandUtil;
+import me.lianecx.discordlinker.DiscordLinker;
+import me.lianecx.discordlinker.utilities.CommandUtil;
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.command.CommandSender;

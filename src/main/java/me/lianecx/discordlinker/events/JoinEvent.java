@@ -1,7 +1,7 @@
-package me.lianecx.discordlinker.spigot.events;
+package me.lianecx.discordlinker.events;
 
-import me.lianecx.discordlinker.spigot.DiscordLinker;
-import me.lianecx.discordlinker.spigot.network.HasRequiredRoleResponse;
+import me.lianecx.discordlinker.DiscordLinker;
+import me.lianecx.discordlinker.network.HasRequiredRoleResponse;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
