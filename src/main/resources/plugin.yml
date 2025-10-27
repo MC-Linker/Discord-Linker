@@ -1,6 +1,6 @@
 name: Discord-Linker
 version: ${project.version}
-main: me.lianecx.discordlinker.spigot.DiscordLinker
+main: me.lianecx.discordlinker.DiscordLinker
 api-version: 1.12
 authors: [ Lianecx ]
 softdepend:
