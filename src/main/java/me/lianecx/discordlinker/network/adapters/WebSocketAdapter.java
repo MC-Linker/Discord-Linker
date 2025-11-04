@@ -8,6 +8,7 @@ import io.socket.client.Ack;
 import io.socket.client.IO;
 import io.socket.client.Socket;
 import io.socket.emitter.Emitter;
+import io.socket.engineio.client.transports.WebSocket;
 import me.lianecx.discordlinker.DiscordLinker;
 import me.lianecx.discordlinker.network.Route;
 import me.lianecx.discordlinker.network.Router;
@@ -61,6 +62,7 @@ public class WebSocketAdapter implements NetworkAdapter {
         ioOptions.query = queryString;
         ioOptions.reconnectionDelayMax = 30000;
         ioOptions.reconnectionAttempts = reconnectionAttempts;
+        ioOptions.transports = new String[] {WebSocket.NAME};
 
         Socket socket = IO.socket(AdapterManager.getBotURI(), ioOptions);
 
