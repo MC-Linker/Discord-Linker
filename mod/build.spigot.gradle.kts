@@ -41,12 +41,6 @@ tasks.processResources {
     }
 }
 
-// Shadow plugin configuration
-tasks.named<com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar>("shadowJar") {
-    minimize()
-    relocate("org.bstats", "me.lianecx")
-}
-
 // Make the shadow JAR the default artifact
 tasks.build {
     dependsOn(tasks.shadowJar)

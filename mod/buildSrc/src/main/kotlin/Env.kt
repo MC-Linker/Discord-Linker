@@ -47,4 +47,27 @@ class Env(project: Project, val compare: (String, String) -> Int) {
             else -> ""
         }
     }
+
+    fun resourceMap(mod: ModProperties, env: Env) = mapOf(
+        "modid" to mod.id,
+        "id" to mod.id,
+        "name" to mod.displayName,
+        "display_name" to mod.displayName,
+        "version" to mod.version,
+        "description" to mod.description,
+        "authors" to mod.authors,
+        "github_url" to mod.sourceUrl,
+        "source_url" to mod.sourceUrl,
+        "website" to mod.generalWebsite,
+        "icon" to mod.icon,
+        "fabric_server_entry" to env.fabricServerEntry,
+        "mc_min" to env.mcVersion.min,
+        "mc_max" to env.mcVersion.max,
+        "issue_tracker" to mod.issueTracker,
+        "java_ver" to env.javaVer.toString(),
+        "forgelike_loader_ver" to env.forgelikeLoaderVersion,
+        "forgelike_api_ver" to env.forgelikeAPIVersion,
+        "loader_id" to env.loader,
+        "license" to mod.license,
+    )
 }
