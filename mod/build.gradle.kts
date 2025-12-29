@@ -84,15 +84,7 @@ dependencies {
     if (env.isForge) "forge"("net.minecraftforge:forge:${env.forgeMavenVersion.min}")
     if (env.isNeo) "neoForge"("net.neoforged:neoforge:${env.neoforgeVersion.min}")
 
-    apis.forEach { src ->
-        if (src.enabled) {
-            src.versionRange.ifPresent { ver ->
-                dependencies {
-                    apis.forEach { it.applyDependency(this, env) }
-                }
-            }
-        }
-    }
+    apis.forEach { it.applyDependency(this, env) }
 
     implementation("io.socket:socket.io-client:2.1.2")
     compileOnly("net.luckperms:api:5.4")
