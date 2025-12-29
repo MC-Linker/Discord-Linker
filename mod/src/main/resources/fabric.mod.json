@@ -20,5 +20,5 @@
             "${fabric_server_entry}"
         ]
     },
-    ${ dependencies_field }
+    "depends": ${ dependencies_json }
 }

@@ -118,8 +118,15 @@ java {
 }
 
 tasks.processResources {
-    val map = env.resourceMap(mod, env)
+    val (fabricDeps, forgeDeps) = dependencyJsonOrToml(apis)
+
+    val map = env.resourceMap(mod, env) + mapOf(
+        "dependencies_json" to fabricDeps,
+        "dependencies_field" to forgeDeps
+    )
+
     map.forEach { (key, value) -> inputs.property(key, value) }
+
     metaExclude.files.forEach { file -> exclude(file) }
     filesMatching("fabric.mod.json") { expand(map) }
     filesMatching("META-INF/mods.toml") { expand(map) }

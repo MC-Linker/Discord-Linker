@@ -27,9 +27,9 @@ stonecutter {
         }
 
         version("1.12.2-spigot", "1.12.2").buildscript("build.spigot.gradle.kts")
-        // mc("1.12.2", "forge")
+        // loaderVersion("1.12.2", "forge")
 
-        // mc("1.14.4", "fabric", "forge")
+        loaderVersion("1.14.4", "fabric", "forge")
 
         loaderVersion("1.16.5", "fabric", "forge")
 
