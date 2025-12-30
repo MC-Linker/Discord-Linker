@@ -40,6 +40,21 @@ tasks.processResources {
     }
 }
 
+sourceSets {
+    named("main") {
+        java.setSrcDirs(
+            listOf(
+                "src/common/java",
+                "src/spigot/java"
+            )
+        )
+
+        resources.setSrcDirs(
+            listOf("src/common/resources", "src/spigot/resources")
+        )
+    }
+}
+
 stonecutter {
     constants["fabric"] = false
     constants["forge"] = false

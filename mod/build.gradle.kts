@@ -126,6 +126,34 @@ tasks.processResources {
     filesMatching("META-INF/neoforge.mods.toml") { expand(map) }
 }
 
+
+sourceSets {
+    named("main") {
+        val commonSrc = listOf(
+            "src/common/java",
+            "src/architectury/java"
+        )
+        java.setSrcDirs(
+            commonSrc + when {
+                env.isFabric -> listOf("src/fabric/java")
+                env.isForge -> listOf("src/forge/java")
+                env.isNeo -> listOf("src/neoforge/java")
+                else -> throw IllegalStateException("No valid mod environment detected")
+            }
+        )
+
+        resources.setSrcDirs(
+            listOf("src/common/resources") + when {
+                env.isFabric -> listOf("src/fabric/resources")
+                env.isForge -> listOf("src/forge/resources")
+                env.isNeo -> listOf("src/neoforge/resources")
+                else -> throw IllegalStateException("No valid mod environment detected")
+            }
+        )
+    }
+}
+
+
 publishMods {
     file = tasks.remapJar.get().archiveFile
     displayName = "${mod.displayName} ${mod.version} for ${env.mcVersion.min}"
