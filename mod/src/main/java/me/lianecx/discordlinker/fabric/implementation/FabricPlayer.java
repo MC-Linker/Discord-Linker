@@ -1,7 +1,6 @@
 package me.lianecx.discordlinker.fabric.implementation;
 
 import me.lianecx.discordlinker.common.abstraction.LinkerPlayer;
-import net.minecraft.network.chat.TextComponent;
 import net.minecraft.world.entity.player.Player;
 
 
@@ -26,9 +25,9 @@ public final class FabricPlayer implements LinkerPlayer {
     @Override
     public void sendMessage(String message) {
         //? if <1.19 {
-        player.sendMessage(new TextComponent(message), null);
-        //?} else
-        //player.sendSystemMessage(Component.literal(message));
+        /*player.sendMessage(new TextComponent(message), null);
+         *///?} else
+        player.sendSystemMessage(Component.literal(message));
     }
 
     @Override

@@ -5,5 +5,5 @@ plugins {
     id("me.modmuss50.mod-publish-plugin") version "0.8.4" apply false // Publishes builds to hosting websites
 }
 
-stonecutter active "1.16.5-forge"
+stonecutter active "1.20+1-fabric"
 

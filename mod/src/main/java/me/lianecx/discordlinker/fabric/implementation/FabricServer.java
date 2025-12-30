@@ -2,8 +2,6 @@ package me.lianecx.discordlinker.fabric.implementation;
 
 import me.lianecx.discordlinker.common.abstraction.LinkerPlayer;
 import me.lianecx.discordlinker.common.abstraction.LinkerServer;
-import net.minecraft.network.chat.ChatType;
-import net.minecraft.network.chat.TextComponent;
 import net.minecraft.server.MinecraftServer;
 
 import java.util.List;
@@ -48,12 +46,12 @@ public final class FabricServer implements LinkerServer {
     @Override
     public void broadcastMessage(String message) {
         //? if <1.19 {
-        server.getPlayerList().broadcastMessage(new TextComponent(message), ChatType.CHAT, null);
-        //?} else {
-        /*server.getPlayerList().broadcastSystemMessage(
+        /*server.getPlayerList().broadcastMessage(new TextComponent(message), ChatType.CHAT, null);
+         *///?} else {
+        server.getPlayerList().broadcastSystemMessage(
                 Component.literal(message),
                 false
         );
-        *///?}
+        //?}
     }
 }
