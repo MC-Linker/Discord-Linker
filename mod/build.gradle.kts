@@ -126,8 +126,34 @@ tasks.processResources {
     filesMatching("META-INF/neoforge.mods.toml") { expand(map) }
 }
 
+sourceSets.main {
+    java {
+        val spigot = listOf("**/spigot/**")
+        exclude(
+            spigot + when {
+                env.isFabric -> listOf("**/forge/**", "**/neoforge/**")
+                env.isForge -> listOf("**/fabric/**", "**/neoforge/**")
+                env.isNeo -> listOf("**/fabric/**", "**/forge/**")
+                else -> throw IllegalStateException("No valid mod environment detected")
+            }
+        )
+    }
 
-sourceSets {
+    resources {
+        val spigot = listOf("plugin.yml")
+        exclude(
+            spigot + when {
+                env.isFabric -> listOf("META-INF/mods.toml", "META-INF/neoforge.mods.toml")
+                env.isForge -> listOf("fabric.mod.json", "META-INF/neoforge.mods.toml")
+                env.isNeo -> listOf("fabric.mod.json", "META-INF/mods.toml")
+                else -> throw IllegalStateException("No valid mod environment detected")
+            }
+        )
+    }
+}
+
+
+/*sourceSets {
     named("main") {
         val commonSrc = listOf(
             "src/common/java",
@@ -151,7 +177,7 @@ sourceSets {
             }
         )
     }
-}
+}*/
 
 
 publishMods {

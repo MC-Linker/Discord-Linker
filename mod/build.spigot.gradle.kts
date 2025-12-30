@@ -40,17 +40,16 @@ tasks.processResources {
     }
 }
 
-sourceSets {
-    named("main") {
-        java.setSrcDirs(
-            listOf(
-                "src/common/java",
-                "src/spigot/java"
-            )
+sourceSets.main {
+    java {
+        exclude(
+            listOf("**/fabric/**", "**/forge/**", "**/neoforge/**", "**/architectury/**")
         )
+    }
 
-        resources.setSrcDirs(
-            listOf("src/common/resources", "src/spigot/resources")
+    resources {
+        exclude(
+            listOf("fabric.mod.json", "META-INF/mods.toml", "META-INF/neoforge.mods.toml")
         )
     }
 }
