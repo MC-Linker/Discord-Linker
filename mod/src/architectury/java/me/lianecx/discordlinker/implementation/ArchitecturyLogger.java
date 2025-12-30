@@ -1,4 +1,3 @@
-//? if mod {
 package me.lianecx.discordlinker.implementation;
 
 import me.lianecx.discordlinker.abstraction.core.LinkerLogger;
@@ -33,4 +32,3 @@ public class ArchitecturyLogger implements LinkerLogger {
         logger.debug(message);
     }
 }
-//? }

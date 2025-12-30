@@ -1,4 +1,3 @@
-//? if mod {
 package me.lianecx.discordlinker.implementation;
 
 import me.lianecx.discordlinker.abstraction.core.LinkerConfig;
@@ -184,4 +183,3 @@ public class ArchitecturyConfig implements LinkerConfig {
     @Override
     public boolean shouldDebug() {return getBoolOrDefault("debug_mode");}
 }
-//? }

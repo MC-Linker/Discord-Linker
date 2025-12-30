@@ -1,8 +1,6 @@
-//? if spigot {
-/*package me.lianecx.discordlinker.spigot;
+package me.lianecx.discordlinker;
 
 import org.bukkit.plugin.java.JavaPlugin;
-import me.lianecx.discordlinker.DiscordLinkerCommon;
 
 public class DiscordLinkerSpigot extends JavaPlugin {
 
@@ -10,5 +8,4 @@ public class DiscordLinkerSpigot extends JavaPlugin {
      public void onEnable() {
         DiscordLinkerCommon.init();
     }
-
-}*///?}
+}

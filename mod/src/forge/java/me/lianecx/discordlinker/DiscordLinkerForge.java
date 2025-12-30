@@ -1,16 +1,14 @@
-//? if forge {
-/*package me.lianecx.discordlinker.forge;
+package me.lianecx.discordlinker;
 
 import net.minecraftforge.fml.common.Mod;
-import me.lianecx.discordlinker.DiscordLinkerCommon;
+import me.lianecx.discordlinker.DiscordLinkerArchitectury;
 
-/^*
- * This is the entry point for your mod's forge side.
- ^/
+/**
+ * This is the entry point for the forge side.
+ */
 @Mod("discordlinker")
 public class DiscordLinkerForge {
     public DiscordLinkerForge() {
-        DiscordLinkerCommon.init();
+        DiscordLinkerArchitectury.init();
     }
 }
-*///?}
