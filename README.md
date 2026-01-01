@@ -1,6 +1,9 @@
 ## Description
 
-View minecraft stats, advancements and inventories inside Discord, execute commands and create a chat-bridge!
+MC Linker is the easiest way to connect your Minecraft server with Discord.
+NO custom bot creation or configuration files needed!
+Add chat bridges, view player stats, advancements, and inventories, run commands and moderate your server all within
+Discord.
 
 ## Setup
 
