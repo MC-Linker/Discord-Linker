@@ -1,6 +1,7 @@
 package me.lianecx.discordlinker.fabric.implementation;
 
 import me.lianecx.discordlinker.common.abstraction.LinkerPlayer;
+import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Player;
 
 
