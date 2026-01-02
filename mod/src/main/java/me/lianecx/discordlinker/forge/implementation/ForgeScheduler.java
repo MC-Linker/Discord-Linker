@@ -6,8 +6,10 @@ import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.LogicalSide;
 import net.minecraftforge.fml.common.Mod;
-//? if <1.19
-//import net.minecraftforge.fml.server.ServerLifecycleHooks;
+//? if <1.18 {
+/*import net.minecraftforge.fml.server.ServerLifecycleHooks;
+ *///?} else if <1.19
+//import net.minecraftforge.server.ServerLifecycleHooks;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -17,9 +19,6 @@ import java.util.List;
 public class ForgeScheduler implements LinkerScheduler {
 
     private final List<LinkerSchedulerTask> tasks = new ArrayList<>();
-
-    public ForgeScheduler() {
-    }
 
     @SubscribeEvent
     public void onServerTick(TickEvent.ServerTickEvent event) {
