@@ -71,7 +71,8 @@ public final class ArchitecturyServer implements LinkerServer {
         GameProfile profile = server.getProfileCache()
                 .get(name)
                 //? if >=1.18
-                .orElse(null);
+                .orElse(null)
+                ;
         if(profile != null) return new LinkerOfflinePlayer(profile.getId().toString(), profile.getName());
         return null;
     }
@@ -90,7 +91,8 @@ public final class ArchitecturyServer implements LinkerServer {
         GameProfile profile = server.getProfileCache()
                 .get(uuid)
                 //? if >=1.18
-                .orElse(null);
+                .orElse(null)
+                ;
         if(profile != null) return new LinkerOfflinePlayer(profile.getId().toString(), profile.getName());
 
         //? if <1.21 {
