@@ -6,8 +6,6 @@ public interface LinkerScheduler {
 
     LinkerSchedulerRepeatingTask runRepeating(Runnable task, long initialDelay, long period, int delay);
 
-    void cancel(Runnable task);
-
     class LinkerSchedulerTask {
         private final Runnable task;
         private int ticks;
@@ -18,17 +16,33 @@ public interface LinkerScheduler {
             this.ticks = delay;
         }
 
-        public Runnable getTask() {return task;}
+        public Runnable getTask() {
+            return task;
+        }
 
-        public boolean isCancelled() {return cancelled;}
+        public boolean isCancelled() {
+            return cancelled;
+        }
 
-        public void cancel() {cancelled = true;}
+        public void cancel() {
+            cancelled = true;
+        }
 
+        /**
+         * Decreases the internal tick counter.
+         *
+         * @return true if the task is ready to run
+         */
         public boolean tick() {
             if(cancelled) return false;
             return --ticks <= 0;
         }
 
+        /**
+         * Resets the internal tick counter.
+         *
+         * @param delay the delay to reset to
+         */
         public void reset(int delay) {
             this.ticks = delay;
         }
@@ -46,6 +60,8 @@ public interface LinkerScheduler {
             this.period = period;
         }
 
-        public int getPeriod() {return period;}
+        public int getPeriod() {
+            return period;
+        }
     }
 }

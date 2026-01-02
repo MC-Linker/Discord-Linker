@@ -31,11 +31,6 @@ public final class FabricScheduler implements LinkerScheduler {
         return wrapper;
     }
 
-    @Override
-    public void cancel(Runnable task) {
-        tasks.removeIf(t -> t.getTask() == task);
-    }
-
     private void tick(MinecraftServer server) {
         Iterator<LinkerScheduler.LinkerSchedulerTask> it = tasks.iterator();
 
