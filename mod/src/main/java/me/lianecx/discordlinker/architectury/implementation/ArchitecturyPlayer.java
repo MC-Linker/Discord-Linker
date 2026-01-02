@@ -1,29 +1,19 @@
-package me.lianecx.discordlinker.fabric.implementation;
+package me.lianecx.discordlinker.architectury.implementation;
 
 import me.lianecx.discordlinker.common.abstraction.LinkerPlayer;
 //? if <1.19 {
 /*import net.minecraft.network.chat.TextComponent;
  *///? } else
 import net.minecraft.network.chat.Component;
-import net.minecraft.world.entity.player.Player;
+import net.minecraft.server.level.ServerPlayer;
 
+public class ArchitecturyPlayer extends LinkerPlayer {
 
-public final class FabricPlayer implements LinkerPlayer {
+    private final ServerPlayer player;
 
-    private final Player player;
-
-    public FabricPlayer(Player player) {
+    public ArchitecturyPlayer(ServerPlayer player) {
+        super(player.getStringUUID(), player.getName().getString());
         this.player = player;
-    }
-
-    @Override
-    public String getUUID() {
-        return player.getUUID().toString();
-    }
-
-    @Override
-    public String getName() {
-        return player.getName().getString();
     }
 
     @Override

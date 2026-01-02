@@ -63,6 +63,14 @@ stonecutter {
     constants["neoforge"] = env.isNeo
     constants["spigot"] = false
     constants["mod"] = true
+
+    replacements.string(env.isNeo) {
+        replace("net.minecraftforge", "net.neoforged")
+    }
+
+    replacements.string(env.atMost("1.16.5")) {
+        replace("dev.architectury", "me.shedaniel.architectury")
+    }
 }
 
 loom {

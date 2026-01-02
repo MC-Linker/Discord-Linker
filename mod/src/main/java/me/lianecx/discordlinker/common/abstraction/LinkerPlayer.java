@@ -1,11 +1,16 @@
 package me.lianecx.discordlinker.common.abstraction;
 
-public interface LinkerPlayer {
-    String getName();
+public abstract class LinkerPlayer extends LinkerOfflinePlayer {
 
-    String getUUID();
+    public LinkerPlayer(String uuid, String name) {
+        super(uuid, name);
+    }
 
-    void sendMessage(String message);
+    abstract public void sendMessage(String message);
 
-    boolean hasPermission(String permission);
+    abstract public boolean hasPermission(String permission);
+
+    public boolean isOnline() {
+        return true;
+    }
 }

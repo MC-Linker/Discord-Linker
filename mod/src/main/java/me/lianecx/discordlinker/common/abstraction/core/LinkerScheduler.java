@@ -2,22 +2,32 @@ package me.lianecx.discordlinker.common.abstraction.core;
 
 public interface LinkerScheduler {
 
-    LinkerSchedulerTask runDelayed(Runnable task, int delay);
+    LinkerSchedulerTask runDelayedSync(Runnable task, int delay);
 
-    LinkerSchedulerRepeatingTask runRepeating(Runnable task, int initialDelay, int period, int delay);
+    LinkerSchedulerRepeatingTask runRepeatingSync(Runnable task, int initialDelay, int period, int delay);
+
+    LinkerSchedulerTask runDelayedAsync(Runnable task, int delay);
+
+    LinkerSchedulerRepeatingTask runRepeatingAsync(Runnable task, int initialDelay, int period, int delay);
 
     class LinkerSchedulerTask {
         private final Runnable task;
+        private boolean async;
         private int ticks;
         private boolean cancelled;
 
-        public LinkerSchedulerTask(Runnable task, int delay) {
+        public LinkerSchedulerTask(Runnable task, boolean async, int delay) {
             this.task = task;
+            this.async = async;
             this.ticks = delay;
         }
 
         public Runnable getTask() {
             return task;
+        }
+
+        public boolean isAsync() {
+            return async;
         }
 
         public boolean isCancelled() {
@@ -55,8 +65,8 @@ public interface LinkerScheduler {
     class LinkerSchedulerRepeatingTask extends LinkerSchedulerTask {
         private final int period;
 
-        public LinkerSchedulerRepeatingTask(Runnable task, int delay, int period) {
-            super(task, delay);
+        public LinkerSchedulerRepeatingTask(Runnable task, boolean async, int delay, int period) {
+            super(task, async, delay);
             this.period = period;
         }
 
