@@ -1,6 +1,9 @@
 package me.lianecx.discordlinker.fabric.implementation;
 
 import me.lianecx.discordlinker.common.abstraction.LinkerPlayer;
+//? if <1.19 {
+/*import net.minecraft.network.chat.TextComponent;
+ *///? } else
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Player;
 

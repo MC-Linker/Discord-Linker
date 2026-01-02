@@ -4,7 +4,7 @@ public interface LinkerScheduler {
 
     LinkerSchedulerTask runDelayed(Runnable task, int delay);
 
-    LinkerSchedulerRepeatingTask runRepeating(Runnable task, long initialDelay, long period, int delay);
+    LinkerSchedulerRepeatingTask runRepeating(Runnable task, int initialDelay, int period, int delay);
 
     class LinkerSchedulerTask {
         private final Runnable task;

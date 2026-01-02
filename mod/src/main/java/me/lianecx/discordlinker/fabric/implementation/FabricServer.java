@@ -2,6 +2,10 @@ package me.lianecx.discordlinker.fabric.implementation;
 
 import me.lianecx.discordlinker.common.abstraction.LinkerPlayer;
 import me.lianecx.discordlinker.common.abstraction.LinkerServer;
+import net.minecraft.network.chat.ChatType;
+//? if <1.19 {
+/*import net.minecraft.network.chat.TextComponent;
+ *///? } else
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
 

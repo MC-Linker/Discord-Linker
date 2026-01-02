@@ -24,16 +24,15 @@ public final class FabricScheduler implements LinkerScheduler {
     }
 
     @Override
-    public LinkerScheduler.LinkerSchedulerRepeatingTask runRepeating(Runnable task, long initialDelay, long period, int delay) {
+    public LinkerScheduler.LinkerSchedulerRepeatingTask runRepeating(Runnable task, int initialDelay, int period, int delay) {
         LinkerScheduler.LinkerSchedulerRepeatingTask wrapper =
-                new LinkerScheduler.LinkerSchedulerRepeatingTask(task, (int) initialDelay, (int) period);
+                new LinkerScheduler.LinkerSchedulerRepeatingTask(task, initialDelay, period);
         tasks.add(wrapper);
         return wrapper;
     }
 
     private void tick(MinecraftServer server) {
         Iterator<LinkerScheduler.LinkerSchedulerTask> it = tasks.iterator();
-
         while(it.hasNext()) {
             LinkerScheduler.LinkerSchedulerTask task = it.next();
 
