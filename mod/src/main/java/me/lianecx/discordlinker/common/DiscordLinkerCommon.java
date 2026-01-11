@@ -6,6 +6,7 @@ import me.lianecx.discordlinker.common.abstraction.LinkerServer;
 import me.lianecx.discordlinker.common.abstraction.MinecraftChatColor;
 import me.lianecx.discordlinker.common.abstraction.core.LinkerConfig;
 import me.lianecx.discordlinker.common.abstraction.core.LinkerLogger;
+import me.lianecx.discordlinker.common.abstraction.core.LinkerScheduler;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.FileWriter;
@@ -19,18 +20,25 @@ public class DiscordLinkerCommon {
 
     public static final int DEFAULT_BOT_PORT = 80;
     public static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
-    private static final TypeAdapter<JsonElement> strictAdapter = new Gson().getAdapter(JsonElement.class);
+    private static final TypeAdapter<JsonElement> strictGsonAdapter = new Gson().getAdapter(JsonElement.class);
+
     private static DiscordLinkerCommon discordLinker;
-    private final LinkerConfig config;
+
     private final ClientManager clientManager;
+
     private final LinkerLogger logger;
+    private final LinkerConfig config;
     private final LinkerServer server;
+    private final LinkerScheduler scheduler;
+
     private ConnJson connJson;
 
-    private DiscordLinkerCommon(LinkerLogger logger, LinkerConfig config, LinkerServer server) {
+    private DiscordLinkerCommon(LinkerLogger logger, LinkerConfig config, LinkerServer server, LinkerScheduler scheduler) {
         this.logger = logger;
         this.config = config;
         this.server = server;
+        this.scheduler = scheduler;
+
         this.connJson = loadConn();
 
         String token = connJson != null ? connJson.getToken() : null;
@@ -42,9 +50,9 @@ public class DiscordLinkerCommon {
         logger.info(MinecraftChatColor.GREEN + "Discord-Linker enabled.");
     }
 
-    public static synchronized DiscordLinkerCommon init(LinkerLogger logger, LinkerConfig config, LinkerServer server) {
+    public static synchronized DiscordLinkerCommon init(LinkerLogger logger, LinkerConfig config, LinkerServer server, LinkerScheduler scheduler) {
         if (discordLinker != null) throw new IllegalStateException("DiscordLinkerCommon already initialized!");
-        discordLinker = new DiscordLinkerCommon(logger, config, server);
+        discordLinker = new DiscordLinkerCommon(logger, config, server, scheduler);
         return discordLinker;
     }
 
@@ -65,7 +73,7 @@ public class DiscordLinkerCommon {
 
     public static boolean isValidJson(String json) {
         try {
-            strictAdapter.fromJson(json);
+            strictGsonAdapter.fromJson(json);
         } catch (JsonSyntaxException | IOException e) {
             return false;
         }

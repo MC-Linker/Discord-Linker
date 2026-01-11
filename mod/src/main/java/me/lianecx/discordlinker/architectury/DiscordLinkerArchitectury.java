@@ -2,6 +2,7 @@ package me.lianecx.discordlinker.architectury;
 
 import me.lianecx.discordlinker.architectury.implementation.ArchitecturyConfig;
 import me.lianecx.discordlinker.architectury.implementation.ArchitecturyLogger;
+import me.lianecx.discordlinker.architectury.implementation.ArchitecturyScheduler;
 import me.lianecx.discordlinker.architectury.implementation.ArchitecturyServer;
 import me.lianecx.discordlinker.common.DiscordLinkerCommon;
 
@@ -18,11 +19,10 @@ public class DiscordLinkerArchitectury {
 
     public static synchronized DiscordLinkerArchitectury init() {
         if(common != null) throw new IllegalStateException("DiscordLinkerArchitectury is already initialized!");
-        ArchitecturyLogger logger = new ArchitecturyLogger();
-        ArchitecturyConfig config = new ArchitecturyConfig(".");
         ArchitecturyServer server = new ArchitecturyServer(getServer());
+        ArchitecturyConfig config = new ArchitecturyConfig(server.getDataFolder());
 
-        common = DiscordLinkerCommon.init(logger, config, server);
+        common = DiscordLinkerCommon.init(new ArchitecturyLogger(), config, server, new ArchitecturyScheduler());
         instance = new DiscordLinkerArchitectury();
         return instance;
     }
