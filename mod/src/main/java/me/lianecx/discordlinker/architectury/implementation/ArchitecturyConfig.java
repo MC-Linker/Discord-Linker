@@ -26,10 +26,9 @@ public class ArchitecturyConfig implements LinkerConfig {
     private MappingNode defaults;
     private MappingNode config;
 
-    public ArchitecturyConfig(File configFolder) {
+    public ArchitecturyConfig(String configFolder) {
         LoaderOptions loaderOptions = new LoaderOptions();
         loaderOptions.setProcessComments(true);
-
         DumperOptions dumperOptions = new DumperOptions();
         dumperOptions.setProcessComments(true);
 
@@ -38,7 +37,7 @@ public class ArchitecturyConfig implements LinkerConfig {
 
         YAML = new Yaml(constructor, representer, dumperOptions, loaderOptions);
 
-        this.configFile = new File(configFolder, CONFIG_FILENAME);
+        this.configFile = new File(new File(configFolder), CONFIG_FILENAME);
 
         loadDefaults();
         if(!configFile.exists()) copyDefault();
@@ -163,23 +162,37 @@ public class ArchitecturyConfig implements LinkerConfig {
     }
 
     @Override
-    public String getPluginVersion() {return "";}
+    public String getPluginVersion() {
+        return "";
+    }
 
     @Override
-    public int getBotPort() {return getIntOrDefault("bot_port");}
+    public int getBotPort() {
+        return getIntOrDefault("bot_port");
+    }
 
     @Override
-    public void setBotPort(int port) {setField("bot_port", port); save();}
+    public void setBotPort(int port) {
+        setField("bot_port", port); save();
+    }
 
     @Override
-    public String getTemplateChatMessage() {return getFieldOrDefault("message");}
+    public String getTemplateChatMessage() {
+        return getFieldOrDefault("message");
+    }
 
     @Override
-    public String getTemplatePrivateMessage() {return getFieldOrDefault("private_message");}
+    public String getTemplatePrivateMessage() {
+        return getFieldOrDefault("private_message");
+    }
 
     @Override
-    public String getTemplateReplyMessage() {return getFieldOrDefault("reply_message");}
+    public String getTemplateReplyMessage() {
+        return getFieldOrDefault("reply_message");
+    }
 
     @Override
-    public boolean shouldDebug() {return getBoolOrDefault("debug_mode");}
+    public boolean shouldDebug() {
+        return getBoolOrDefault("debug_mode");
+    }
 }

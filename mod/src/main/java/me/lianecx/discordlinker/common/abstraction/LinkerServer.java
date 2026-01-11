@@ -14,6 +14,8 @@ public interface LinkerServer {
 
     List<LinkerPlayer> getOnlinePlayers();
 
+    String getDataFolder();
+
     /**
      * Gets the player by the given UUID, only if they are online.
      * Returns null if the player is not online.

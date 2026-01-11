@@ -50,6 +50,11 @@ public final class ArchitecturyServer implements LinkerServer {
     }
 
     @Override
+    public String getDataFolder() {
+        return "";
+    }
+
+    @Override
     public LinkerPlayer getPlayer(UUID uuid) {
         ServerPlayer player = server.getPlayerList().getPlayer(uuid);
         if(player == null) return null;
