@@ -1,4 +1,4 @@
-package me.lianecx.discordlinker.common.abstraction;
+package me.lianecx.discordlinker.common.util;
 
 public enum MinecraftChatColor {
     BLACK('0'),
