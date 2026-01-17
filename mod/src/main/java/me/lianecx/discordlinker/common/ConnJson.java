@@ -49,42 +49,52 @@ public class ConnJson {
     // --- Nested classes ---
     public static class ChatChannel {
 
-        private List<ChatChannelType> types;
-        private String webhook;
         private String id;
+        private List<ChatChannelType> types;
         private boolean allowDiscordToMinecraft;
-
-        public List<ChatChannelType> getTypes() {
-            return types;
-        }
-
-        public String getWebhook() {
-            return webhook;
-        }
+        private String webhook;
 
         public String getId() {
             return id;
+        }
+
+        public List<ChatChannelType> getTypes() {
+            return types;
         }
 
         public boolean allowsDiscordToMinecraft() {
             return allowDiscordToMinecraft;
         }
 
+        public String getWebhook() {
+            return webhook;
+        }
+
         public enum ChatChannelType {
+            @SerializedName("chat")
             CHAT,
+            @SerializedName("join")
             JOIN,
+            @SerializedName("quit")
             QUIT,
+            @SerializedName("advancement")
             ADVANCEMENT,
+            @SerializedName("death")
             DEATH,
+            @SerializedName("player_command")
             PLAYER_COMMAND,
+            @SerializedName("console_command")
             CONSOLE_COMMAND,
+            @SerializedName("block_command")
             BLOCK_COMMAND,
+            @SerializedName("start")
             START,
+            @SerializedName("close")
             CLOSE;
 
             @Override
             public String toString() {
-                return name().toLowerCase().replace('_', '-');
+                return name().toLowerCase();
             }
         }
     }
@@ -119,9 +129,9 @@ public class ConnJson {
         }
 
         public enum StatChannelEvent {
-            @SerializedName("members") MEMBERS,
             @SerializedName("online") ONLINE,
-            @SerializedName("offline") OFFLINE;
+            @SerializedName("offline") OFFLINE,
+            @SerializedName("members") MEMBERS;
 
             @Override
             public String toString() {
@@ -132,20 +142,20 @@ public class ConnJson {
 
     public static class SyncedRole {
         private String id;
-        private boolean isGroup; // true if group, false if team
         private String name;
+        private boolean isGroup; // true if group, false if team
         private List<String> players; // List of player UUIDs
 
         public String getId() {
             return id;
         }
 
-        public boolean isGroup() {
-            return isGroup;
-        }
-
         public String getName() {
             return name;
+        }
+
+        public boolean isGroup() {
+            return isGroup;
         }
 
         public List<String> getPlayers() {

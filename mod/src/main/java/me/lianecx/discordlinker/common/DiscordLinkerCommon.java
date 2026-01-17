@@ -41,10 +41,10 @@ public class DiscordLinkerCommon {
         this.connJson = loadConn();
 
         String token = connJson != null ? connJson.getToken() : null;
-        this.clientManager = new ClientManager(token);
+        this.clientManager = token != null ? new ClientManager(token) : new ClientManager();
 
-        clientManager.checkVersion();
-        connectToBot();
+        ClientManager.checkVersion();
+        reconnectToBot();
 
         logger.info(MinecraftChatColor.GREEN + "Discord-Linker enabled.");
     }
@@ -64,7 +64,7 @@ public class DiscordLinkerCommon {
         getClientManager().chat(ConnJson.ChatChannel.ChatChannelType.CLOSE);
         getClientManager().updateStatsChannel(ConnJson.StatsChannel.StatChannelEvent.OFFLINE);
         getClientManager().updateStatsChannel(ConnJson.StatsChannel.StatChannelEvent.MEMBERS);
-        getClientManager().stop();
+        getClientManager().disconnect();
 
         getLogger().info(MinecraftChatColor.RED + "Discord-Linker disabled.");
         discordLinker = null;
@@ -81,27 +81,27 @@ public class DiscordLinkerCommon {
             return true;
         }
         catch(IOException e) {
-            DiscordLinkerCommon.getLogger().error("Failed to delete connection data file!");
+            getLogger().error(MinecraftChatColor.RED + "Failed to delete connection data file!");
             e.printStackTrace();
             return false;
         }
     }
 
-    public static void writeConn() {
-        try {
-            FileWriter writer = new FileWriter(getServer().getDataFolder() + CONNJSON_FILENAME);
+    public static boolean writeConn() {
+        try (FileWriter writer = new FileWriter(getServer().getDataFolder() + CONNJSON_FILENAME)) {
             writer.write(JsonUtil.toJsonString(getConnJson()));
-            writer.close();
+            return true;
         }
         catch(IOException e) {
-            DiscordLinkerCommon.getLogger().error("Failed to write connection data to file!");
+            getLogger().error(MinecraftChatColor.RED + "Failed to write connection data to file!");
             e.printStackTrace();
+            return false;
         }
     }
 
-    public static void updateConn(JsonObject connJson) {
+    public static boolean updateConn(JsonObject connJson) {
         getInstance().connJson = JsonUtil.getConnJson(connJson);
-        writeConn();
+        return writeConn();
     }
 
     public static LinkerLogger getLogger() {
@@ -124,12 +124,12 @@ public class DiscordLinkerCommon {
         return getInstance().server;
     }
 
-    private void connectToBot() {
+    private void reconnectToBot() {
         ConnJson.ConnProtocol protocol = connJson != null ? connJson.getProtocol() : null;
         if(protocol == null)
             logger.warn(MinecraftChatColor.YELLOW + "No Discord server connected! Please invite the \"MC-Linker\" Discord-Bot (https://discord.com/discovery/applications/712759741528408064) and run `/connect` in your Discord server.");
         else if(protocol == ConnJson.ConnProtocol.WEBSOCKET) {
-            clientManager.start(connected -> {
+            clientManager.reconnect(connected -> {
                 if(!connected) return;
                 clientManager.chat(ConnJson.ChatChannel.ChatChannelType.START);
                 clientManager.updateStatsChannel(ConnJson.StatsChannel.StatChannelEvent.ONLINE);

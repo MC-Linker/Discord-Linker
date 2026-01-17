@@ -15,6 +15,12 @@ public class JsonUtil {
 
     private static final TypeAdapter<JsonElement> strictGsonAdapter = new Gson().getAdapter(JsonElement.class);
 
+    public static JsonObject singleton(String key, String value) {
+        JsonObject jsonObject = new JsonObject();
+        jsonObject.addProperty(key, value);
+        return jsonObject;
+    }
+
     public static String toJsonString(ConnJson connJson) {
         return GSON.toJson(connJson);
     }
@@ -46,6 +52,9 @@ public class JsonUtil {
         }
     }
 
+    /**
+     * Treats the first object in the given array as a JSON string and attempts to parse it into a JsonObject.
+     */
     public static @Nullable JsonObject getJsonObjectFromObjects(Object[] objects) {
         if(objects.length == 0) return null;
         if(!(objects[0] instanceof String)) return null;
