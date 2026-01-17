@@ -1,12 +1,13 @@
 package me.lianecx.discordlinker.common;
 
 import com.google.gson.*;
-import me.lianecx.discordlinker.common.abstraction.ConnJson;
 import me.lianecx.discordlinker.common.abstraction.LinkerServer;
-import me.lianecx.discordlinker.common.abstraction.MinecraftChatColor;
+import me.lianecx.discordlinker.common.util.JsonUtil;
+import me.lianecx.discordlinker.common.util.MinecraftChatColor;
 import me.lianecx.discordlinker.common.abstraction.core.LinkerConfig;
 import me.lianecx.discordlinker.common.abstraction.core.LinkerLogger;
 import me.lianecx.discordlinker.common.abstraction.core.LinkerScheduler;
+import me.lianecx.discordlinker.common.network.client.ClientManager;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.FileWriter;
@@ -16,11 +17,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-public class DiscordLinkerCommon {
+import static me.lianecx.discordlinker.common.ConnJson.CONNJSON_FILENAME;
 
-    public static final int DEFAULT_BOT_PORT = 80;
-    public static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
-    private static final TypeAdapter<JsonElement> strictGsonAdapter = new Gson().getAdapter(JsonElement.class);
+public class DiscordLinkerCommon {
 
     private static DiscordLinkerCommon discordLinker;
 
@@ -44,7 +43,7 @@ public class DiscordLinkerCommon {
         String token = connJson != null ? connJson.getToken() : null;
         this.clientManager = new ClientManager(token);
 
-        ClientManager.checkVersion();
+        clientManager.checkVersion();
         connectToBot();
 
         logger.info(MinecraftChatColor.GREEN + "Discord-Linker enabled.");
@@ -62,7 +61,7 @@ public class DiscordLinkerCommon {
     }
 
     public static void shutdown() {
-        getClientManager().chat("", ConnJson.ChatChannel.ChatChannelType.CLOSE, null);
+        getClientManager().chat(ConnJson.ChatChannel.ChatChannelType.CLOSE);
         getClientManager().updateStatsChannel(ConnJson.StatsChannel.StatChannelEvent.OFFLINE);
         getClientManager().updateStatsChannel(ConnJson.StatsChannel.StatChannelEvent.MEMBERS);
         getClientManager().stop();
@@ -71,19 +70,10 @@ public class DiscordLinkerCommon {
         discordLinker = null;
     }
 
-    public static boolean isValidJson(String json) {
-        try {
-            strictGsonAdapter.fromJson(json);
-        } catch (JsonSyntaxException | IOException e) {
-            return false;
-        }
-        return true;
-    }
-
     public static boolean deleteConn() {
         discordLinker.connJson = null;
 
-        Path connJsonPath = Paths.get(getServer().getDataFolder() + "/connection.conn");
+        Path connJsonPath = Paths.get(getServer().getDataFolder() + CONNJSON_FILENAME);
         if(!Files.exists(connJsonPath)) return true;
 
         try {
@@ -99,8 +89,8 @@ public class DiscordLinkerCommon {
 
     public static void writeConn() {
         try {
-            FileWriter writer = new FileWriter(getServer().getDataFolder() + "/connection.conn");
-            writer.write(GSON.toJson(getConnJson()));
+            FileWriter writer = new FileWriter(getServer().getDataFolder() + CONNJSON_FILENAME);
+            writer.write(JsonUtil.toJsonString(getConnJson()));
             writer.close();
         }
         catch(IOException e) {
@@ -109,8 +99,8 @@ public class DiscordLinkerCommon {
         }
     }
 
-    public static void updateConn(JsonObject connJson) throws IOException {
-        getInstance().connJson = DiscordLinkerCommon.GSON.fromJson(connJson, ConnJson.class);
+    public static void updateConn(JsonObject connJson) {
+        getInstance().connJson = JsonUtil.getConnJson(connJson);
         writeConn();
     }
 
@@ -141,7 +131,7 @@ public class DiscordLinkerCommon {
         else if(protocol == ConnJson.ConnProtocol.WEBSOCKET) {
             clientManager.start(connected -> {
                 if(!connected) return;
-                clientManager.chat("", ConnJson.ChatChannel.ChatChannelType.START, null);
+                clientManager.chat(ConnJson.ChatChannel.ChatChannelType.START);
                 clientManager.updateStatsChannel(ConnJson.StatsChannel.StatChannelEvent.ONLINE);
             });
         }
@@ -152,10 +142,10 @@ public class DiscordLinkerCommon {
     }
 
     private @Nullable ConnJson loadConn() {
-        Path connJsonPath = Paths.get(server.getDataFolder() + "/connection.conn");
+        Path connJsonPath = Paths.get(server.getDataFolder() + CONNJSON_FILENAME);
         if(Files.exists(connJsonPath)) {
-            try(Reader connReader = Files.newBufferedReader(Paths.get(server.getDataFolder() + "/connection.conn"))) {
-                connJson = GSON.fromJson(connReader, ConnJson.class);
+            try(Reader connReader = Files.newBufferedReader(Paths.get(server.getDataFolder() + CONNJSON_FILENAME))) {
+                connJson = JsonUtil.getConnJson(connReader);
                 return connJson;
             }
             catch(IOException ignored) {

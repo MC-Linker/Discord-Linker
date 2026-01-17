@@ -1,10 +1,12 @@
-package me.lianecx.discordlinker.common.abstraction;
+package me.lianecx.discordlinker.common;
 
 import com.google.gson.annotations.SerializedName;
 import java.util.List;
 import java.util.Map;
 
 public class ConnJson {
+
+    public static final String CONNJSON_FILENAME = "connection.conn";
 
     private String id;
     private String token;
@@ -78,7 +80,12 @@ public class ConnJson {
             CONSOLE_COMMAND,
             BLOCK_COMMAND,
             START,
-            CLOSE
+            CLOSE;
+
+            @Override
+            public String toString() {
+                return name().toLowerCase().replace('_', '-');
+            }
         }
     }
 
@@ -103,13 +110,23 @@ public class ConnJson {
 
         public enum StatsChannelType {
             @SerializedName("member-counter") MEMBER_COUNTER,
-            @SerializedName("status") STATUS
+            @SerializedName("status") STATUS;
+
+            @Override
+            public String toString() {
+                return name().toLowerCase().replace('_', '-');
+            }
         }
 
         public enum StatChannelEvent {
             @SerializedName("members") MEMBERS,
             @SerializedName("online") ONLINE,
-            @SerializedName("offline") OFFLINE
+            @SerializedName("offline") OFFLINE;
+
+            @Override
+            public String toString() {
+                return name().toLowerCase();
+            }
         }
     }
 
