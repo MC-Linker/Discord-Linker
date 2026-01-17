@@ -3,6 +3,7 @@ package me.lianecx.discordlinker.architectury.implementation;
 import com.mojang.authlib.GameProfile;
 //? if >1.20
 //import com.mojang.authlib.yggdrasil.ProfileResult;
+import dev.architectury.platform.Platform;
 import me.lianecx.discordlinker.common.abstraction.LinkerOfflinePlayer;
 import me.lianecx.discordlinker.common.abstraction.LinkerPlayer;
 import me.lianecx.discordlinker.common.abstraction.LinkerServer;
@@ -13,6 +14,8 @@ import net.minecraft.network.chat.TextComponent;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.level.storage.LevelResource;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 import java.util.UUID;
@@ -51,7 +54,7 @@ public final class ArchitecturyServer implements LinkerServer {
 
     @Override
     public String getDataFolder() {
-        return "";
+        return Platform.getConfigFolder().resolve("discord-linker").toString();
     }
 
     @Override
@@ -118,5 +121,35 @@ public final class ArchitecturyServer implements LinkerServer {
         /*server.getPlayerList().broadcastMessage(new TextComponent(message), ChatType.CHAT, null);
          *///?} else
         server.getPlayerList().broadcastSystemMessage(Component.literal(message), false);
+    }
+
+    @Override
+    public boolean isPluginOrModEnabled(String pluginNameOrModId) {
+        return Platform.isModLoaded(pluginNameOrModId);
+    }
+
+    @Override
+    public boolean isOnline() {
+        return server.getPreventProxyConnections();
+    }
+
+    @Override
+    public String getMinecraftVersion() {
+        return Platform.getMinecraftVersion();
+    }
+
+    @Override
+    public String getWorldPath() {
+        return server.getWorldPath(LevelResource.ROOT).toAbsolutePath().toString();
+    }
+
+    @Override
+    public String getWorldContainerPath() {
+        return server.getWorldPath(LevelResource.ROOT).getParent().toAbsolutePath().toString();
+    }
+
+    @Override
+    public @Nullable String getFloodgatePrefix() {
+        return null;
     }
 }

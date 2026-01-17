@@ -1,5 +1,6 @@
 package me.lianecx.discordlinker.architectury;
 
+import dev.architectury.platform.Platform;
 import me.lianecx.discordlinker.architectury.implementation.ArchitecturyConfig;
 import me.lianecx.discordlinker.architectury.implementation.ArchitecturyLogger;
 import me.lianecx.discordlinker.architectury.implementation.ArchitecturyScheduler;

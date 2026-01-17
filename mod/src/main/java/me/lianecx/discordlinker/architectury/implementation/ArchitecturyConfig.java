@@ -1,5 +1,6 @@
 package me.lianecx.discordlinker.architectury.implementation;
 
+import dev.architectury.platform.Platform;
 import me.lianecx.discordlinker.common.abstraction.core.LinkerConfig;
 import org.jetbrains.annotations.NotNull;
 import org.yaml.snakeyaml.DumperOptions;
@@ -15,10 +16,12 @@ import java.io.*;
 import java.nio.file.Files;
 import java.util.List;
 
+import static me.lianecx.discordlinker.architectury.DiscordLinkerArchitectury.MOD_ID;
+
 public class ArchitecturyConfig implements LinkerConfig {
 
     private static final String CONFIG_FILENAME = "linker.yml";
-    private static final String DEFAULT_CONFIG_RESOURCE = "config.yml";
+    private static final String DEFAULT_CONFIG_FILENAME = "config.yml";
 
     private final Yaml YAML;
     private final File configFile;
@@ -45,7 +48,7 @@ public class ArchitecturyConfig implements LinkerConfig {
     }
 
     private void loadDefaults() {
-        try(InputStream in = getClass().getClassLoader().getResourceAsStream(DEFAULT_CONFIG_RESOURCE)) {
+        try(InputStream in = getClass().getClassLoader().getResourceAsStream(DEFAULT_CONFIG_FILENAME)) {
             if(in != null) this.defaults = (MappingNode) YAML.compose(new InputStreamReader(in));
         }
         catch(IOException e) {
@@ -54,7 +57,7 @@ public class ArchitecturyConfig implements LinkerConfig {
     }
 
     private void copyDefault() {
-        try(InputStream in = getClass().getClassLoader().getResourceAsStream(DEFAULT_CONFIG_RESOURCE)) {
+        try(InputStream in = getClass().getClassLoader().getResourceAsStream(DEFAULT_CONFIG_FILENAME)) {
             if(in != null) Files.copy(in, configFile.toPath());
         }
         catch(IOException e) {
@@ -162,8 +165,13 @@ public class ArchitecturyConfig implements LinkerConfig {
     }
 
     @Override
+    public boolean isTestVersion() {
+        return getPluginVersion().contains("SNAPSHOT");
+    }
+
+    @Override
     public String getPluginVersion() {
-        return "";
+        return Platform.getMod(MOD_ID).getVersion();
     }
 
     @Override

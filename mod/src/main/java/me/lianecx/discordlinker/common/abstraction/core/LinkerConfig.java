@@ -1,6 +1,9 @@
 package me.lianecx.discordlinker.common.abstraction.core;
 
 public interface LinkerConfig {
+
+    boolean isTestVersion();
+
     String getPluginVersion();
 
     int getBotPort();

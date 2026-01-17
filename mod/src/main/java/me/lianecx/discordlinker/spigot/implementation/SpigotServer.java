@@ -3,10 +3,12 @@ package me.lianecx.discordlinker.spigot.implementation;
 import me.lianecx.discordlinker.common.abstraction.*;
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
+import org.bukkit.configuration.Configuration;
+import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
-import org.bukkit.plugin.java.JavaPlugin;
 import org.jetbrains.annotations.Nullable;
 
+import java.io.File;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -76,5 +78,40 @@ public class SpigotServer implements LinkerServer {
     @Override
     public void broadcastMessage(String message) {
         Bukkit.broadcastMessage(message);
+    }
+
+    @Override
+    public boolean isPluginOrModEnabled(String pluginOrModName) {
+        return Bukkit.getPluginManager().isPluginEnabled(pluginOrModName);
+    }
+
+    @Override
+    public boolean isOnline() {
+        return Bukkit.getServer().getOnlineMode();
+    }
+
+    @Override
+    public String getMinecraftVersion() {
+        return Bukkit.getServer().getBukkitVersion().split("-")[0];
+    }
+
+    @Override
+    public String getWorldPath() {
+        return Bukkit.getWorlds().get(0).getWorldFolder().getAbsolutePath();
+    }
+
+    @Override
+    public String getWorldContainerPath() {
+        return Bukkit.getWorldContainer().getAbsolutePath();
+    }
+
+    @Override
+    public @Nullable String getFloodgatePrefix() {
+        //Load yaml file
+        File floodgateConfig = new File("plugins/floodgate/config.yml");
+        if(!floodgateConfig.exists()) return null;
+
+        Configuration config = YamlConfiguration.loadConfiguration(floodgateConfig);
+        return config.getString("username-prefix");
     }
 }

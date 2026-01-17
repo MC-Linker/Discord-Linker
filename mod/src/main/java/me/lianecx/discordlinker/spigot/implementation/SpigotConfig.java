@@ -16,6 +16,11 @@ public class SpigotConfig implements LinkerConfig {
     }
 
     @Override
+    public boolean isTestVersion() {
+        return getPluginVersion().contains("SNAPSHOT");
+    }
+
+    @Override
     public String getPluginVersion() {
         return plugin.getDescription().getVersion();
     }
