@@ -111,8 +111,9 @@ java {
         17 -> JavaVersion.VERSION_17
         else -> JavaVersion.VERSION_21
     }
+
+    sourceCompatibility = JavaVersion.VERSION_1_8 // Keep codebase in java 8 for compatibility
     targetCompatibility = java
-    sourceCompatibility = java
     toolchain {
         languageVersion.set(JavaLanguageVersion.of(env.javaVer))
     }
@@ -159,34 +160,6 @@ sourceSets.main {
         )
     }
 }
-
-
-/*sourceSets {
-    named("main") {
-        val commonSrc = listOf(
-            "src/common/java",
-            "src/architectury/java"
-        )
-        java.setSrcDirs(
-            commonSrc + when {
-                env.isFabric -> listOf("src/fabric/java")
-                env.isForge -> listOf("src/forge/java")
-                env.isNeo -> listOf("src/neoforge/java")
-                else -> throw IllegalStateException("No valid mod environment detected")
-            }
-        )
-
-        resources.setSrcDirs(
-            listOf("src/common/resources") + when {
-                env.isFabric -> listOf("src/fabric/resources")
-                env.isForge -> listOf("src/forge/resources")
-                env.isNeo -> listOf("src/neoforge/resources")
-                else -> throw IllegalStateException("No valid mod environment detected")
-            }
-        )
-    }
-}*/
-
 
 publishMods {
     file = tasks.remapJar.get().archiveFile
