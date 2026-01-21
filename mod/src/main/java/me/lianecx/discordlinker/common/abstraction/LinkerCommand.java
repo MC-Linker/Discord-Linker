@@ -8,7 +8,6 @@ public interface LinkerCommand {
 
     /**
      * Execute the command.
-     *
      * @param sender The source of the command (player or console)
      * @param args   Command arguments
      */

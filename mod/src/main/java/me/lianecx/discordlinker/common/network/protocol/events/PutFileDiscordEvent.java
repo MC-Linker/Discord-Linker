@@ -11,7 +11,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URLDecoder;
 
-public class PutFileDiscordEvent implements DiscordEvent<PutFilePayload> {
+public class PutFileDiscordEvent implements LinkerDiscordEvent<PutFilePayload> {
 
     @Override
     public PutFilePayload decode(Object[] objects) throws InvalidPayloadException {

@@ -4,7 +4,7 @@ import me.lianecx.discordlinker.common.network.protocol.payloads.DiscordEventPay
 import me.lianecx.discordlinker.common.network.protocol.payloads.InvalidPayloadException;
 import me.lianecx.discordlinker.common.network.protocol.responses.DiscordEventResponse;
 
-public interface DiscordEvent<T extends DiscordEventPayload> {
+public interface LinkerDiscordEvent<T extends DiscordEventPayload> {
 
     /**
     * Decode the payload from an array of objects.

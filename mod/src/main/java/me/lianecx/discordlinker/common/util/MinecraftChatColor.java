@@ -34,4 +34,11 @@ public enum MinecraftChatColor {
     public String toString() {
         return "§" + code;
     }
+
+    /**
+     * Strips Minecraft color codes starting with '&' or '§' from the input string.
+     */
+    public static String stripColorCodes(String input) {
+        return input.replaceAll("(?i)[&§][0-9A-FK-OR]",  "");
+    }
 }

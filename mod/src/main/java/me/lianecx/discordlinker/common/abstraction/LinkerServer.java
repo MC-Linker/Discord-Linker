@@ -68,4 +68,6 @@ public interface LinkerServer {
      * Gets the Floodgate prefix for Bedrock players, or null if Floodgate is not installed.
      */
     @Nullable String getFloodgatePrefix();
+
+    void kickPlayer(LinkerPlayer player, String reason);
 }

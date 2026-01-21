@@ -62,8 +62,8 @@ public class DiscordLinkerCommon {
 
     public static void shutdown() {
         getClientManager().chat(ConnJson.ChatChannel.ChatChannelType.CLOSE);
-        getClientManager().updateStatsChannel(ConnJson.StatsChannel.StatChannelEvent.OFFLINE);
-        getClientManager().updateStatsChannel(ConnJson.StatsChannel.StatChannelEvent.MEMBERS);
+        getClientManager().updateStatsChannel(ConnJson.StatsChannel.StatsChannelEvent.OFFLINE);
+        getClientManager().updateStatsChannel(ConnJson.StatsChannel.StatsChannelEvent.MEMBERS);
         getClientManager().disconnect();
 
         getLogger().info(MinecraftChatColor.RED + "Discord-Linker disabled.");
@@ -124,6 +124,10 @@ public class DiscordLinkerCommon {
         return getInstance().server;
     }
 
+    public static LinkerScheduler getScheduler() {
+        return getInstance().scheduler;
+    }
+
     private void reconnectToBot() {
         ConnJson.ConnProtocol protocol = connJson != null ? connJson.getProtocol() : null;
         if(protocol == null)
@@ -132,7 +136,7 @@ public class DiscordLinkerCommon {
             clientManager.reconnect(connected -> {
                 if(!connected) return;
                 clientManager.chat(ConnJson.ChatChannel.ChatChannelType.START);
-                clientManager.updateStatsChannel(ConnJson.StatsChannel.StatChannelEvent.ONLINE);
+                clientManager.updateStatsChannel(ConnJson.StatsChannel.StatsChannelEvent.ONLINE);
             });
         }
         else {

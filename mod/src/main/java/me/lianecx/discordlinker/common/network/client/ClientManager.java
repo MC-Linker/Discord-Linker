@@ -4,7 +4,7 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import me.lianecx.discordlinker.common.ConnJson;
 import me.lianecx.discordlinker.common.abstraction.LinkerServer;
-import me.lianecx.discordlinker.common.network.protocol.events.LinkerDiscordEvents;
+import me.lianecx.discordlinker.common.network.protocol.events.LinkerDiscordEventBus;
 import me.lianecx.discordlinker.common.network.protocol.responses.DiscordEventJsonResponse;
 import me.lianecx.discordlinker.common.util.JsonUtil;
 import me.lianecx.discordlinker.common.util.MinecraftChatColor;
@@ -21,7 +21,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
 
 import static me.lianecx.discordlinker.common.DiscordLinkerCommon.*;
 import static me.lianecx.discordlinker.common.network.client.WebSocketDiscordClient.DEFAULT_RECONNECTION_ATTEMPTS;
@@ -32,7 +31,7 @@ public final class ClientManager {
     public static int BOT_PORT = getConfig().isTestVersion() ? 81 : getConfig().getBotPort();
     public static URI BOT_URI = URI.create("http://api.mclinker.com:" + BOT_PORT);
 
-    private final LinkerDiscordEvents linkerDiscordEvents = new LinkerDiscordEvents();
+    private final LinkerDiscordEventBus linkerDiscordEventBus = new LinkerDiscordEventBus();
 
     private DiscordClient client;
 
@@ -40,7 +39,7 @@ public final class ClientManager {
 
     public ClientManager(String token) {
         this.client = new WebSocketDiscordClient(Collections.singletonMap("token", token), getConnectionQuery());
-        client.onAny(linkerDiscordEvents::handleDiscordEvent);
+        client.onAny(linkerDiscordEventBus::emit);
     }
 
     public static void checkVersion() {
@@ -138,7 +137,7 @@ public final class ClientManager {
         send("chat", payload);
     }
 
-    public void updateStatsChannel(ConnJson.StatsChannel.StatChannelEvent event) {
+    public void updateStatsChannel(ConnJson.StatsChannel.StatsChannelEvent event) {
         send("update-stats-channels", JsonUtil.singleton("event", event.toString()));
     }
 

@@ -11,6 +11,7 @@ public class ConnJson {
     private String id;
     private String token;
     private ConnProtocol protocol;
+    private RequiredRoleToJoin requiredRoleToJoin;
     @SerializedName("channels")
     private List<ChatChannel> chatChannels;
     @SerializedName("synced-roles")
@@ -30,6 +31,10 @@ public class ConnJson {
         return protocol;
     }
 
+    public RequiredRoleToJoin getRequiredRoleToJoin() {
+        return requiredRoleToJoin;
+    }
+
     public List<ChatChannel> getChatChannels() {
         return chatChannels;
     }
@@ -44,6 +49,31 @@ public class ConnJson {
 
     public enum ConnProtocol {
         WEBSOCKET,
+    }
+
+    public static class RequiredRoleToJoin {
+        private Method method;
+        private List<String> roles;
+
+        public Method getMethod() {
+            return method;
+        }
+
+        public List<String> getRoles() {
+            return roles;
+        }
+
+        public enum Method {
+            @SerializedName("any")
+            ANY,
+            @SerializedName("all")
+            ALL;
+
+            @Override
+            public String toString() {
+                return name().toLowerCase();
+            }
+        }
     }
 
     // --- Nested classes ---
@@ -101,12 +131,12 @@ public class ConnJson {
 
     public static class StatsChannel {
 
-        private Map<StatChannelEvent, String> names;
+        private Map<StatsChannelEvent, String> names;
         private String id;
         @SerializedName("type")
         private StatsChannelType type;
 
-        public Map<StatChannelEvent, String> getNames() {
+        public Map<StatsChannelEvent, String> getNames() {
             return names;
         }
 
@@ -128,7 +158,7 @@ public class ConnJson {
             }
         }
 
-        public enum StatChannelEvent {
+        public enum StatsChannelEvent {
             @SerializedName("online") ONLINE,
             @SerializedName("offline") OFFLINE,
             @SerializedName("members") MEMBERS;
