@@ -1,6 +1,7 @@
 package me.lianecx.discordlinker.common;
 
 import com.google.gson.annotations.SerializedName;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -33,19 +34,22 @@ public class ConnJson {
         return protocol;
     }
 
-    public RequiredRoleToJoin getRequiredRoleToJoin() {
+    public @Nullable RequiredRoleToJoin getRequiredRoleToJoin() {
         return requiredRoleToJoin;
     }
 
     public List<ChatChannel> getChatChannels() {
+        if(chatChannels == null) chatChannels = new ArrayList<>();
         return chatChannels;
     }
 
     public List<SyncedRole> getSyncedRoles() {
+        if(syncedRoles == null) syncedRoles = new ArrayList<>();
         return syncedRoles;
     }
 
     public List<StatsChannel> getStatsChannels() {
+        if(statsChannels == null) statsChannels = new ArrayList<>();
         return statsChannels;
     }
 
@@ -56,6 +60,14 @@ public class ConnJson {
             if(!role.isGroup()) return true;
         }
         return false;
+    }
+
+    public SyncedRole getSyncedRole(String name, boolean isGroup) {
+        for(SyncedRole role : syncedRoles) {
+            if(role.getName().equalsIgnoreCase(name) && role.isGroup() == isGroup)
+                return role;
+        }
+        return null;
     }
 
     public enum ConnProtocol {

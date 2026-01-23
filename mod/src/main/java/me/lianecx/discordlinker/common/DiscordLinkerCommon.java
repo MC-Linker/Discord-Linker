@@ -2,6 +2,7 @@ package me.lianecx.discordlinker.common;
 
 import com.google.gson.*;
 import me.lianecx.discordlinker.common.abstraction.LinkerServer;
+import me.lianecx.discordlinker.common.abstraction.TeamsAndGroupsBridge;
 import me.lianecx.discordlinker.common.util.JsonUtil;
 import me.lianecx.discordlinker.common.util.MinecraftChatColor;
 import me.lianecx.discordlinker.common.abstraction.core.LinkerConfig;
@@ -29,14 +30,16 @@ public class DiscordLinkerCommon {
     private final LinkerConfig config;
     private final LinkerServer server;
     private final LinkerScheduler scheduler;
+    private final TeamsAndGroupsBridge teamsAndGroupsBridge;
 
     private ConnJson connJson;
 
-    private DiscordLinkerCommon(LinkerLogger logger, LinkerConfig config, LinkerServer server, LinkerScheduler scheduler) {
+    private DiscordLinkerCommon(LinkerLogger logger, LinkerConfig config, LinkerServer server, LinkerScheduler scheduler, TeamsAndGroupsBridge teamsAndGroupsBridge) {
         this.logger = logger;
         this.config = config;
         this.server = server;
         this.scheduler = scheduler;
+        this.teamsAndGroupsBridge = teamsAndGroupsBridge;
 
         this.connJson = loadConn();
 
@@ -49,15 +52,43 @@ public class DiscordLinkerCommon {
         logger.info(MinecraftChatColor.GREEN + "Discord-Linker enabled.");
     }
 
-    public static synchronized DiscordLinkerCommon init(LinkerLogger logger, LinkerConfig config, LinkerServer server, LinkerScheduler scheduler) {
+    public static synchronized DiscordLinkerCommon init(LinkerLogger logger, LinkerConfig config, LinkerServer server, LinkerScheduler scheduler, TeamsAndGroupsBridge teamsAndGroupsBridge) {
         if (discordLinker != null) throw new IllegalStateException("DiscordLinkerCommon already initialized!");
-        discordLinker = new DiscordLinkerCommon(logger, config, server, scheduler);
+        discordLinker = new DiscordLinkerCommon(logger, config, server, scheduler, teamsAndGroupsBridge);
         return discordLinker;
     }
 
     public static DiscordLinkerCommon getInstance() {
         if(discordLinker == null) throw new IllegalStateException("DiscordLinkerCommon has not been initialized yet!");
         return discordLinker;
+    }
+
+    public static LinkerLogger getLogger() {
+        return getInstance().logger;
+    }
+
+    public static LinkerConfig getConfig() {
+        return getInstance().config;
+    }
+
+    public static @Nullable ConnJson getConnJson() {
+        return getInstance().connJson;
+    }
+
+    public static ClientManager getClientManager() {
+        return getInstance().clientManager;
+    }
+
+    public static LinkerServer getServer() {
+        return getInstance().server;
+    }
+
+    public static LinkerScheduler getScheduler() {
+        return getInstance().scheduler;
+    }
+
+    public static TeamsAndGroupsBridge getTeamsAndGroupsBridge() {
+        return getInstance().teamsAndGroupsBridge;
     }
 
     public static void shutdown() {
@@ -102,30 +133,6 @@ public class DiscordLinkerCommon {
     public static boolean updateConn(JsonObject connJson) {
         getInstance().connJson = JsonUtil.getConnJson(connJson);
         return writeConn();
-    }
-
-    public static LinkerLogger getLogger() {
-        return getInstance().logger;
-    }
-
-    public static LinkerConfig getConfig() {
-        return getInstance().config;
-    }
-
-    public static @Nullable ConnJson getConnJson() {
-        return getInstance().connJson;
-    }
-
-    public static ClientManager getClientManager() {
-        return getInstance().clientManager;
-    }
-
-    public static LinkerServer getServer() {
-        return getInstance().server;
-    }
-
-    public static LinkerScheduler getScheduler() {
-        return getInstance().scheduler;
     }
 
     private void reconnectToBot() {

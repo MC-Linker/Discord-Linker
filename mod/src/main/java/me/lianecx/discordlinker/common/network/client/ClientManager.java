@@ -1,16 +1,14 @@
 package me.lianecx.discordlinker.common.network.client;
 
 import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import io.socket.client.AckWithTimeout;
 import me.lianecx.discordlinker.common.ConnJson;
+import me.lianecx.discordlinker.common.abstraction.LinkerOfflinePlayer;
 import me.lianecx.discordlinker.common.abstraction.LinkerPlayer;
 import me.lianecx.discordlinker.common.abstraction.LinkerServer;
 import me.lianecx.discordlinker.common.network.protocol.events.LinkerDiscordEventBus;
 import me.lianecx.discordlinker.common.network.protocol.responses.DiscordEventJsonResponse;
 import me.lianecx.discordlinker.common.network.protocol.responses.DiscordEventResponse;
-import me.lianecx.discordlinker.common.network.protocol.responses.HasRequiredRoleResponse;
 import me.lianecx.discordlinker.common.network.protocol.responses.HasRequiredRoleResponses;
 import me.lianecx.discordlinker.common.util.JsonUtil;
 import me.lianecx.discordlinker.common.util.MinecraftChatColor;
@@ -24,7 +22,6 @@ import java.net.URL;
 import java.net.URLEncoder;
 import java.security.SecureRandom;
 import java.util.*;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
 import static me.lianecx.discordlinker.common.DiscordLinkerCommon.*;
@@ -155,7 +152,7 @@ public final class ClientManager {
     }
 
     private void updateSyncedRoleMember(String name, boolean isGroup, UUID uuid, String addOrRemove) {
-        getSyncedRole(name, isGroup, role -> {
+        getSyncedRoleAndUpdatePlayers(name, isGroup, role -> {
             if(role == null) return;
 
             JsonObject payload = new JsonObject();
@@ -171,55 +168,43 @@ public final class ClientManager {
     public void removeSyncedRole(String name, boolean isGroup) {
         if(getConnJson() == null || getConnJson().getSyncedRoles() == null) return;
 
-        boolean hadTeamSyncedRole = getConnJson().hasTeamSyncedRole();
-        getSyncedRole(name, isGroup, role -> {
+        getSyncedRoleAndUpdatePlayers(name, isGroup, role -> {
             if(role == null) return;
 
             send("remove-synced-role", role);
             getConnJson().getSyncedRoles().remove(role);
 
-            boolean hasTeamSyncedRole = getConnJson().hasTeamSyncedRole();
-            // TODO
-            // if(hadTeamSyncedRole && !hasTeamSyncedRole) TeamChangeEvent.stopTeamCheck();
+            getTeamsAndGroupsBridge().stopTeamCheck(); // Stop if it was running before
         });
     }
 
-    public void getSyncedRole(String name, boolean isGroup, Consumer<ConnJson.SyncedRole> callback) {
+    public void getSyncedRoleAndUpdatePlayers(String name, boolean isGroup, Consumer<ConnJson.SyncedRole> callback) {
         if(getConnJson() == null) {
             callback.accept(null);
             return;
         }
 
-        List<ConnJson.SyncedRole> syncedRoles = getConnJson().getSyncedRoles();
-
-        // Check if the team/group is synced
-        ConnJson.SyncedRole role = null;
-        for(ConnJson.SyncedRole syncedRole : syncedRoles) {
-            if(syncedRole.getName().equals(name) && syncedRole.isGroup() == isGroup) {
-                role = syncedRole;
-                break;
-            }
-        }
-
+        ConnJson.SyncedRole role = getConnJson().getSyncedRole(name, isGroup);
         if(role == null) {
             callback.accept(null);
             return;
         }
 
-        ConnJson.SyncedRole finalRole = role;
-        Router.getPlayers(name, isGroup, uuids -> {
-            if(uuids == null) {
-                callback.accept(null);
-                return;
-            }
+        getTeamsAndGroupsBridge().getPlayersInGroupOrTeam(name, isGroup)
+            .thenAccept(players -> {
+                if(players == null) {
+                    callback.accept(null);
+                    return;
+                }
 
-            finalRole.getPlayers().addAll(uuids);
+                //Update players in role
+                role.getPlayers().clear();
+                for(LinkerOfflinePlayer player : players) {
+                    role.getPlayers().add(player.getUUID());
+                }
 
-            //Update connJson
-            getConnJson().getSyncedRoles().add(finalRole);
-
-            callback.accept(finalRole);
-        });
+                callback.accept(role);
+            });
     }
 
     /**
