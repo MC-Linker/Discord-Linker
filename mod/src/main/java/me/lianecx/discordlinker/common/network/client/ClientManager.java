@@ -1,11 +1,17 @@
 package me.lianecx.discordlinker.common.network.client;
 
 import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import io.socket.client.AckWithTimeout;
 import me.lianecx.discordlinker.common.ConnJson;
+import me.lianecx.discordlinker.common.abstraction.LinkerPlayer;
 import me.lianecx.discordlinker.common.abstraction.LinkerServer;
 import me.lianecx.discordlinker.common.network.protocol.events.LinkerDiscordEventBus;
 import me.lianecx.discordlinker.common.network.protocol.responses.DiscordEventJsonResponse;
+import me.lianecx.discordlinker.common.network.protocol.responses.DiscordEventResponse;
+import me.lianecx.discordlinker.common.network.protocol.responses.HasRequiredRoleResponse;
+import me.lianecx.discordlinker.common.network.protocol.responses.HasRequiredRoleResponses;
 import me.lianecx.discordlinker.common.util.JsonUtil;
 import me.lianecx.discordlinker.common.util.MinecraftChatColor;
 import org.jetbrains.annotations.NotNull;
@@ -17,9 +23,8 @@ import java.net.URI;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.security.SecureRandom;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
 import static me.lianecx.discordlinker.common.DiscordLinkerCommon.*;
@@ -141,12 +146,152 @@ public final class ClientManager {
         send("update-stats-channels", JsonUtil.singleton("event", event.toString()));
     }
 
+    public void addSyncedRoleMember(String name, boolean isGroup, UUID uuid) {
+        updateSyncedRoleMember(name, isGroup, uuid, "add");
+    }
+
+    public void removeSyncedRoleMember(String name, boolean isGroup, UUID uuid) {
+        updateSyncedRoleMember(name, isGroup, uuid, "remove");
+    }
+
+    private void updateSyncedRoleMember(String name, boolean isGroup, UUID uuid, String addOrRemove) {
+        getSyncedRole(name, isGroup, role -> {
+            if(role == null) return;
+
+            JsonObject payload = new JsonObject();
+            payload.addProperty("id", role.getId());
+            payload.addProperty("uuid", uuid.toString());
+            if(addOrRemove.equals("add"))
+                send("add-synced-role-member", payload);
+            else if(addOrRemove.equals("remove"))
+                send("remove-synced-role-member", payload);
+        });
+    }
+
+    public void removeSyncedRole(String name, boolean isGroup) {
+        if(getConnJson() == null || getConnJson().getSyncedRoles() == null) return;
+
+        boolean hadTeamSyncedRole = getConnJson().hasTeamSyncedRole();
+        getSyncedRole(name, isGroup, role -> {
+            if(role == null) return;
+
+            send("remove-synced-role", role);
+            getConnJson().getSyncedRoles().remove(role);
+
+            boolean hasTeamSyncedRole = getConnJson().hasTeamSyncedRole();
+            // TODO
+            // if(hadTeamSyncedRole && !hasTeamSyncedRole) TeamChangeEvent.stopTeamCheck();
+        });
+    }
+
+    public void getSyncedRole(String name, boolean isGroup, Consumer<ConnJson.SyncedRole> callback) {
+        if(getConnJson() == null) {
+            callback.accept(null);
+            return;
+        }
+
+        List<ConnJson.SyncedRole> syncedRoles = getConnJson().getSyncedRoles();
+
+        // Check if the team/group is synced
+        ConnJson.SyncedRole role = null;
+        for(ConnJson.SyncedRole syncedRole : syncedRoles) {
+            if(syncedRole.getName().equals(name) && syncedRole.isGroup() == isGroup) {
+                role = syncedRole;
+                break;
+            }
+        }
+
+        if(role == null) {
+            callback.accept(null);
+            return;
+        }
+
+        ConnJson.SyncedRole finalRole = role;
+        Router.getPlayers(name, isGroup, uuids -> {
+            if(uuids == null) {
+                callback.accept(null);
+                return;
+            }
+
+            finalRole.getPlayers().addAll(uuids);
+
+            //Update connJson
+            getConnJson().getSyncedRoles().add(finalRole);
+
+            callback.accept(finalRole);
+        });
+    }
+
+    /**
+     * Acknowledges that a user has run `/account connect` and successfully verified their account.
+     */
+    public void sendVerificationResponse(String code, String uuid) {
+        JsonObject verifyJson = new JsonObject();
+        verifyJson.addProperty("code", code);
+        verifyJson.addProperty("uuid", uuid);
+
+        send("verify-response", verifyJson);
+    }
+
+    public void hasRequiredRole(String uuid, Consumer<HasRequiredRoleResponses> callback) {
+        JsonObject verifyJson = new JsonObject();
+        verifyJson.addProperty("uuid", uuid);
+
+        send("has-required-role", verifyJson, response -> {
+            if(!(response instanceof DiscordEventJsonResponse)) callback.accept(HasRequiredRoleResponses.ERROR);
+            else {
+                try {
+                    String responseString = ((DiscordEventJsonResponse) response).getData().getAsJsonObject().get("response").getAsString();
+                    HasRequiredRoleResponses roleResponse = HasRequiredRoleResponses.valueOf(responseString);
+                    callback.accept(roleResponse);
+                }
+                catch(Exception e) {
+                    callback.accept(HasRequiredRoleResponses.ERROR);
+                }
+            }
+        });
+    }
+
+    /**
+     * Tells the bot the verification code that has been shown to the user so it listens for their DM.
+     */
+    public void verifyUser(LinkerPlayer player, int code) {
+        JsonObject verifyJson = new JsonObject();
+        verifyJson.addProperty("code", String.valueOf(code));
+        verifyJson.addProperty("uuid", player.getUUID());
+        verifyJson.addProperty("username", player.getName());
+
+        send("verify-user", verifyJson);
+    }
+
+    public void getInviteURL(Consumer<String> callback) {
+        send("invite-url", new JsonObject(), response -> {
+            if(!(response instanceof DiscordEventJsonResponse)) {
+                callback.accept(null);
+                return;
+            }
+
+            try {
+                JsonObject bodyObject = ((DiscordEventJsonResponse) response).getData().getAsJsonObject();
+                if(bodyObject.get("url").isJsonNull()) callback.accept(null);
+                else callback.accept(bodyObject.get("url").getAsString());
+            }
+            catch(Exception e) {
+                callback.accept(null);
+            }
+        });
+    }
+
     public void send(String eventName) {
         send(eventName, new Object[]{});
     }
 
     public void send(String eventName, JsonObject data) {
         send(eventName, data.toString());
+    }
+
+    public void send(String eventName, JsonObject data, Consumer<DiscordEventResponse> callback) {
+        client.send(eventName, new Object[] { data.toString() }, callback);
     }
 
     public void send(String eventName, Object... data) {

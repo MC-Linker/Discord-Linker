@@ -17,6 +17,8 @@ public interface DiscordClient {
 
     void send(String event, Object[] payload);
 
+    void send(String event, Object[] payload, Consumer<DiscordEventResponse> callback);
+
     void on(String event, Function<Object[], DiscordEventResponse> handler);
 
     void once(String event, Function<Object[], DiscordEventResponse> handler);

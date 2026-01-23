@@ -21,4 +21,9 @@ public class SpigotPlayer extends LinkerPlayer {
     public boolean hasPermission(String permission) {
         return player.hasPermission(permission);
     }
+
+    @Override
+    public void kick(String reason) {
+        player.kickPlayer(reason);
+    }
 }

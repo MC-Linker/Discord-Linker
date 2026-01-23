@@ -29,4 +29,12 @@ public class ArchitecturyPlayer extends LinkerPlayer {
         // TODO luckperms
         return player.hasPermissions(4); // OP level 4
     }
+
+    @Override
+    public void kick(String reason) {
+        //? if <1.19 {
+        /*player.connection.disconnect(new TextComponent(reason));
+         *///? } else
+        player.connection.disconnect(Component.literal(reason));
+    }
 }

@@ -2,6 +2,7 @@ package me.lianecx.discordlinker.common.events;
 
 import me.lianecx.discordlinker.common.abstraction.LinkerPlayer;
 import me.lianecx.discordlinker.common.events.data.PlayerJoinEventData;
+import me.lianecx.discordlinker.common.network.protocol.responses.HasRequiredRoleResponses;
 import me.lianecx.discordlinker.common.util.MinecraftChatColor;
 
 import static me.lianecx.discordlinker.common.DiscordLinkerCommon.*;
@@ -13,11 +14,11 @@ public class PlayerJoinMinecraftEvent implements LinkerMinecraftEvent<PlayerJoin
             LinkerPlayer player = event.player;
 
             getClientManager().hasRequiredRole(player.getUUID(), hasRequiredRoleResponse -> {
-                if(hasRequiredRoleResponse == HasRequiredRoleResponse.FALSE)
+                if(hasRequiredRoleResponse == HasRequiredRoleResponses.FALSE)
                     kickPlayerSynchronized(player, MinecraftChatColor.RED + "You do not have the required role(s) to join this server.");
-                else if(hasRequiredRoleResponse == HasRequiredRoleResponse.ERROR)
+                else if(hasRequiredRoleResponse == HasRequiredRoleResponses.ERROR)
                     kickPlayerSynchronized(player, MinecraftChatColor.RED + "Your roles could not be verified. Please try again later.");
-                else if(hasRequiredRoleResponse == HasRequiredRoleResponse.NOT_CONNECTED) {
+                else if(hasRequiredRoleResponse == HasRequiredRoleResponses.NOT_CONNECTED) {
                     // random 4 digit code
                     int randomCode = (int) (Math.random() * 9000) + 1000;
                     getClientManager().verifyUser(player, randomCode);
@@ -42,6 +43,6 @@ public class PlayerJoinMinecraftEvent implements LinkerMinecraftEvent<PlayerJoin
     }
 
     public void kickPlayerSynchronized(LinkerPlayer player, String reason) {
-        getScheduler().runDelayedSync(() -> getServer().kickPlayer(player, reason), 0);
+        getScheduler().runDelayedSync(() -> player.kick(reason), 0);
     }
 }

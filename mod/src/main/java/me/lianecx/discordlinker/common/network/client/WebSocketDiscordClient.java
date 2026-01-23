@@ -3,9 +3,11 @@ package me.lianecx.discordlinker.common.network.client;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonSyntaxException;
 import io.socket.client.Ack;
+import io.socket.client.AckWithTimeout;
 import io.socket.client.IO;
 import io.socket.client.Socket;
 import io.socket.emitter.Emitter;
+import me.lianecx.discordlinker.common.util.JsonUtil;
 import me.lianecx.discordlinker.common.util.MinecraftChatColor;
 import me.lianecx.discordlinker.common.network.protocol.responses.DiscordEventFileResponse;
 import me.lianecx.discordlinker.common.network.protocol.responses.DiscordEventJsonResponse;
@@ -199,6 +201,36 @@ public final class WebSocketDiscordClient implements DiscordClient {
     @Override
     public void send(String event, Object[] payload) {
         socket.emit(event, payload);
+    }
+
+    @Override
+    public void send(String event, Object[] payload, Consumer<DiscordEventResponse> callback) {
+        socket.emit(event, payload, new AckWithTimeout(5000) {
+            @Override
+            public void onSuccess(Object... args) {
+                // Assume the response is JSON
+                if(args.length == 0) {
+                    callback.accept(null);
+                    return;
+                }
+
+                // JSON response
+                JsonObject json = JsonUtil.getJsonObjectFromObjects(args);
+                if(json == null) {
+                    callback.accept(null);
+                    return;
+                }
+
+                DiscordEventJsonResponse response = new DiscordEventJsonResponse(json);
+                callback.accept(response);
+            }
+
+            @Override
+            public void onTimeout() {
+                getLogger().error(MinecraftChatColor.RED + "Request to Discord Bot timed out.");
+                callback.accept(null);
+            }
+        });
     }
 
     @Override

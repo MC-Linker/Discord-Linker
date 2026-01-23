@@ -10,6 +10,8 @@ public abstract class LinkerPlayer extends LinkerOfflinePlayer {
 
     abstract public boolean hasPermission(String permission);
 
+    abstract public void kick(String reason);
+
     public boolean isOnline() {
         return true;
     }

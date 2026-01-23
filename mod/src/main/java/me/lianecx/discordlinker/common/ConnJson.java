@@ -1,6 +1,8 @@
 package me.lianecx.discordlinker.common;
 
 import com.google.gson.annotations.SerializedName;
+
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -13,11 +15,11 @@ public class ConnJson {
     private ConnProtocol protocol;
     private RequiredRoleToJoin requiredRoleToJoin;
     @SerializedName("channels")
-    private List<ChatChannel> chatChannels;
+    private List<ChatChannel> chatChannels = new ArrayList<>();
     @SerializedName("synced-roles")
-    private List<SyncedRole> syncedRoles;
+    private List<SyncedRole> syncedRoles = new ArrayList<>();
     @SerializedName("stats-channels")
-    private List<StatsChannel> statsChannels;
+    private List<StatsChannel> statsChannels = new ArrayList<>();
 
     public String getId() {
         return id;
@@ -45,6 +47,15 @@ public class ConnJson {
 
     public List<StatsChannel> getStatsChannels() {
         return statsChannels;
+    }
+
+    // --- Convenience methods ---
+
+    public boolean hasTeamSyncedRole() {
+        for(SyncedRole role : syncedRoles) {
+            if(!role.isGroup()) return true;
+        }
+        return false;
     }
 
     public enum ConnProtocol {
