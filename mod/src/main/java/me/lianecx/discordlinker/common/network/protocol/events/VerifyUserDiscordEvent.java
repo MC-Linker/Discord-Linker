@@ -1,6 +1,7 @@
 package me.lianecx.discordlinker.common.network.protocol.events;
 
 import com.google.gson.JsonObject;
+import me.lianecx.discordlinker.common.commands.VerifyCommand;
 import me.lianecx.discordlinker.common.network.protocol.payloads.InvalidPayloadException;
 import me.lianecx.discordlinker.common.network.protocol.payloads.VerifyUserPayload;
 import me.lianecx.discordlinker.common.network.protocol.responses.DiscordEventJsonResponse;

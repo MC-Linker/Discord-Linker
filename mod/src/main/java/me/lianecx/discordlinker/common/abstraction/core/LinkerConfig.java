@@ -17,4 +17,6 @@ public interface LinkerConfig {
     String getTemplateReplyMessage();
 
     boolean shouldDebug();
+
+    void reload();
 }

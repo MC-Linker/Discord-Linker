@@ -1,6 +1,6 @@
 package me.lianecx.discordlinker.common.abstraction;
 
-public abstract class LinkerPlayer extends LinkerOfflinePlayer {
+public abstract class LinkerPlayer extends LinkerOfflinePlayer implements LinkerCommandSender {
 
     public LinkerPlayer(String uuid, String name) {
         super(uuid, name);

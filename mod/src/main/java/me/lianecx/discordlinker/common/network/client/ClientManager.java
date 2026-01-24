@@ -31,6 +31,8 @@ import static me.lianecx.discordlinker.common.network.client.WebSocketDiscordCli
 
 public final class ClientManager {
 
+    public static int DEFAULT_BOT_PORT = 80;
+
     //If snapshot version, request test-bot at port 81 otherwise request main-bot at port 80/config-port
     public static int BOT_PORT = getConfig().isTestVersion() ? 81 : getConfig().getBotPort();
     public static URI BOT_URI = URI.create("http://api.mclinker.com:" + BOT_PORT);
@@ -44,6 +46,11 @@ public final class ClientManager {
     public ClientManager(String token) {
         this.client = new WebSocketDiscordClient(Collections.singletonMap("token", token), getConnectionQuery());
         client.onAny(linkerDiscordEventBus::emit);
+    }
+
+    public void setBotPort(int port) {
+        BOT_PORT = port;
+        BOT_URI = URI.create("http://api.mclinker.com:" + BOT_PORT);
     }
 
     public static void checkVersion() {
@@ -70,6 +77,7 @@ public final class ClientManager {
             callback.accept(false);
             return;
         }
+        client.disconnect();
         client.connect(callback);
     }
 
