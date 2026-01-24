@@ -7,9 +7,9 @@ import io.socket.client.AckWithTimeout;
 import io.socket.client.IO;
 import io.socket.client.Socket;
 import io.socket.emitter.Emitter;
+import me.lianecx.discordlinker.common.network.protocol.responses.DiscordEventFileResponse;
 import me.lianecx.discordlinker.common.util.JsonUtil;
 import me.lianecx.discordlinker.common.util.MinecraftChatColor;
-import me.lianecx.discordlinker.common.network.protocol.responses.DiscordEventFileResponse;
 import me.lianecx.discordlinker.common.network.protocol.responses.DiscordEventJsonResponse;
 import me.lianecx.discordlinker.common.network.protocol.responses.DiscordEventResponse;
 import okhttp3.Dispatcher;
@@ -19,6 +19,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
@@ -112,7 +113,7 @@ public final class WebSocketDiscordClient implements DiscordClient {
     }
 
     @Override
-    public void on(String event, Function<Object[], DiscordEventResponse> handler) {
+    public void on(String event, Function<Object[], CompletableFuture<DiscordEventResponse>> handler) {
         socket.on(event, args -> {
             try {
                 Ack ack = getAckFromArgs(args);
@@ -124,15 +125,15 @@ public final class WebSocketDiscordClient implements DiscordClient {
                     System.arraycopy(args, 0, data, 0, args.length - 1);
                 }
 
-                DiscordEventResponse response = handler.apply(data);
-                respondToAck(ack, response);
+                CompletableFuture<DiscordEventResponse> response = handler.apply(data);
+                respondToAckFuture(ack, response);
             }
             catch(JsonSyntaxException ignored) {}
         });
     }
 
     @Override
-    public void once(String event, Function<Object[], DiscordEventResponse> handler) {
+    public void once(String event, Function<Object[], CompletableFuture<DiscordEventResponse>> handler) {
         socket.once(event, args -> {
             try {
                 Ack ack = getAckFromArgs(args);
@@ -144,15 +145,15 @@ public final class WebSocketDiscordClient implements DiscordClient {
                     System.arraycopy(args, 0, data, 0, args.length - 1);
                 }
 
-                DiscordEventResponse response = handler.apply(data);
-                respondToAck(ack, response);
+                CompletableFuture<DiscordEventResponse> response = handler.apply(data);
+                respondToAckFuture(ack, response);
             }
             catch(JsonSyntaxException ignored) {}
         });
     }
 
     @Override
-    public void onAny(BiFunction<String, Object[], DiscordEventResponse> handler) {
+    public void onAny(BiFunction<String, Object[], CompletableFuture<DiscordEventResponse>> handler) {
         socket.onAnyIncoming(args -> {
             try {
                 if (args == null || args.length < 1) return;
@@ -168,8 +169,8 @@ public final class WebSocketDiscordClient implements DiscordClient {
                 data = new Object[dataLength];
                 System.arraycopy(args, 1, data, 0, dataLength);
 
-                DiscordEventResponse response = handler.apply(event, data);
-                respondToAck(ack, response);
+                CompletableFuture<DiscordEventResponse> respones = handler.apply(event, data);
+                respondToAckFuture(ack, respones);
             }
             catch(JsonSyntaxException ignored) {} // Ignore invalid messages
         });
@@ -182,9 +183,16 @@ public final class WebSocketDiscordClient implements DiscordClient {
         return null;
     }
 
-    private void respondToAck(Ack ack, DiscordEventResponse response) {
-        if(ack == null || response == null) return;
+    private void respondToAckFuture(Ack ack, CompletableFuture<DiscordEventResponse> future) {
+        if(ack == null || future == null) return;
 
+        future.whenComplete((response, err) -> {
+            if (err != null) respondToAck(ack, new DiscordEventJsonResponse(DiscordEventJsonResponse.JsonStatus.ERROR, err.getMessage()));
+            else respondToAck(ack, response);
+        });
+    }
+
+    private void respondToAck(Ack ack, DiscordEventResponse response) {
         if(response instanceof DiscordEventJsonResponse)
             ack.call(((DiscordEventJsonResponse) response).getData());
         else if(response instanceof DiscordEventFileResponse) {
@@ -197,6 +205,7 @@ public final class WebSocketDiscordClient implements DiscordClient {
             }
         }
     }
+
 
     @Override
     public void send(String event, Object[] payload) {

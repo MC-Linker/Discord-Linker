@@ -152,4 +152,10 @@ public final class ArchitecturyServer implements LinkerServer {
     public @Nullable String getFloodgatePrefix() {
         return null;
     }
+
+    @Override
+    public String runCommand(String command) {
+        //TODO implement
+        return "";
+    }
 }

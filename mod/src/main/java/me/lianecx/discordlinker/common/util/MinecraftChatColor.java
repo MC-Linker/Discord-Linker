@@ -1,5 +1,7 @@
 package me.lianecx.discordlinker.common.util;
 
+import com.google.gson.JsonObject;
+
 public enum MinecraftChatColor {
     BLACK('0'),
     DARK_BLUE('1'),
@@ -28,6 +30,10 @@ public enum MinecraftChatColor {
 
     MinecraftChatColor(char code) {
         this.code = code;
+    }
+
+    public static String replaceColorKey(String response, char c) {
+        return response.replaceAll("§", String.valueOf(c));
     }
 
     @Override

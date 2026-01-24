@@ -58,8 +58,13 @@ public class SpigotServer implements LinkerServer {
     @Override
     public @Nullable LinkerOfflinePlayer getOfflinePlayer(String username) {
         try {
+            // Try to get online player first
+            Player onlinePlayer = Bukkit.getPlayerExact(username);
+            if (onlinePlayer != null) return new SpigotPlayer(onlinePlayer);
+
+            // If online player exists, return that
             OfflinePlayer player = Bukkit.getOfflinePlayer(username);
-            return new SpigotOfflinePlayer(player);
+            return new LinkerOfflinePlayer(player.getUniqueId(), player.getName());
         } catch (Exception e) {
             return null;
         }
@@ -68,8 +73,12 @@ public class SpigotServer implements LinkerServer {
     @Override
     public @Nullable LinkerOfflinePlayer getOfflinePlayer(UUID uuid) {
         try {
+            // Try to get online player first
+            Player onlinePlayer = Bukkit.getPlayer(uuid);
+            if (onlinePlayer != null) return new SpigotPlayer(onlinePlayer);
+
             OfflinePlayer player = Bukkit.getOfflinePlayer(uuid);
-            return new SpigotOfflinePlayer(player);
+            return new LinkerOfflinePlayer(player.getUniqueId(), player.getName());
         } catch (Exception e) {
             return null;
         }

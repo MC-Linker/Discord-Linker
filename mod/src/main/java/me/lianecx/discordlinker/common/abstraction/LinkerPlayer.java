@@ -6,11 +6,15 @@ public abstract class LinkerPlayer extends LinkerOfflinePlayer {
         super(uuid, name);
     }
 
-    abstract public void sendMessage(String message);
+    public abstract void sendMessage(String message);
 
-    abstract public boolean hasPermission(String permission);
+    public abstract void sendMessageWithClickableURLs(String message);
 
-    abstract public void kick(String reason);
+    public abstract boolean hasPermission(String permission);
+
+    public abstract void kick(String reason);
+
+    public abstract String getNBTAsString();
 
     public boolean isOnline() {
         return true;

@@ -4,6 +4,8 @@ import me.lianecx.discordlinker.common.network.protocol.payloads.DiscordEventPay
 import me.lianecx.discordlinker.common.network.protocol.payloads.InvalidPayloadException;
 import me.lianecx.discordlinker.common.network.protocol.responses.DiscordEventResponse;
 
+import java.util.concurrent.CompletableFuture;
+
 public interface LinkerDiscordEvent<T extends DiscordEventPayload> {
 
     /**
@@ -12,7 +14,7 @@ public interface LinkerDiscordEvent<T extends DiscordEventPayload> {
     T decode(Object[] objects) throws InvalidPayloadException;
 
     /**
-     * Handle the event with the given payload.
+     * Handle the event asynchronously with the given payload.
      */
-    DiscordEventResponse handle(T payload);
+    CompletableFuture<DiscordEventResponse> handleAsync(T payload);
 }

@@ -12,7 +12,7 @@ import java.io.File;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 
-public class GetFileDiscordEvent implements LinkerDiscordEvent<GetFilePayload> {
+public class GetFileDiscordEvent implements LinkerSyncDiscordEvent<GetFilePayload> {
 
     @Override
     public GetFilePayload decode(Object[] objects) throws InvalidPayloadException {

@@ -22,8 +22,10 @@ import java.net.URL;
 import java.net.URLEncoder;
 import java.security.SecureRandom;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 
+import static java.util.concurrent.CompletableFuture.completedFuture;
 import static me.lianecx.discordlinker.common.DiscordLinkerCommon.*;
 import static me.lianecx.discordlinker.common.network.client.WebSocketDiscordClient.DEFAULT_RECONNECTION_ATTEMPTS;
 
@@ -110,10 +112,10 @@ public final class ClientManager {
             callback.accept(writeSuccess);
             if(!writeSuccess) {
                 disconnect();
-                return DiscordEventJsonResponse.ERROR_WRITE_CONN;
+                return completedFuture(DiscordEventJsonResponse.ERROR_WRITE_CONN);
             }
 
-            return DiscordEventJsonResponse.SUCCESS;
+            return completedFuture(DiscordEventJsonResponse.SUCCESS);
         });
 
         tempClient.connect(connected -> {
