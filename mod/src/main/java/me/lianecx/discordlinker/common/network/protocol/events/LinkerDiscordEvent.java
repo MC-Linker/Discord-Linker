@@ -9,8 +9,8 @@ import java.util.concurrent.CompletableFuture;
 public interface LinkerDiscordEvent<T extends DiscordEventPayload> {
 
     /**
-    * Decode the payload from an array of objects.
-    */
+     * Decode the payload from an array of objects.
+     */
     T decode(Object[] objects) throws InvalidPayloadException;
 
     /**

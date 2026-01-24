@@ -18,21 +18,21 @@ public class GetFileDiscordEvent implements LinkerSyncDiscordEvent<GetFilePayloa
     public GetFilePayload decode(Object[] objects) throws InvalidPayloadException {
         JsonObject jsonObject = JsonUtil.getJsonObjectFromObjects(objects);
         if(jsonObject == null || !jsonObject.has("path")) throw new InvalidPayloadException(objects);
-        String path = jsonObject.get("path").getAsString();
-        return new GetFilePayload(path);
+        try {
+            String path = URLDecoder.decode(jsonObject.get("path").getAsString(), "utf-8");
+            return new GetFilePayload(path);
+        }
+        catch(UnsupportedEncodingException e) {
+            throw new InvalidPayloadException(objects);
+        }
     }
 
     @Override
     public DiscordEventResponse handle(GetFilePayload payload) {
-        try {
-            File file = new File(URLDecoder.decode(payload.path(), "utf-8"));
-            if(!file.isFile())
-                return DiscordEventJsonResponse.INVALID_PATH;
+        File file = new File(payload.path);
+        if(!file.isFile())
+            return DiscordEventJsonResponse.INVALID_PATH;
 
-            return new DiscordEventFileResponse(file.toString());
-        }
-        catch(UnsupportedEncodingException err) {
-            return new DiscordEventJsonResponse(DiscordEventJsonResponse.JsonStatus.ERROR, err.toString());
-        }
+        return new DiscordEventFileResponse(file.toString());
     }
 }

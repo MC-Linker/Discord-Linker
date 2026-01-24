@@ -27,7 +27,7 @@ public class GetPlayerNBTDiscordEvent implements LinkerSyncDiscordEvent<GetPlaye
         if(player == null) return DiscordEventJsonResponse.INVALID_PLAYER;
 
         String nbt = player.getNBTAsString();
-        if(nbt == null) return DiscordEventJsonResponse.ERROR_NBT;
+        if(nbt == null) return DiscordEventJsonResponse.NBT_ERROR;
 
         JsonObject responseJson = new JsonObject();
         responseJson.addProperty("data", nbt);

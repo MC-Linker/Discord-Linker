@@ -5,6 +5,7 @@ import me.lianecx.discordlinker.common.network.protocol.payloads.CommandPayload;
 import me.lianecx.discordlinker.common.network.protocol.payloads.InvalidPayloadException;
 import me.lianecx.discordlinker.common.network.protocol.responses.DiscordEventJsonResponse;
 import me.lianecx.discordlinker.common.network.protocol.responses.DiscordEventResponse;
+import me.lianecx.discordlinker.common.util.JsonUtil;
 import me.lianecx.discordlinker.common.util.MinecraftChatColor;
 
 import java.io.UnsupportedEncodingException;
@@ -17,9 +18,10 @@ public class CommandDiscordEvent implements LinkerDiscordEvent<CommandPayload> {
 
     @Override
     public CommandPayload decode(Object[] objects) {
-        if (objects.length < 1) throw new InvalidPayloadException(objects);
+        JsonObject payload = JsonUtil.getJsonObjectFromObjects(objects);
+        if (payload == null) throw new InvalidPayloadException(objects);
 
-        String command = (String) objects[0];
+        String command = payload.get("cmd").getAsString();
         return new CommandPayload(command);
     }
 

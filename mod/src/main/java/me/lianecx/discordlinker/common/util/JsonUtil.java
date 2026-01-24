@@ -6,6 +6,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
 import java.io.Reader;
+import java.util.List;
 
 public class JsonUtil {
 
@@ -79,5 +80,21 @@ public class JsonUtil {
             return false;
         }
         return true;
+    }
+
+    public static <T> T fromJson(JsonObject payload, Class<T> clazz) {
+       try {
+           return GSON.fromJson(payload, clazz);
+       } catch(Exception err) {
+           return null;
+       }
+    }
+
+    public static JsonElement toJson(Object object) {
+        try {
+            return GSON.toJsonTree(object);
+        } catch(Exception err) {
+            return null;
+        }
     }
 }

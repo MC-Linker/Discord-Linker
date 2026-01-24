@@ -38,9 +38,7 @@ public class ListFileDiscordEvent implements LinkerSyncDiscordEvent<ListFilePayl
             }).forEach(content::add);
             stream.close();
 
-            JsonObject responseData = new JsonObject();
-            responseData.add("files", content);
-            return new DiscordEventJsonResponse(DiscordEventJsonResponse.JsonStatus.SUCCESS, responseData);
+            return new DiscordEventJsonResponse(DiscordEventJsonResponse.JsonStatus.SUCCESS, content);
         }
         catch(InvalidPathException err) {
             return DiscordEventJsonResponse.INVALID_PATH;

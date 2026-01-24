@@ -154,14 +154,10 @@ public class ConnJson {
 
     public static class StatsChannel {
 
-        private Map<StatsChannelEvent, String> names;
         private String id;
         @SerializedName("type")
         private StatsChannelType type;
-
-        public Map<StatsChannelEvent, String> getNames() {
-            return names;
-        }
+        private Map<StatsChannelEvent, String> names;
 
         public String getId() {
             return id;
@@ -169,6 +165,10 @@ public class ConnJson {
 
         public StatsChannelType getType() {
             return type;
+        }
+
+        public Map<StatsChannelEvent, String> getNames() {
+            return names;
         }
 
         public enum StatsChannelType {
@@ -213,6 +213,10 @@ public class ConnJson {
 
         public List<String> getPlayers() {
             return players;
+        }
+
+        public void setPlayers(List<String> players) {
+            this.players = players;
         }
     }
 }
