@@ -13,6 +13,7 @@ import me.lianecx.discordlinker.common.network.protocol.responses.HasRequiredRol
 import me.lianecx.discordlinker.common.util.JsonUtil;
 import me.lianecx.discordlinker.common.util.MinecraftChatColor;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.*;
 import java.math.BigInteger;
@@ -28,6 +29,7 @@ import java.util.function.Consumer;
 import static java.util.concurrent.CompletableFuture.completedFuture;
 import static me.lianecx.discordlinker.common.DiscordLinkerCommon.*;
 import static me.lianecx.discordlinker.common.network.client.WebSocketDiscordClient.DEFAULT_RECONNECTION_ATTEMPTS;
+import static me.lianecx.discordlinker.common.util.URLEncoderUtil.encodeURL;
 
 public final class ClientManager {
 
@@ -39,7 +41,7 @@ public final class ClientManager {
 
     private final LinkerDiscordEventBus linkerDiscordEventBus = new LinkerDiscordEventBus();
 
-    private DiscordClient client;
+    private @Nullable DiscordClient client;
 
     public ClientManager() {}
 
@@ -104,6 +106,11 @@ public final class ClientManager {
             client = tempClient;
 
             JsonObject dataObject = JsonUtil.getJsonObjectFromObjects(data);
+            if(dataObject == null) {
+                callback.accept(false);
+                disconnect();
+                return completedFuture(new DiscordEventJsonResponse(DiscordEventJsonResponse.JsonStatus.ERROR, "Invalid payload: " + Arrays.toString(data)));
+            }
 
             //Save connection data
             JsonObject connJson = new JsonObject();
@@ -116,7 +123,7 @@ public final class ClientManager {
             if(dataObject.has("requiredRoleToJoin") && !dataObject.get("requiredRoleToJoin").isJsonNull())
                 connJson.add("requiredRoleToJoin", dataObject.get("requiredRoleToJoin"));
 
-            boolean writeSuccess = updateConn(connJson);
+            boolean writeSuccess = ConnJson.update(connJson);
             callback.accept(writeSuccess);
             if(!writeSuccess) {
                 disconnect();
@@ -277,44 +284,53 @@ public final class ClientManager {
         });
     }
 
+    /**
+     * Sends an event to the bot with no data.
+     */
     public void send(String eventName) {
         send(eventName, new Object[]{});
     }
 
+    /**
+     * Sends an event to the bot with a JSON object as data.
+     */
     public void send(String eventName, JsonObject data) {
         send(eventName, data.toString());
     }
 
+    /**
+     * Sends an event to the bot with a JSON object as data and a callback for the response.
+     */
     public void send(String eventName, JsonObject data, Consumer<DiscordEventResponse> callback) {
+        if(client == null) return;
         client.send(eventName, new Object[] { data.toString() }, callback);
     }
 
+    /**
+     * Sends an event to the bot with arbitrary data.
+     */
     public void send(String eventName, Object... data) {
+        if(client == null) return;
         client.send(eventName, data);
     }
 
     public void disconnect() {
+        if(client == null) return;
         client.disconnect();
     }
 
     public @NotNull Map<String, String> getConnectionQuery() {
-        try {
-            LinkerServer server = getServer();
-            boolean isMinehut = server.isPluginOrModEnabled("MinehutPlugin");
+        LinkerServer server = getServer();
+        boolean isMinehut = server.isPluginOrModEnabled("MinehutPlugin");
 
-            Map<String, String> response = new HashMap<>();
-            response.put("version", server.getMinecraftVersion());
-            // Minehut servers have online mode disabled in the server.properties file, because a proxy handles authentication
-            response.put("online", String.valueOf(isMinehut || server.isOnline()));
-            response.put("worldPath", URLEncoder.encode(server.getWorldPath(), "utf-8"));
-            response.put("path", URLEncoder.encode(server.getWorldContainerPath(), "utf-8"));
-            response.put("floodgatePrefix", server.getFloodgatePrefix());
-            return response;
-        }
-        catch(IOException err) {
-            // never happens (UTF-8 is always supported)
-            return null;
-        }
+        Map<String, String> response = new HashMap<>();
+        response.put("version", server.getMinecraftVersion());
+        // Minehut servers have online mode disabled in the server.properties file, because a proxy handles authentication
+        response.put("online", String.valueOf(isMinehut || server.isOnline()));
+        response.put("worldPath", encodeURL(server.getWorldPath()));
+        response.put("path", encodeURL(server.getWorldContainerPath()));
+        response.put("floodgatePrefix", server.getFloodgatePrefix());
+        return response;
     }
 
     public void disconnectForce() {

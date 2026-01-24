@@ -6,8 +6,7 @@ import me.lianecx.discordlinker.common.network.protocol.payloads.StatsChannelPay
 import me.lianecx.discordlinker.common.network.protocol.responses.DiscordEventJsonResponse;
 import me.lianecx.discordlinker.common.network.protocol.responses.DiscordEventResponse;
 
-import static me.lianecx.discordlinker.common.DiscordLinkerCommon.getConnJson;
-import static me.lianecx.discordlinker.common.DiscordLinkerCommon.writeConn;
+import static me.lianecx.discordlinker.common.DiscordLinkerCommon.*;
 
 public class RemoveStatsChannelDiscordEvent implements LinkerSyncDiscordEvent<StatsChannelPayload> {
 
@@ -20,7 +19,7 @@ public class RemoveStatsChannelDiscordEvent implements LinkerSyncDiscordEvent<St
     public DiscordEventResponse handle(StatsChannelPayload payload) {
         if(getConnJson() == null) return DiscordEventJsonResponse.CONN_JSON_MISSING;
         getConnJson().getStatsChannels().removeIf(channel -> channel.getId().equals(payload.channel.getId()));
-        writeConn();
+        getConnJson().write();
 
         return DiscordEventJsonResponse.toJson(getConnJson().getStatsChannels());
     }

@@ -13,6 +13,7 @@ import java.net.URLDecoder;
 import java.util.concurrent.CompletableFuture;
 
 import static me.lianecx.discordlinker.common.DiscordLinkerCommon.*;
+import static me.lianecx.discordlinker.common.util.URLEncoderUtil.decodeURL;
 
 public class CommandDiscordEvent implements LinkerDiscordEvent<CommandPayload> {
 
@@ -21,7 +22,7 @@ public class CommandDiscordEvent implements LinkerDiscordEvent<CommandPayload> {
         JsonObject payload = JsonUtil.getJsonObjectFromObjects(objects);
         if (payload == null) throw new InvalidPayloadException(objects);
 
-        String command = payload.get("cmd").getAsString();
+        String command = decodeURL(payload.get("cmd").getAsString());
         return new CommandPayload(command);
     }
 

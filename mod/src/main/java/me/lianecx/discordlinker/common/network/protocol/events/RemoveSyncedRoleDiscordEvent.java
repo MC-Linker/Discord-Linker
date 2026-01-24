@@ -19,7 +19,7 @@ public class RemoveSyncedRoleDiscordEvent implements LinkerSyncDiscordEvent<Sync
     public DiscordEventResponse handle(SyncedRolePayload payload) {
         if(getConnJson() == null) return DiscordEventJsonResponse.CONN_JSON_MISSING;
         getConnJson().getSyncedRoles().removeIf(channel -> channel.getId().equals(payload.role.getId()));
-        writeConn();
+        getConnJson().write();
 
         boolean hasTeamSyncedRole = getConnJson().hasTeamSyncedRole();
         if(!hasTeamSyncedRole) getTeamsAndGroupsBridge().stopTeamCheck();

@@ -5,6 +5,7 @@ import com.google.gson.JsonObject;
 import me.lianecx.discordlinker.common.network.protocol.payloads.InvalidPayloadException;
 import me.lianecx.discordlinker.common.network.protocol.payloads.ListFilePayload;
 import me.lianecx.discordlinker.common.network.protocol.responses.DiscordEventJsonResponse;
+import me.lianecx.discordlinker.common.util.JsonUtil;
 
 import java.io.IOException;
 import java.net.URLDecoder;
@@ -17,16 +18,17 @@ import java.util.stream.Stream;
 public class ListFileDiscordEvent implements LinkerSyncDiscordEvent<ListFilePayload> {
     @Override
     public ListFilePayload decode(Object[] objects) {
-        if (objects.length != 1) throw new InvalidPayloadException(objects);
+        JsonObject payload = JsonUtil.getJsonObjectFromObjects(objects);
+        if (payload == null) throw new InvalidPayloadException(objects);
 
-        String directory = (String) objects[0];
-        return new ListFilePayload(directory);
+        String folder = payload.get("folder").getAsString();
+        return new ListFilePayload(folder);
     }
 
     @Override
     public DiscordEventJsonResponse handle(ListFilePayload payload) {
         try {
-            Path folder = Paths.get(URLDecoder.decode(payload.directory, "utf-8"));
+            Path folder = Paths.get(payload.folder);
 
             JsonArray content = new JsonArray();
             Stream<Path> stream = Files.list(folder);

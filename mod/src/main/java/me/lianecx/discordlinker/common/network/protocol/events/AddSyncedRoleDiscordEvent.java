@@ -40,7 +40,7 @@ public class AddSyncedRoleDiscordEvent implements LinkerDiscordEvent<SyncedRoleP
 
             payload.role.setPlayers(players);
             getConnJson().getSyncedRoles().add(payload.role);
-            writeConn();
+            getConnJson().write();
 
             // If a team synced role was added, start the team check
             boolean hasTeamSyncedRole = getConnJson().hasTeamSyncedRole();

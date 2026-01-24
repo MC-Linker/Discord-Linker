@@ -6,8 +6,7 @@ import me.lianecx.discordlinker.common.network.protocol.responses.DiscordEventJs
 import me.lianecx.discordlinker.common.network.protocol.responses.DiscordEventResponse;
 import me.lianecx.discordlinker.common.util.MinecraftChatColor;
 
-import static me.lianecx.discordlinker.common.DiscordLinkerCommon.deleteConn;
-import static me.lianecx.discordlinker.common.DiscordLinkerCommon.getLogger;
+import static me.lianecx.discordlinker.common.DiscordLinkerCommon.*;
 
 public class DisconnectDiscordEvent implements LinkerSyncDiscordEvent<EmptyPayload> {
 
@@ -18,7 +17,8 @@ public class DisconnectDiscordEvent implements LinkerSyncDiscordEvent<EmptyPaylo
 
     @Override
     public DiscordEventResponse handle(EmptyPayload payload) {
-        boolean deleted = deleteConn();
+        if(getConnJson() == null) return DiscordEventJsonResponse.CONN_JSON_MISSING;
+        boolean deleted = getConnJson().delete();
 
         if(deleted) {
             getLogger().info(MinecraftChatColor.YELLOW + "Disconnected from discord...");

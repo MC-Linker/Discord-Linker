@@ -1,11 +1,26 @@
 package me.lianecx.discordlinker.common;
 
+import com.google.gson.JsonIOException;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonSyntaxException;
 import com.google.gson.annotations.SerializedName;
+import me.lianecx.discordlinker.common.abstraction.LinkerServer;
+import me.lianecx.discordlinker.common.abstraction.core.LinkerLogger;
+import me.lianecx.discordlinker.common.util.JsonUtil;
+import me.lianecx.discordlinker.common.util.MinecraftChatColor;
 import org.jetbrains.annotations.Nullable;
 
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.Reader;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+
+import static me.lianecx.discordlinker.common.DiscordLinkerCommon.*;
 
 public class ConnJson {
 
@@ -68,6 +83,62 @@ public class ConnJson {
                 return role;
         }
         return null;
+    }
+
+    public static boolean update(JsonObject connJson) {
+        ConnJson conn = JsonUtil.getConnJson(connJson);
+        if(conn == null) return false;
+        setConnJson(conn);
+        return conn.write();
+    }
+
+    /**
+     * Loads the connection.conn file from disk.
+     * Takes in the server and logger as this is likely called during initialization.
+     */
+    public static @Nullable ConnJson load(LinkerServer server, LinkerLogger logger) {
+        Path connJsonPath = Paths.get(server.getDataFolder() + CONNJSON_FILENAME);
+        if(Files.exists(connJsonPath)) {
+            try(Reader connReader = Files.newBufferedReader(Paths.get(server.getDataFolder() + CONNJSON_FILENAME))) {
+                 return JsonUtil.getConnJson(connReader);
+            }
+            catch(IOException ignored) {
+                logger.error(MinecraftChatColor.RED + "Failed to read connection.conn file! Please restart your server or reconnect in Discord using `/connect`.");
+            }
+            catch(JsonSyntaxException | JsonIOException e) {
+                logger.error(MinecraftChatColor.RED + "Your connection data is corrupted! Please reconnect in Discord using `/connect`.");
+            }
+        }
+        return null;
+    }
+
+    public boolean delete() {
+        setConnJson(null);
+
+        Path connJsonPath = Paths.get(getServer().getDataFolder() + CONNJSON_FILENAME);
+        if(!Files.exists(connJsonPath)) return true;
+
+        try {
+            Files.delete(connJsonPath);
+            return true;
+        }
+        catch(IOException e) {
+            getLogger().error(MinecraftChatColor.RED + "Failed to delete connection data file!");
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    public boolean write() {
+        try (FileWriter writer = new FileWriter(getServer().getDataFolder() + CONNJSON_FILENAME)) {
+            writer.write(JsonUtil.toJsonString(this));
+            return true;
+        }
+        catch(IOException e) {
+            getLogger().error(MinecraftChatColor.RED + "Failed to write connection data to file!");
+            e.printStackTrace();
+            return false;
+        }
     }
 
     public enum ConnProtocol {

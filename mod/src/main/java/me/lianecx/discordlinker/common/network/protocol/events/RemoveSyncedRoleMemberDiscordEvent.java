@@ -38,7 +38,7 @@ public class RemoveSyncedRoleMemberDiscordEvent implements LinkerDiscordEvent<Sy
                 role = payload.role;
             }
             role.setPlayers(players);
-            writeConn();
+            getConnJson().write();
 
             future.complete(DiscordEventJsonResponse.toJson(players));
         });

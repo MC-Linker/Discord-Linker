@@ -38,7 +38,7 @@ public class AddSyncedRoleMemberDiscordEvent implements LinkerDiscordEvent<Synce
                 role = payload.role;
             }
             role.setPlayers(players);
-            writeConn();
+            getConnJson().write();
 
             future.complete(DiscordEventJsonResponse.toJson(players));
         });

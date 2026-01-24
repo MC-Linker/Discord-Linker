@@ -3,6 +3,9 @@ package me.lianecx.discordlinker.common;
 import com.google.gson.*;
 import me.lianecx.discordlinker.common.abstraction.LinkerServer;
 import me.lianecx.discordlinker.common.abstraction.TeamsAndGroupsBridge;
+import me.lianecx.discordlinker.common.commands.LinkerMinecraftCommandBus;
+import me.lianecx.discordlinker.common.events.LinkerMinecraftEventBus;
+import me.lianecx.discordlinker.common.network.protocol.events.LinkerDiscordEventBus;
 import me.lianecx.discordlinker.common.util.JsonUtil;
 import me.lianecx.discordlinker.common.util.MinecraftChatColor;
 import me.lianecx.discordlinker.common.abstraction.core.LinkerConfig;
@@ -32,6 +35,10 @@ public class DiscordLinkerCommon {
     private final LinkerScheduler scheduler;
     private final TeamsAndGroupsBridge teamsAndGroupsBridge;
 
+    private final LinkerDiscordEventBus discordEventBus;
+    private final LinkerMinecraftEventBus minecraftEventBus;
+    private final LinkerMinecraftCommandBus minecraftCommandBus;
+
     private ConnJson connJson;
 
     private DiscordLinkerCommon(LinkerLogger logger, LinkerConfig config, LinkerServer server, LinkerScheduler scheduler, TeamsAndGroupsBridge teamsAndGroupsBridge) {
@@ -41,7 +48,11 @@ public class DiscordLinkerCommon {
         this.scheduler = scheduler;
         this.teamsAndGroupsBridge = teamsAndGroupsBridge;
 
-        this.connJson = loadConn();
+        this.discordEventBus = new LinkerDiscordEventBus();
+        this.minecraftEventBus = new LinkerMinecraftEventBus();
+        this.minecraftCommandBus = new LinkerMinecraftCommandBus();
+
+        this.connJson = ConnJson.load(server, logger);
 
         String token = connJson != null ? connJson.getToken() : null;
         this.clientManager = token != null ? new ClientManager(token) : new ClientManager();
@@ -75,6 +86,10 @@ public class DiscordLinkerCommon {
         return getInstance().connJson;
     }
 
+    public static void setConnJson(ConnJson connJson) {
+        getInstance().connJson = connJson;
+    }
+
     public static ClientManager getClientManager() {
         return getInstance().clientManager;
     }
@@ -91,6 +106,18 @@ public class DiscordLinkerCommon {
         return getInstance().teamsAndGroupsBridge;
     }
 
+    public static LinkerDiscordEventBus getDiscordEventBus() {
+        return getInstance().discordEventBus;
+    }
+
+    public static LinkerMinecraftEventBus getMinecraftEventBus() {
+        return getInstance().minecraftEventBus;
+    }
+
+    public static LinkerMinecraftCommandBus getMinecraftCommandBus() {
+        return getInstance().minecraftCommandBus;
+    }
+
     public static void shutdown() {
         getClientManager().chat(ConnJson.ChatChannel.ChatChannelType.CLOSE);
         getClientManager().updateStatsChannel(ConnJson.StatsChannel.StatsChannelEvent.OFFLINE);
@@ -99,40 +126,6 @@ public class DiscordLinkerCommon {
 
         getLogger().info(MinecraftChatColor.RED + "Discord-Linker disabled.");
         discordLinker = null;
-    }
-
-    public static boolean deleteConn() {
-        discordLinker.connJson = null;
-
-        Path connJsonPath = Paths.get(getServer().getDataFolder() + CONNJSON_FILENAME);
-        if(!Files.exists(connJsonPath)) return true;
-
-        try {
-            Files.delete(connJsonPath);
-            return true;
-        }
-        catch(IOException e) {
-            getLogger().error(MinecraftChatColor.RED + "Failed to delete connection data file!");
-            e.printStackTrace();
-            return false;
-        }
-    }
-
-    public static boolean writeConn() {
-        try (FileWriter writer = new FileWriter(getServer().getDataFolder() + CONNJSON_FILENAME)) {
-            writer.write(JsonUtil.toJsonString(getConnJson()));
-            return true;
-        }
-        catch(IOException e) {
-            getLogger().error(MinecraftChatColor.RED + "Failed to write connection data to file!");
-            e.printStackTrace();
-            return false;
-        }
-    }
-
-    public static boolean updateConn(JsonObject connJson) {
-        getInstance().connJson = JsonUtil.getConnJson(connJson);
-        return writeConn();
     }
 
     private void reconnectToBot() {
@@ -150,22 +143,5 @@ public class DiscordLinkerCommon {
             logger.warn(MinecraftChatColor.GOLD + "**Your server is using the deprecated backup connection method and will be disconnected. Please reconnect in Discord using `/connect`.**");
             clientManager.disconnectForce();
         }
-    }
-
-    private @Nullable ConnJson loadConn() {
-        Path connJsonPath = Paths.get(server.getDataFolder() + CONNJSON_FILENAME);
-        if(Files.exists(connJsonPath)) {
-            try(Reader connReader = Files.newBufferedReader(Paths.get(server.getDataFolder() + CONNJSON_FILENAME))) {
-                connJson = JsonUtil.getConnJson(connReader);
-                return connJson;
-            }
-            catch(IOException ignored) {
-                logger.error("Failed to read connection.conn file! Please restart your server or reconnect in Discord using `/connect`.");
-            }
-            catch(JsonSyntaxException | JsonIOException e) {
-                logger.error("Your connection data is corrupted! Please reconnect in Discord using `/connect`.");
-            }
-        }
-        return null;
     }
 }

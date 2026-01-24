@@ -13,6 +13,8 @@ import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 
+import static me.lianecx.discordlinker.common.util.URLEncoderUtil.decodeURL;
+
 public class PutFileDiscordEvent implements LinkerSyncDiscordEvent<PutFilePayload> {
 
     @Override
@@ -22,12 +24,7 @@ public class PutFileDiscordEvent implements LinkerSyncDiscordEvent<PutFilePayloa
         if(!(objects[1] instanceof InputStream))
             throw new InvalidPayloadException(objects);
 
-        String path;
-        try {
-            path = URLDecoder.decode(payload.get("path").getAsString(), "utf-8");
-        } catch (UnsupportedEncodingException e) {
-            throw new InvalidPayloadException(objects);
-        }
+        String path = decodeURL(payload.get("path").getAsString());
         InputStream fileData = (InputStream) objects[1];
         return new PutFilePayload(path, fileData);
     }

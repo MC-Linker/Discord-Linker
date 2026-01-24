@@ -7,8 +7,7 @@ import me.lianecx.discordlinker.common.network.protocol.responses.DiscordEventJs
 import me.lianecx.discordlinker.common.network.protocol.responses.DiscordEventResponse;
 import me.lianecx.discordlinker.common.util.JsonUtil;
 
-import static me.lianecx.discordlinker.common.DiscordLinkerCommon.getConnJson;
-import static me.lianecx.discordlinker.common.DiscordLinkerCommon.writeConn;
+import static me.lianecx.discordlinker.common.DiscordLinkerCommon.*;
 
 public class AddStatsChannelDiscordEvent implements LinkerSyncDiscordEvent<StatsChannelPayload> {
 
@@ -25,7 +24,7 @@ public class AddStatsChannelDiscordEvent implements LinkerSyncDiscordEvent<Stats
         getConnJson().getStatsChannels().removeIf(existingChannel -> existingChannel.getId().equals(payload.channel.getId()));
         // Add the new channel
         getConnJson().getStatsChannels().add(payload.channel);
-        writeConn();
+        getConnJson().write();
 
         return DiscordEventJsonResponse.toJson(getConnJson().getStatsChannels());
     }
