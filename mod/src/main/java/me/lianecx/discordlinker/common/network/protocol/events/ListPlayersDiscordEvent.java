@@ -4,7 +4,6 @@ import me.lianecx.discordlinker.common.abstraction.LinkerPlayer;
 import me.lianecx.discordlinker.common.network.protocol.payloads.EmptyPayload;
 import me.lianecx.discordlinker.common.network.protocol.responses.DiscordEventJsonResponse;
 import me.lianecx.discordlinker.common.network.protocol.responses.DiscordEventResponse;
-import net.minecraft.world.entity.player.Player;
 
 import java.util.List;
 import java.util.stream.Collectors;
