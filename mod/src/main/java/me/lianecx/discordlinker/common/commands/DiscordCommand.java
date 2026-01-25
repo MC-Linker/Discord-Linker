@@ -1,6 +1,7 @@
 package me.lianecx.discordlinker.common.commands;
 
 import me.lianecx.discordlinker.common.abstraction.LinkerCommandSender;
+import me.lianecx.discordlinker.common.abstraction.LinkerPlayer;
 import me.lianecx.discordlinker.common.util.MinecraftChatColor;
 
 import static me.lianecx.discordlinker.common.DiscordLinkerCommon.getClientManager;
@@ -21,7 +22,11 @@ public class DiscordCommand implements LinkerMinecraftCommand {
                 return;
             }
 
-            sender.sendMessageWithClickableURLs(MinecraftChatColor.GREEN + "Click the following link to join the Discord server: " + MinecraftChatColor.DARK_GREEN + url);
+
+            if(sender instanceof LinkerPlayer)
+                ((LinkerPlayer) sender).sendMessageWithClickableURLs(MinecraftChatColor.GREEN + "Click the following link to join the Discord server: " + MinecraftChatColor.DARK_GREEN + url);
+            else
+                sender.sendMessage(MinecraftChatColor.GREEN + "Join the Discord server using the following link: " + MinecraftChatColor.DARK_GREEN + url);
         });
     }
 }

@@ -1,7 +1,8 @@
 package me.lianecx.discordlinker.common.util;
 
+import static me.lianecx.discordlinker.common.util.UrlParser.URL_REGEX;
+
 public class MarkdownUtil {
-    public static final String URL_REGEX = "https?://[-\\w_.]{2,}\\.[a-z]{2,4}/\\S*?";
     public static final String MD_URL_REGEX = "(?i)\\[([^]]+)]\\((" + URL_REGEX + ")\\)";
 
     public static String markdownToColorCodes(String markdown) {

@@ -55,4 +55,9 @@ public class SpigotConfig implements LinkerConfig {
     public boolean shouldDebug() {
         return config.getBoolean("debug");
     }
+
+    @Override
+    public void reload() {
+        plugin.reloadConfig();
+    }
 }

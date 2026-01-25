@@ -65,7 +65,7 @@ public class ArchitecturyConfig implements LinkerConfig {
         }
     }
 
-    public void load() {
+    private void load() {
         try(InputStream in = Files.newInputStream(configFile.toPath())) {
             this.config = (MappingNode) YAML.compose(new InputStreamReader(in));
 
@@ -202,5 +202,10 @@ public class ArchitecturyConfig implements LinkerConfig {
     @Override
     public boolean shouldDebug() {
         return getBoolOrDefault("debug_mode");
+    }
+
+    @Override
+    public void reload() {
+        load();
     }
 }

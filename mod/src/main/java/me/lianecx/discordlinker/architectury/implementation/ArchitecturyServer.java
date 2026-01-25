@@ -9,6 +9,7 @@ import me.lianecx.discordlinker.common.abstraction.LinkerPlayer;
 import me.lianecx.discordlinker.common.abstraction.LinkerServer;
 //? if <1.19 {
 /*import net.minecraft.network.chat.ChatType;
+import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.TextComponent;
  *///? } else
 import net.minecraft.network.chat.Component;
@@ -20,6 +21,8 @@ import org.jetbrains.annotations.Nullable;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
+
+import static me.lianecx.discordlinker.architectury.util.URLComponent.buildURLComponent;
 
 public final class ArchitecturyServer implements LinkerServer {
 
@@ -121,6 +124,15 @@ public final class ArchitecturyServer implements LinkerServer {
         /*server.getPlayerList().broadcastMessage(new TextComponent(message), ChatType.CHAT, null);
          *///?} else
         server.getPlayerList().broadcastSystemMessage(Component.literal(message), false);
+    }
+
+    @Override
+    public void broadcastMessageWithClickableURLs(String message) {
+        Component component = buildURLComponent(message);
+        //? if <1.19 {
+        /*server.getPlayerList().broadcastMessage(component, ChatType.CHAT, null);
+        *///?} else
+        server.getPlayerList().broadcastSystemMessage(component, false);
     }
 
     @Override

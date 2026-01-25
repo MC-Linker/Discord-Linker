@@ -1,7 +1,12 @@
 package me.lianecx.discordlinker.spigot.implementation;
 
 import me.lianecx.discordlinker.common.abstraction.LinkerPlayer;
+import me.lianecx.discordlinker.spigot.util.NBTParser;
+import net.md_5.bungee.api.chat.BaseComponent;
+import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
+
+import static me.lianecx.discordlinker.spigot.util.URLComponent.buildURLComponent;
 
 public class SpigotPlayer extends LinkerPlayer {
 
@@ -18,6 +23,12 @@ public class SpigotPlayer extends LinkerPlayer {
     }
 
     @Override
+    public void sendMessageWithClickableURLs(String message) {
+        BaseComponent[] component = buildURLComponent(message);
+        player.spigot().sendMessage(component);
+    }
+
+    @Override
     public boolean hasPermission(String permission) {
         return player.hasPermission(permission);
     }
@@ -25,5 +36,10 @@ public class SpigotPlayer extends LinkerPlayer {
     @Override
     public void kick(String reason) {
         player.kickPlayer(reason);
+    }
+
+    @Override
+    public String getNBTAsString() {
+        return NBTParser.parsePlayerNBT(player);
     }
 }

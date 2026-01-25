@@ -1,18 +1,10 @@
 package me.lianecx.discordlinker.common.network.protocol.events;
 
-import com.google.gson.JsonElement;
-import com.google.gson.reflect.TypeToken;
-import me.lianecx.discordlinker.common.ConnJson;
-import me.lianecx.discordlinker.common.network.protocol.payloads.ChatChannelPayload;
 import me.lianecx.discordlinker.common.network.protocol.payloads.InvalidPayloadException;
 import me.lianecx.discordlinker.common.network.protocol.payloads.SyncedRolePayload;
 import me.lianecx.discordlinker.common.network.protocol.responses.DiscordEventJsonResponse;
 import me.lianecx.discordlinker.common.network.protocol.responses.DiscordEventResponse;
-import me.lianecx.discordlinker.common.util.JsonUtil;
-import net.minecraft.world.scores.Team;
 
-import java.util.List;
-import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
 import static java.util.concurrent.CompletableFuture.completedFuture;

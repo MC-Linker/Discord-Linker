@@ -13,6 +13,7 @@ import me.lianecx.discordlinker.common.util.MinecraftChatColor;
 import static me.lianecx.discordlinker.common.DiscordLinkerCommon.getConfig;
 import static me.lianecx.discordlinker.common.DiscordLinkerCommon.getServer;
 import static me.lianecx.discordlinker.common.util.MarkdownUtil.*;
+import static me.lianecx.discordlinker.common.util.UrlParser.URL_REGEX;
 
 public class ChatDiscordEvent implements LinkerSyncDiscordEvent<ChatPayload> {
 

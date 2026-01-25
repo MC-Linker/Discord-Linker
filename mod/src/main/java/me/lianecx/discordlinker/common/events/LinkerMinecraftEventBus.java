@@ -1,7 +1,6 @@
 package me.lianecx.discordlinker.common.events;
 
 import me.lianecx.discordlinker.common.events.data.*;
-import net.minecraft.client.multiplayer.chat.ChatListener;
 
 import java.util.ArrayList;
 import java.util.HashMap;

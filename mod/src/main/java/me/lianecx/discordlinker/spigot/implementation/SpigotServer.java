@@ -1,6 +1,7 @@
 package me.lianecx.discordlinker.spigot.implementation;
 
 import me.lianecx.discordlinker.common.abstraction.*;
+import net.md_5.bungee.api.chat.BaseComponent;
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.configuration.Configuration;
@@ -12,6 +13,8 @@ import java.io.File;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
+
+import static me.lianecx.discordlinker.spigot.util.URLComponent.buildURLComponent;
 
 public class SpigotServer implements LinkerServer {
 
@@ -64,7 +67,7 @@ public class SpigotServer implements LinkerServer {
 
             // If online player exists, return that
             OfflinePlayer player = Bukkit.getOfflinePlayer(username);
-            return new LinkerOfflinePlayer(player.getUniqueId(), player.getName());
+            return new LinkerOfflinePlayer(player.getUniqueId().toString(), player.getName());
         } catch (Exception e) {
             return null;
         }
@@ -78,7 +81,7 @@ public class SpigotServer implements LinkerServer {
             if (onlinePlayer != null) return new SpigotPlayer(onlinePlayer);
 
             OfflinePlayer player = Bukkit.getOfflinePlayer(uuid);
-            return new LinkerOfflinePlayer(player.getUniqueId(), player.getName());
+            return new LinkerOfflinePlayer(player.getUniqueId().toString(), player.getName());
         } catch (Exception e) {
             return null;
         }
@@ -87,6 +90,12 @@ public class SpigotServer implements LinkerServer {
     @Override
     public void broadcastMessage(String message) {
         Bukkit.broadcastMessage(message);
+    }
+
+    @Override
+    public void broadcastMessageWithClickableURLs(String message) {
+        BaseComponent[] component = buildURLComponent(message);
+        Bukkit.getServer().spigot().broadcast(component);
     }
 
     @Override
@@ -122,5 +131,11 @@ public class SpigotServer implements LinkerServer {
 
         Configuration config = YamlConfiguration.loadConfiguration(floodgateConfig);
         return config.getString("username-prefix");
+    }
+
+    @Override
+    public String runCommand(String command) {
+        //TODO implement
+        return "";
     }
 }

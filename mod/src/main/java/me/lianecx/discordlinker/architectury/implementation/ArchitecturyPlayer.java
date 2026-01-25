@@ -1,11 +1,18 @@
 package me.lianecx.discordlinker.architectury.implementation;
 
+import me.lianecx.discordlinker.architectury.util.URLComponent;
 import me.lianecx.discordlinker.common.abstraction.LinkerPlayer;
 //? if <1.19 {
-/*import net.minecraft.network.chat.TextComponent;
- *///? } else
+/*import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.TextComponent;
+ *///? } else
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.server.level.ServerPlayer;
+
+import static me.lianecx.discordlinker.architectury.util.URLComponent.buildURLComponent;
 
 public class ArchitecturyPlayer extends LinkerPlayer {
 
@@ -25,6 +32,15 @@ public class ArchitecturyPlayer extends LinkerPlayer {
     }
 
     @Override
+    public void sendMessageWithClickableURLs(String message) {
+        Component component = buildURLComponent(message);
+        //? if <1.19 {
+        /*player.sendMessage(component, null);
+        *///? } else
+        player.sendSystemMessage(component);
+    }
+
+    @Override
     public boolean hasPermission(String permission) {
         // TODO luckperms
         return player.hasPermissions(4); // OP level 4
@@ -36,5 +52,12 @@ public class ArchitecturyPlayer extends LinkerPlayer {
         /*player.connection.disconnect(new TextComponent(reason));
          *///? } else
         player.connection.disconnect(Component.literal(reason));
+    }
+
+    @Override
+    public String getNBTAsString() {
+        CompoundTag nbt = new CompoundTag();
+        player.save(nbt);
+        return nbt.toString();
     }
 }
