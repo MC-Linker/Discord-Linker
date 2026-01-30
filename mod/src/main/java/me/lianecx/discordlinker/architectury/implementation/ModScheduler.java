@@ -14,7 +14,7 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-public class ArchitecturyScheduler implements LinkerScheduler {
+public class ModScheduler implements LinkerScheduler {
 
     private static final ExecutorService ASYNC_EXECUTOR = Executors.newCachedThreadPool(r -> {
         Thread t = new Thread(r, "DiscordLinker-Async");
@@ -24,7 +24,7 @@ public class ArchitecturyScheduler implements LinkerScheduler {
 
     private final List<LinkerSchedulerTask> tasks = new ArrayList<>();
 
-    public ArchitecturyScheduler() {
+    public ModScheduler() {
         TickEvent.SERVER_POST.register(this::tick);
     }
 

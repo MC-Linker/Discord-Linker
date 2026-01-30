@@ -16,9 +16,9 @@ import java.io.*;
 import java.nio.file.Files;
 import java.util.List;
 
-import static me.lianecx.discordlinker.architectury.DiscordLinkerArchitectury.MOD_ID;
+import static me.lianecx.discordlinker.architectury.DiscordLinkerMod.MOD_ID;
 
-public class ArchitecturyConfig implements LinkerConfig {
+public class ModConfig implements LinkerConfig {
 
     private static final String CONFIG_FILENAME = "linker.yml";
     private static final String DEFAULT_CONFIG_FILENAME = "config.yml";
@@ -29,7 +29,7 @@ public class ArchitecturyConfig implements LinkerConfig {
     private MappingNode defaults;
     private MappingNode config;
 
-    public ArchitecturyConfig(String configFolder) {
+    public ModConfig(String configFolder) {
         LoaderOptions loaderOptions = new LoaderOptions();
         loaderOptions.setProcessComments(true);
         DumperOptions dumperOptions = new DumperOptions();
@@ -181,7 +181,8 @@ public class ArchitecturyConfig implements LinkerConfig {
 
     @Override
     public void setBotPort(int port) {
-        setField("bot_port", port); save();
+        setField("bot_port", port);
+        save();
     }
 
     @Override

@@ -9,8 +9,8 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 public class DiscordLinkerSpigot extends JavaPlugin {
 
-     @Override
-     public void onEnable() {
-        DiscordLinkerCommon.init(new SpigotLogger(getLogger()), new SpigotConfig(this), new SpigotServer(getDataFolder().getAbsolutePath()), new SpigotScheduler(this));
-     }
+    @Override
+    public void onEnable() {
+        DiscordLinkerCommon.init(new SpigotLogger(getLogger()), new SpigotConfig(this), new SpigotServer(getDataFolder().getAbsolutePath()), new SpigotScheduler(this), new SpigotTeamsAndGroupsBridge());
+    }
 }

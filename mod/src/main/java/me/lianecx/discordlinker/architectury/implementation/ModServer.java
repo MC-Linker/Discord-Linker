@@ -1,17 +1,10 @@
 package me.lianecx.discordlinker.architectury.implementation;
 
 import com.mojang.authlib.GameProfile;
-//? if >1.20
-//import com.mojang.authlib.yggdrasil.ProfileResult;
 import dev.architectury.platform.Platform;
 import me.lianecx.discordlinker.common.abstraction.LinkerOfflinePlayer;
 import me.lianecx.discordlinker.common.abstraction.LinkerPlayer;
 import me.lianecx.discordlinker.common.abstraction.LinkerServer;
-//? if <1.19 {
-/*import net.minecraft.network.chat.ChatType;
-import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.TextComponent;
- *///? } else
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
@@ -24,11 +17,11 @@ import java.util.stream.Collectors;
 
 import static me.lianecx.discordlinker.architectury.util.URLComponent.buildURLComponent;
 
-public final class ArchitecturyServer implements LinkerServer {
+public final class ModServer implements LinkerServer {
 
     private final MinecraftServer server;
 
-    public ArchitecturyServer(MinecraftServer server) {
+    public ModServer(MinecraftServer server) {
         this.server = server;
     }
 
@@ -51,7 +44,7 @@ public final class ArchitecturyServer implements LinkerServer {
     public List<LinkerPlayer> getOnlinePlayers() {
         return server.getPlayerList().getPlayers()
                 .stream()
-                .map(ArchitecturyPlayer::new)
+                .map(ModPlayer::new)
                 .collect(Collectors.toList());
     }
 
@@ -64,14 +57,14 @@ public final class ArchitecturyServer implements LinkerServer {
     public LinkerPlayer getPlayer(UUID uuid) {
         ServerPlayer player = server.getPlayerList().getPlayer(uuid);
         if(player == null) return null;
-        return new ArchitecturyPlayer(player);
+        return new ModPlayer(player);
     }
 
     @Override
     public LinkerOfflinePlayer getOfflinePlayer(String name) {
         // Player is online
         ServerPlayer online = server.getPlayerList().getPlayerByName(name);
-        if(online != null) return new ArchitecturyPlayer(online);
+        if(online != null) return new ModPlayer(online);
 
         // Player is offline
 
@@ -82,8 +75,7 @@ public final class ArchitecturyServer implements LinkerServer {
         GameProfile profile = server.getProfileCache()
                 .get(name)
                 //? if >=1.18
-                .orElse(null)
-                ;
+                .orElse(null);
         if(profile != null) return new LinkerOfflinePlayer(profile.getId().toString(), profile.getName());
         return null;
     }
@@ -102,8 +94,7 @@ public final class ArchitecturyServer implements LinkerServer {
         GameProfile profile = server.getProfileCache()
                 .get(uuid)
                 //? if >=1.18
-                .orElse(null)
-                ;
+                .orElse(null);
         if(profile != null) return new LinkerOfflinePlayer(profile.getId().toString(), profile.getName());
 
         //? if <1.21 {
@@ -131,7 +122,7 @@ public final class ArchitecturyServer implements LinkerServer {
         Component component = buildURLComponent(message);
         //? if <1.19 {
         /*server.getPlayerList().broadcastMessage(component, ChatType.CHAT, null);
-        *///?} else
+         *///?} else
         server.getPlayerList().broadcastSystemMessage(component, false);
     }
 

@@ -1,16 +1,16 @@
 package me.lianecx.discordlinker.architectury.implementation;
 
-import me.lianecx.discordlinker.architectury.DiscordLinkerArchitectury;
+import me.lianecx.discordlinker.architectury.DiscordLinkerMod;
 import me.lianecx.discordlinker.common.abstraction.core.LinkerLogger;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-public class ArchitecturyLogger implements LinkerLogger {
+public class ModLogger implements LinkerLogger {
 
     private final Logger logger;
 
-    public ArchitecturyLogger() {
-        this.logger = LogManager.getLogger(DiscordLinkerArchitectury.MOD_ID);
+    public ModLogger() {
+        this.logger = LogManager.getLogger(DiscordLinkerMod.MOD_ID);
     }
 
     @Override

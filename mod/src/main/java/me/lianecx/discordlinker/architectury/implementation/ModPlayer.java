@@ -1,24 +1,17 @@
 package me.lianecx.discordlinker.architectury.implementation;
 
-import me.lianecx.discordlinker.architectury.util.URLComponent;
 import me.lianecx.discordlinker.common.abstraction.LinkerPlayer;
-//? if <1.19 {
-/*import net.minecraft.nbt.CompoundTag;
-import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.TextComponent;
- *///? } else
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.server.level.ServerPlayer;
 
 import static me.lianecx.discordlinker.architectury.util.URLComponent.buildURLComponent;
 
-public class ArchitecturyPlayer extends LinkerPlayer {
+public class ModPlayer extends LinkerPlayer {
 
     private final ServerPlayer player;
 
-    public ArchitecturyPlayer(ServerPlayer player) {
+    public ModPlayer(ServerPlayer player) {
         super(player.getStringUUID(), player.getName().getString());
         this.player = player;
     }
@@ -36,7 +29,7 @@ public class ArchitecturyPlayer extends LinkerPlayer {
         Component component = buildURLComponent(message);
         //? if <1.19 {
         /*player.sendMessage(component, null);
-        *///? } else
+         *///? } else
         player.sendSystemMessage(component);
     }
 

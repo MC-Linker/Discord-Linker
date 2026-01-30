@@ -21,14 +21,12 @@ public class AddSyncedRoleDiscordEvent implements LinkerDiscordEvent<SyncedRoleP
     public CompletableFuture<DiscordEventResponse> handleAsync(SyncedRolePayload payload) {
         if(getConnJson() == null) return completedFuture(DiscordEventJsonResponse.CONN_JSON_MISSING);
 
-        if(!getServer().isPluginOrModEnabled("LuckPerms")) return completedFuture(DiscordEventJsonResponse.LUCKPERMS_NOT_LOADED);
+        if(!getServer().isPluginOrModEnabled("LuckPerms"))
+            return completedFuture(DiscordEventJsonResponse.LUCKPERMS_NOT_LOADED);
 
-        CompletableFuture<DiscordEventResponse> future = new CompletableFuture<>();
-        getTeamsAndGroupsBridge().updateGroupOrTeamMembers(payload.role.getName(), payload.role.isGroup(), true, players -> {
-            if(players == null) {
-                future.complete(payload.role.isGroup() ? DiscordEventJsonResponse.INVALID_GROUP : DiscordEventJsonResponse.INVALID_TEAM);
-                return;
-            }
+        return getTeamsAndGroupsBridge().getPlayersInGroupOrTeam(payload.role.getName(), payload.role.isGroup()).thenApply(players -> {
+            if(players == null)
+                return payload.role.isGroup() ? DiscordEventJsonResponse.INVALID_GROUP : DiscordEventJsonResponse.INVALID_TEAM;
 
             payload.role.setPlayers(players);
             getConnJson().getSyncedRoles().add(payload.role);
@@ -38,8 +36,7 @@ public class AddSyncedRoleDiscordEvent implements LinkerDiscordEvent<SyncedRoleP
             boolean hasTeamSyncedRole = getConnJson().hasTeamSyncedRole();
             if(hasTeamSyncedRole) getTeamsAndGroupsBridge().startTeamCheck();
 
-            future.complete(DiscordEventJsonResponse.toJson(getConnJson().getSyncedRoles()));
+            return DiscordEventJsonResponse.toJson(getConnJson().getSyncedRoles());
         });
-        return future;
     }
 }

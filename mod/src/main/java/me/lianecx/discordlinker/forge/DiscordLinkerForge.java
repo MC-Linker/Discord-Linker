@@ -1,6 +1,6 @@
 package me.lianecx.discordlinker.forge;
 
-import me.lianecx.discordlinker.architectury.DiscordLinkerArchitectury;
+import me.lianecx.discordlinker.architectury.DiscordLinkerMod;
 import net.minecraftforge.fml.common.Mod;
 
 /**
@@ -9,6 +9,6 @@ import net.minecraftforge.fml.common.Mod;
 @Mod("discordlinker")
 public class DiscordLinkerForge {
     public DiscordLinkerForge() {
-        DiscordLinkerArchitectury.init();
+        DiscordLinkerMod.init();
     }
 }
