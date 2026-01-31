@@ -15,18 +15,18 @@ public class URLComponent {
             if(segment.isUrl()) {
                 //? if <1.19 {
                 /*root.append(new TextComponent(segment.getContent())
-                *///? } else
-                root.append(Component.literal(segment.getContent())
-                    .withStyle(style -> style
-                        .withClickEvent(new ClickEvent(ClickEvent.Action.OPEN_URL, segment.getContent()))
-                        .withHoverEvent(new HoverEvent(
-                                HoverEvent.Action.SHOW_TEXT,
-                                //? if <1.19 {
-                                /*new TextComponent("Click to open link")
-                                *///? } else
-                                Component.literal("Click to open link")
-                        ))
-                    )
+                        *///? } else
+                        root.append(Component.literal(segment.getContent())
+                        .withStyle(style -> style
+                                .withClickEvent(new ClickEvent(ClickEvent.Action.OPEN_URL, segment.getContent()))
+                                .withHoverEvent(new HoverEvent(
+                                        HoverEvent.Action.SHOW_TEXT,
+                                        //? if <1.19 {
+                                        /*new TextComponent("Click to open link")
+                                        *///? } else
+                                        Component.literal("Click to open link")
+                                ))
+                        )
                 );
             }
             //? if <1.19 {

@@ -43,7 +43,7 @@ tasks.processResources {
 sourceSets.main {
     java {
         exclude(
-            listOf("**/fabric/**", "**/forge/**", "**/neoforge/**", "**/architectury/**")
+            listOf("**/fabric/**", "**/forge/**", "**/architectury/**")
         )
     }
 

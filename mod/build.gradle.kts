@@ -140,9 +140,9 @@ sourceSets.main {
         val spigot = listOf("**/spigot/**")
         exclude(
             spigot + when {
-                env.isFabric -> listOf("**/forge/**", "**/neoforge/**")
-                env.isForge -> listOf("**/fabric/**", "**/neoforge/**")
-                env.isNeo -> listOf("**/fabric/**", "**/forge/**")
+                env.isFabric -> listOf("**/forge/**")
+                env.isForge -> listOf("**/fabric/**")
+                env.isNeo -> listOf("**/fabric/**")
                 else -> throw IllegalStateException("No valid mod environment detected")
             }
         )

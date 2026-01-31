@@ -2,7 +2,7 @@ package me.lianecx.discordlinker.architectury.implementation;
 
 import me.lianecx.discordlinker.common.abstraction.LinkerPlayer;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.*;
 import net.minecraft.server.level.ServerPlayer;
 
 import static me.lianecx.discordlinker.architectury.util.URLComponent.buildURLComponent;
@@ -20,7 +20,7 @@ public class ModPlayer extends LinkerPlayer {
     public void sendMessage(String message) {
         //? if <1.19 {
         /*player.sendMessage(new TextComponent(message), null);
-         *///?} else
+        *///?} else
         player.sendSystemMessage(Component.literal(message));
     }
 
@@ -29,7 +29,7 @@ public class ModPlayer extends LinkerPlayer {
         Component component = buildURLComponent(message);
         //? if <1.19 {
         /*player.sendMessage(component, null);
-         *///? } else
+        *///? } else
         player.sendSystemMessage(component);
     }
 
@@ -43,7 +43,7 @@ public class ModPlayer extends LinkerPlayer {
     public void kick(String reason) {
         //? if <1.19 {
         /*player.connection.disconnect(new TextComponent(reason));
-         *///? } else
+        *///? } else
         player.connection.disconnect(Component.literal(reason));
     }
 

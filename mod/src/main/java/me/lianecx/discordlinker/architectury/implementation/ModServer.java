@@ -1,11 +1,13 @@
 package me.lianecx.discordlinker.architectury.implementation;
 
 import com.mojang.authlib.GameProfile;
+//? if >=1.21
+//import com.mojang.authlib.yggdrasil.ProfileResult;
 import dev.architectury.platform.Platform;
 import me.lianecx.discordlinker.common.abstraction.LinkerOfflinePlayer;
 import me.lianecx.discordlinker.common.abstraction.LinkerPlayer;
 import me.lianecx.discordlinker.common.abstraction.LinkerServer;
-import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.*;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.storage.LevelResource;
@@ -75,7 +77,8 @@ public final class ModServer implements LinkerServer {
         GameProfile profile = server.getProfileCache()
                 .get(name)
                 //? if >=1.18
-                .orElse(null);
+                .orElse(null)
+                ;
         if(profile != null) return new LinkerOfflinePlayer(profile.getId().toString(), profile.getName());
         return null;
     }
@@ -94,7 +97,8 @@ public final class ModServer implements LinkerServer {
         GameProfile profile = server.getProfileCache()
                 .get(uuid)
                 //? if >=1.18
-                .orElse(null);
+                .orElse(null)
+                ;
         if(profile != null) return new LinkerOfflinePlayer(profile.getId().toString(), profile.getName());
 
         //? if <1.21 {
@@ -113,7 +117,7 @@ public final class ModServer implements LinkerServer {
     public void broadcastMessage(String message) {
         //? if <1.19 {
         /*server.getPlayerList().broadcastMessage(new TextComponent(message), ChatType.CHAT, null);
-         *///?} else
+        *///?} else
         server.getPlayerList().broadcastSystemMessage(Component.literal(message), false);
     }
 
@@ -122,7 +126,7 @@ public final class ModServer implements LinkerServer {
         Component component = buildURLComponent(message);
         //? if <1.19 {
         /*server.getPlayerList().broadcastMessage(component, ChatType.CHAT, null);
-         *///?} else
+        *///?} else
         server.getPlayerList().broadcastSystemMessage(component, false);
     }
 
