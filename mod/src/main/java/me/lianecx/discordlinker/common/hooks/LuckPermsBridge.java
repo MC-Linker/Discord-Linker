@@ -1,4 +1,4 @@
-package me.lianecx.discordlinker.common.util;
+package me.lianecx.discordlinker.common.hooks;
 
 import net.luckperms.api.LuckPerms;
 import net.luckperms.api.LuckPermsProvider;
@@ -12,7 +12,7 @@ import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
-public final class LuckPermsUtil {
+public final class LuckPermsBridge {
 
     private final LuckPerms api = LuckPermsProvider.get();
 

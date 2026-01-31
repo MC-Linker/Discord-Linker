@@ -3,7 +3,6 @@ package me.lianecx.discordlinker.common.network.client;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import me.lianecx.discordlinker.common.ConnJson;
-import me.lianecx.discordlinker.common.abstraction.LinkerOfflinePlayer;
 import me.lianecx.discordlinker.common.abstraction.LinkerPlayer;
 import me.lianecx.discordlinker.common.abstraction.LinkerServer;
 import me.lianecx.discordlinker.common.network.protocol.events.LinkerDiscordEventBus;
@@ -15,15 +14,16 @@ import me.lianecx.discordlinker.common.util.MinecraftChatColor;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.math.BigInteger;
 import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.URL;
-import java.net.URLEncoder;
 import java.security.SecureRandom;
 import java.util.*;
-import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 
 import static java.util.concurrent.CompletableFuture.completedFuture;
@@ -72,6 +72,7 @@ public final class ClientManager {
 
     /**
      * Connects to the bot with the saved token passed in the constructor.
+     *
      * @param callback The callback to run when the connection is established or fails.
      */
     public void reconnect(Consumer<Boolean> callback) {
@@ -85,6 +86,7 @@ public final class ClientManager {
 
     /**
      * Connects to the bot with a verification code for the first time.
+     *
      * @param code     The verification code to connect with.
      * @param callback The callback to run when the connection is established or fails.
      */
@@ -208,20 +210,20 @@ public final class ClientManager {
         }
 
         getTeamsAndGroupsBridge().getPlayersInGroupOrTeam(name, isGroup)
-            .thenAccept(players -> {
-                if(players == null) {
-                    callback.accept(null);
-                    return;
-                }
+                .thenAccept(players -> {
+                    if(players == null) {
+                        callback.accept(null);
+                        return;
+                    }
 
-                //Update players in role
-                role.getPlayers().clear();
-                for(LinkerOfflinePlayer player : players) {
-                    role.getPlayers().add(player.getUUID());
-                }
+                    //Update players in role
+                    role.getPlayers().clear();
+                    for(String player : players) {
+                        role.getPlayers().add(player);
+                    }
 
-                callback.accept(role);
-            });
+                    callback.accept(role);
+                });
     }
 
     /**
@@ -288,7 +290,7 @@ public final class ClientManager {
      * Sends an event to the bot with no data.
      */
     public void send(String eventName) {
-        send(eventName, new Object[]{});
+        send(eventName, new Object[] {});
     }
 
     /**
@@ -303,7 +305,7 @@ public final class ClientManager {
      */
     public void send(String eventName, JsonObject data, Consumer<DiscordEventResponse> callback) {
         if(client == null) return;
-        client.send(eventName, new Object[] { data.toString() }, callback);
+        client.send(eventName, new Object[] {data.toString()}, callback);
     }
 
     /**

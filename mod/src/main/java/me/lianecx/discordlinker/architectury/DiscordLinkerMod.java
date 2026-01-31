@@ -18,7 +18,7 @@ public class DiscordLinkerMod {
         ModServer server = new ModServer(GameInstance.getServer());
         ModConfig config = new ModConfig(server.getDataFolder());
 
-        common = DiscordLinkerCommon.init(new ModLogger(), config, server, new ModScheduler(), new ModTeamsAndGroupsBridge(server));
+        common = DiscordLinkerCommon.init(new ModLogger(), config, server, new ModScheduler(), new ModTeamsBridge(server));
         instance = new DiscordLinkerMod();
         return instance;
     }

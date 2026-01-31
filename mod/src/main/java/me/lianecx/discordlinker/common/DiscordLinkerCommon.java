@@ -1,27 +1,16 @@
 package me.lianecx.discordlinker.common;
 
-import com.google.gson.*;
 import me.lianecx.discordlinker.common.abstraction.LinkerServer;
-import me.lianecx.discordlinker.common.abstraction.TeamsAndGroupsBridge;
-import me.lianecx.discordlinker.common.commands.LinkerMinecraftCommandBus;
-import me.lianecx.discordlinker.common.events.LinkerMinecraftEventBus;
-import me.lianecx.discordlinker.common.network.protocol.events.LinkerDiscordEventBus;
-import me.lianecx.discordlinker.common.util.JsonUtil;
-import me.lianecx.discordlinker.common.util.MinecraftChatColor;
+import me.lianecx.discordlinker.common.abstraction.TeamsBridge;
 import me.lianecx.discordlinker.common.abstraction.core.LinkerConfig;
 import me.lianecx.discordlinker.common.abstraction.core.LinkerLogger;
 import me.lianecx.discordlinker.common.abstraction.core.LinkerScheduler;
+import me.lianecx.discordlinker.common.commands.LinkerMinecraftCommandBus;
+import me.lianecx.discordlinker.common.events.LinkerMinecraftEventBus;
 import me.lianecx.discordlinker.common.network.client.ClientManager;
+import me.lianecx.discordlinker.common.network.protocol.events.LinkerDiscordEventBus;
+import me.lianecx.discordlinker.common.util.MinecraftChatColor;
 import org.jetbrains.annotations.Nullable;
-
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.Reader;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-
-import static me.lianecx.discordlinker.common.ConnJson.CONNJSON_FILENAME;
 
 public class DiscordLinkerCommon {
 
@@ -63,9 +52,9 @@ public class DiscordLinkerCommon {
         logger.info(MinecraftChatColor.GREEN + "Discord-Linker enabled.");
     }
 
-    public static synchronized DiscordLinkerCommon init(LinkerLogger logger, LinkerConfig config, LinkerServer server, LinkerScheduler scheduler, TeamsAndGroupsBridge teamsAndGroupsBridge) {
-        if (discordLinker != null) throw new IllegalStateException("DiscordLinkerCommon already initialized!");
-        discordLinker = new DiscordLinkerCommon(logger, config, server, scheduler, teamsAndGroupsBridge);
+    public static synchronized DiscordLinkerCommon init(LinkerLogger logger, LinkerConfig config, LinkerServer server, LinkerScheduler scheduler, TeamsBridge teamsBridge) {
+        if(discordLinker != null) throw new IllegalStateException("DiscordLinkerCommon already initialized!");
+        discordLinker = new DiscordLinkerCommon(logger, config, server, scheduler, new TeamsAndGroupsBridge(server, teamsBridge));
         return discordLinker;
     }
 

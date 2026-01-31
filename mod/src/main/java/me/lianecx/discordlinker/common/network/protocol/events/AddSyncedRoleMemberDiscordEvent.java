@@ -1,6 +1,6 @@
 package me.lianecx.discordlinker.common.network.protocol.events;
 
-import me.lianecx.discordlinker.common.abstraction.TeamsAndGroupsBridge;
+import me.lianecx.discordlinker.common.TeamsAndGroupsBridge;
 import me.lianecx.discordlinker.common.network.protocol.payloads.InvalidPayloadException;
 import me.lianecx.discordlinker.common.network.protocol.payloads.SyncedRoleMemberPayload;
 import me.lianecx.discordlinker.common.network.protocol.responses.DiscordEventJsonResponse;
