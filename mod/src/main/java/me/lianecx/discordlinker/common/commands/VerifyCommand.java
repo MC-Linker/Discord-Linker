@@ -31,23 +31,27 @@ public class VerifyCommand implements LinkerMinecraftCommand {
 
     @Override
     public void execute(LinkerCommandSender sender, String[] args) {
-        if (!(sender instanceof LinkerPlayer)) {
+        if(!(sender instanceof LinkerPlayer)) {
             sender.sendMessage("You must be a player to use this command.");
             return;
         }
-        else if (args.length == 0) {
+        else if(!sender.hasPermission("discordlinker.discord")) {
+            sender.sendMessage(MinecraftChatColor.RED + "You do not have permission to use this command!");
+            return;
+        }
+        else if(args.length == 0) {
             sender.sendMessage(MinecraftChatColor.RED + "You must specify a verification code. Usage: /verify <code>");
             return;
         }
 
         String uuid = ((LinkerPlayer) sender).getUUID();
         String code = args[0];
-        if (!playersAwaitingVerification.containsKey(uuid)) {
+        if(!playersAwaitingVerification.containsKey(uuid)) {
             sender.sendMessage(MinecraftChatColor.YELLOW + "You are not awaiting verification. Please execute \"/account connect\" in discord first");
             return;
         }
 
-        if (!playersAwaitingVerification.get(uuid).equals(code)) {
+        if(!playersAwaitingVerification.get(uuid).equals(code)) {
             sender.sendMessage(MinecraftChatColor.RED + "The code you specified is incorrect. Please try again.");
             return;
         }

@@ -7,6 +7,8 @@ import me.lianecx.discordlinker.common.abstraction.core.LinkerLogger;
 import me.lianecx.discordlinker.common.abstraction.core.LinkerScheduler;
 import me.lianecx.discordlinker.common.commands.LinkerMinecraftCommandBus;
 import me.lianecx.discordlinker.common.events.LinkerMinecraftEventBus;
+import me.lianecx.discordlinker.common.events.data.ServerStartEventData;
+import me.lianecx.discordlinker.common.events.data.ServerStopEventData;
 import me.lianecx.discordlinker.common.network.client.ClientManager;
 import me.lianecx.discordlinker.common.network.protocol.events.LinkerDiscordEventBus;
 import me.lianecx.discordlinker.common.util.MinecraftChatColor;
@@ -50,6 +52,7 @@ public class DiscordLinkerCommon {
         reconnectToBot();
 
         logger.info(MinecraftChatColor.GREEN + "Discord-Linker enabled.");
+        minecraftEventBus.emit(new ServerStartEventData());
     }
 
     public static synchronized DiscordLinkerCommon init(LinkerLogger logger, LinkerConfig config, LinkerServer server, LinkerScheduler scheduler, TeamsBridge teamsBridge) {
@@ -75,7 +78,7 @@ public class DiscordLinkerCommon {
         return getInstance().connJson;
     }
 
-    public static void setConnJson(ConnJson connJson) {
+    public static void setConnJson(@Nullable ConnJson connJson) {
         getInstance().connJson = connJson;
     }
 
@@ -108,9 +111,7 @@ public class DiscordLinkerCommon {
     }
 
     public static void shutdown() {
-        getClientManager().chat(ConnJson.ChatChannel.ChatChannelType.CLOSE);
-        getClientManager().updateStatsChannel(ConnJson.StatsChannel.StatsChannelEvent.OFFLINE);
-        getClientManager().updateStatsChannel(ConnJson.StatsChannel.StatsChannelEvent.MEMBERS);
+        getMinecraftEventBus().emit(new ServerStopEventData());
         getClientManager().disconnect();
 
         getLogger().info(MinecraftChatColor.RED + "Discord-Linker disabled.");

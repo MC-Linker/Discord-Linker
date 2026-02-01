@@ -21,10 +21,15 @@ public class LinkerMinecraftCommandBus {
         listeners.put("verify", new VerifyCommand());
     }
 
-    public void emitCompletion(String commandName, LinkerCommandSender sender, String[] args) {
+    /**
+     * Emits a command tab completion event.
+     * Keep in mind that mod's directly set arguments through brigadier and won't emit this event.
+     */
+    public List<String> emitCompletion(String commandName, LinkerCommandSender sender, String[] args) {
         if (listeners.containsKey(commandName) && listeners.get(commandName) instanceof LinkerMinecraftCompletableCommand) {
-            ((LinkerMinecraftCompletableCommand) listeners.get(commandName)).complete(sender, args);
+            return ((LinkerMinecraftCompletableCommand) listeners.get(commandName)).complete(sender, args);
         }
+        return new ArrayList<>();
     }
 
     public void emitCommand(String commandName, LinkerCommandSender sender, String[] args) {

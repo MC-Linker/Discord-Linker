@@ -1,9 +1,9 @@
 package me.lianecx.discordlinker.architectury.implementation;
 
-//? if <1.18 {
-/*import dev.architectury.event.events.TickEvent;
- *///? } else
+//? if <=1.16.5 {
 
+/*import dev.architectury.event.events.TickEvent;
+*///? } else
 import dev.architectury.event.events.common.TickEvent;
 import me.lianecx.discordlinker.common.abstraction.core.LinkerScheduler;
 import net.minecraft.server.MinecraftServer;

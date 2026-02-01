@@ -11,6 +11,10 @@ public class DiscordCommand implements LinkerMinecraftCommand {
 
     @Override
     public void execute(LinkerCommandSender sender, String[] args) {
+        if(!sender.hasPermission("discordlinker.discord")) {
+            sender.sendMessage(MinecraftChatColor.RED + "You do not have permission to use this command!");
+            return;
+        }
         if(getConnJson() == null) {
             sender.sendMessage(MinecraftChatColor.RED + "There is no connected Discord server. Please use `/connect plugin` in Discord.");
             return;

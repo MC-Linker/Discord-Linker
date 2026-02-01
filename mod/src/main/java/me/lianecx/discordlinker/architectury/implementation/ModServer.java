@@ -84,8 +84,8 @@ public final class ModServer implements LinkerServer {
         // may block (creates offline profile if couldn't fetch)
         GameProfile profile = server.getProfileCache()
                 //? if <1.18 {
-                //.get(name);
-                //? } else {
+                /*.get(name);
+                *///? } else {
                 .get(name)
                 .orElse(null);//? }
         if(profile != null) return new LinkerOfflinePlayer(profile.getId().toString(), profile.getName());
@@ -105,8 +105,8 @@ public final class ModServer implements LinkerServer {
 
         GameProfile profile = server.getProfileCache()
                 //? if <1.18 {
-                //.get(uuid);
-                //? } else {
+                /*.get(uuid);
+                *///? } else {
                 .get(uuid)
                 .orElse(null);//? }
 

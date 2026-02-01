@@ -23,7 +23,7 @@ public class LinkerMinecraftEventBus {
         register(ConsoleCommandEventData.class, ChatsMinecraftEvent::handleConsoleCommand);
         register(BlockCommandEventData.class, ChatsMinecraftEvent::handleBlockCommand);
 
-        register(PlayerJoinEventData.class, new PlayerJoinMinecraftEvent());
+        register(PlayerJoinEventData.class, new PlayerJoinMinecraftEvent()); // Join Requirement Handler
     }
 
     private <T extends MinecraftEventData> void register(Class<T> type, LinkerMinecraftEvent<T> handler) {
@@ -36,7 +36,7 @@ public class LinkerMinecraftEventBus {
         List<LinkerMinecraftEvent<? extends MinecraftEventData>> eventListeners = listeners.get(data.getClass());
         if(eventListeners == null) return;
 
-        for (LinkerMinecraftEvent<? extends MinecraftEventData> listener : eventListeners) {
+        for(LinkerMinecraftEvent<? extends MinecraftEventData> listener : eventListeners) {
             @SuppressWarnings("unchecked")
             LinkerMinecraftEvent<T> event = (LinkerMinecraftEvent<T>) listener;
             event.handle(data);

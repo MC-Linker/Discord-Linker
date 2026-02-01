@@ -9,12 +9,18 @@ import static me.lianecx.discordlinker.common.DiscordLinkerCommon.getScheduler;
 
 public class ChatsMinecraftEvent {
 
+    private static final String CONSOLE_SENDER_NAME = "Server";
+    private static final String COMMAND_BLOCK_SENDER_NAME = "CommandBlock";
+
     public static void handleServerStart(ServerStartEventData event) {
+        sendChatAsync("", ConnJson.ChatChannel.ChatChannelType.START, null);
         sendStatsAsync(ConnJson.StatsChannel.StatsChannelEvent.ONLINE);
     }
 
     public static void handleServerStop(ServerStopEventData event) {
+        sendChatAsync("", ConnJson.ChatChannel.ChatChannelType.CLOSE, null);
         sendStatsAsync(ConnJson.StatsChannel.StatsChannelEvent.OFFLINE);
+        sendStatsAsync(ConnJson.StatsChannel.StatsChannelEvent.MEMBERS);
     }
 
     public static void handleChat(ChatEventData event) {
@@ -49,12 +55,12 @@ public class ChatsMinecraftEvent {
 
     public static void handleConsoleCommand(ConsoleCommandEventData event) {
         //TODO name of console?
-        sendChatAsync(event.command, ConnJson.ChatChannel.ChatChannelType.CONSOLE_COMMAND, event.senderName);
+        sendChatAsync(event.command, ConnJson.ChatChannel.ChatChannelType.CONSOLE_COMMAND, CONSOLE_SENDER_NAME);
     }
 
     public static void handleBlockCommand(BlockCommandEventData event) {
         //TODO name of command block?
-        sendChatAsync(event.command, ConnJson.ChatChannel.ChatChannelType.BLOCK_COMMAND, "CommandBlock");
+        sendChatAsync(event.command, ConnJson.ChatChannel.ChatChannelType.BLOCK_COMMAND, COMMAND_BLOCK_SENDER_NAME);
     }
 
     public static void sendChatAsync(String message, ConnJson.ChatChannel.ChatChannelType type, String sender) {
