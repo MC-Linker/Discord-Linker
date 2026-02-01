@@ -4,8 +4,12 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 
 public interface LinkerServer {
+    String COMMAND_NO_OUTPUT_SUCCESS = "Command executed successfully with no output.";
+    String COMMAND_NO_OUTPUT_FAIL = "Command failed to execute with no output.";
+
     String getServerName();
 
     int getMaxPlayers();
@@ -72,7 +76,9 @@ public interface LinkerServer {
 
     /**
      * Runs a command on the server console and returns the output as a string.
-     * May return an empty string if there is no output.
+     *
+     * @return A CompletableFuture that will complete with the command output.
+     * If there is no output, the output depends on the success: COMMAND_NO_OUTPUT_SUCCESS or COMMAND_NO_OUTPUT_FAIL.
      */
-    String runCommand(String command);
+    CompletableFuture<String> executeCommand(String command);
 }

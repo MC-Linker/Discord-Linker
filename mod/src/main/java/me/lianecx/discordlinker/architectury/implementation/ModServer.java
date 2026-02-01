@@ -7,14 +7,22 @@ import dev.architectury.platform.Platform;
 import me.lianecx.discordlinker.common.abstraction.LinkerOfflinePlayer;
 import me.lianecx.discordlinker.common.abstraction.LinkerPlayer;
 import me.lianecx.discordlinker.common.abstraction.LinkerServer;
+import net.minecraft.commands.CommandSource;
+import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.network.chat.*;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.storage.LevelResource;
+import net.minecraft.world.phys.Vec2;
+import net.minecraft.world.phys.Vec3;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 import static me.lianecx.discordlinker.architectury.util.URLComponent.buildURLComponent;
@@ -75,10 +83,11 @@ public final class ModServer implements LinkerServer {
 
         // may block (creates offline profile if couldn't fetch)
         GameProfile profile = server.getProfileCache()
+                //? if <1.18 {
+                //.get(name);
+                //? } else {
                 .get(name)
-                //? if >=1.18
-                .orElse(null)
-                ;
+                .orElse(null);//? }
         if(profile != null) return new LinkerOfflinePlayer(profile.getId().toString(), profile.getName());
         return null;
     }
@@ -95,10 +104,12 @@ public final class ModServer implements LinkerServer {
         if(server.getProfileCache() == null) return null;
 
         GameProfile profile = server.getProfileCache()
+                //? if <1.18 {
+                //.get(uuid);
+                //? } else {
                 .get(uuid)
-                //? if >=1.18
-                .orElse(null)
-                ;
+                .orElse(null);//? }
+
         if(profile != null) return new LinkerOfflinePlayer(profile.getId().toString(), profile.getName());
 
         //? if <1.21 {
@@ -161,8 +172,70 @@ public final class ModServer implements LinkerServer {
     }
 
     @Override
-    public String runCommand(String command) {
-        //TODO implement
-        return "";
+    public CompletableFuture<String> executeCommand(String command) {
+        CompletableFuture<String> future = new CompletableFuture<>();
+        StringBuilder output = new StringBuilder();
+
+        ServerLevel serverLevel = server.overworld();
+        CommandSourceStack source = new CommandSourceStack(
+                new CommandSource() {
+
+                    //? if >=1.19 {
+                    @Override
+                    public void sendSystemMessage(Component component) {
+                        output.append(component.getString()).append('\n');
+                    }
+
+                    //? } else {
+                    /*@Override
+                    public void sendMessage(@NotNull Component component, @NotNull UUID senderUUID) {
+                        output.append(component.getString()).append('\n');
+                    }
+                    *///? }
+
+                    @Override
+                    public boolean acceptsSuccess() {
+                        return true;
+                    }
+
+                    @Override
+                    public boolean acceptsFailure() {
+                        return true;
+                    }
+
+                    @Override
+                    public boolean shouldInformAdmins() {
+                        return false;
+                    }
+                },
+                serverLevel == null ? Vec3.ZERO : Vec3.atLowerCornerOf(serverLevel.getSharedSpawnPos()),
+                Vec2.ZERO,
+                server.overworld(),
+                4, // permission level
+                "Discord",
+                //? if <1.19 {
+                /*new TextComponent("Discord"),
+                 *///? } else
+                Component.literal("Discord"),
+                server,
+                null
+        ).withCallback((context, success/*? if <1.21 {*/, result /*? }*/) -> {
+            String outStr = output.toString().trim();
+            if(outStr.isEmpty())
+                outStr = success /*? if >=1.21 {*/ /*> 0 *//*? }*/ ? COMMAND_NO_OUTPUT_SUCCESS : COMMAND_NO_OUTPUT_FAIL;
+            future.complete(outStr);
+        });
+
+        try {
+            //? if >=1.19 {
+            server.getCommands().performPrefixedCommand(source, command);
+             //? } else
+            //server.getCommands().performCommand(source, command);
+        }
+        catch(Exception e) {
+            future.complete("Error executing command: " + e.getMessage());
+        }
+
+        return future;
     }
 }
