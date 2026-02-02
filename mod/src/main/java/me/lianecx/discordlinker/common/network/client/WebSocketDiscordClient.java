@@ -64,11 +64,21 @@ public final class WebSocketDiscordClient implements DiscordClient {
 
         Socket socket = IO.socket(BOT_URI, ioOptions);
 
-        socket.on(Socket.EVENT_CONNECT_ERROR, args -> getLogger().info(MinecraftChatColor.RED + "Could not reach the Discord Bot! Reconnecting..."));
+        socket.on(Socket.EVENT_CONNECT_ERROR, args -> {
+            try {
+                String message = JsonUtil.parseJsonObject(args).get("message").getAsString();
+                // Handled elsewhere, no reconnect
+                if(message.equals("Unauthorized") || message.equals("Server Error")) return;
+            }
+            catch(Exception ignored) {}
+
+            getLogger().info(MinecraftChatColor.RED + "Could not reach the Discord Bot! Reconnecting...");
+        });
         socket.on(Socket.EVENT_CONNECT, args -> getLogger().info(MinecraftChatColor.GREEN + "Connected to the Discord Bot!"));
 
         socket.on(Socket.EVENT_DISCONNECT, args -> {
-            if(args[0].equals("io server disconnect")) { // Server initiated disconnect, do not reconnect
+            // Server or client initiated disconnect, no reconnect
+            if(args[0].equals("io server disconnect") || args[0].equals("io client disconnect")) {
                 getLogger().info(MinecraftChatColor.RED + "Disconnected from the Discord Bot!");
                 if(getConnJson() == null) {
                     getLogger().info(MinecraftChatColor.YELLOW + "No connection data found to clean up.");
@@ -97,7 +107,7 @@ public final class WebSocketDiscordClient implements DiscordClient {
             public void call(Object... args) {
                 callback.accept(true);
                 socket.off(Socket.EVENT_CONNECT, this);
-                socket.off(Socket.EVENT_DISCONNECT, errorListener.get());
+                socket.off(Socket.EVENT_CONNECT_ERROR, errorListener.get());
             }
         });
 
@@ -106,14 +116,13 @@ public final class WebSocketDiscordClient implements DiscordClient {
             public void call(Object... args) {
                 callback.accept(false);
                 socket.off(Socket.EVENT_CONNECT, connectListener.get());
-                socket.off(Socket.EVENT_DISCONNECT, this);
+                socket.off(Socket.EVENT_CONNECT_ERROR, this);
             }
         });
 
         socket.on(Socket.EVENT_CONNECT, connectListener.get());
-        socket.on(Socket.EVENT_DISCONNECT, errorListener.get());
+        socket.on(Socket.EVENT_CONNECT_ERROR, errorListener.get());
 
-        getLogger().info("Client attempting to connect to the Discord Bot...");
         socket.connect();
     }
 

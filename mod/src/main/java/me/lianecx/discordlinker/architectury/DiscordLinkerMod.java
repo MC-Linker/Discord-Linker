@@ -1,5 +1,8 @@
 package me.lianecx.discordlinker.architectury;
 
+//? if <=1.16.5 {
+//import dev.architectury.event.events.LifecycleEvent;
+//? } else
 import dev.architectury.event.events.common.LifecycleEvent;
 import me.lianecx.discordlinker.architectury.implementation.*;
 import me.lianecx.discordlinker.common.DiscordLinkerCommon;

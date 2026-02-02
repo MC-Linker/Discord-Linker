@@ -1,7 +1,5 @@
 package me.lianecx.discordlinker.architectury;
 
-import com.mojang.brigadier.arguments.IntegerArgumentType;
-import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.context.CommandContext;
 //? if <=1.16.5 {
 /*import dev.architectury.event.events.CommandRegistrationEvent;
@@ -15,6 +13,7 @@ import java.util.Arrays;
 
 import static com.mojang.brigadier.arguments.IntegerArgumentType.integer;
 import static com.mojang.brigadier.arguments.StringArgumentType.word;
+import static me.lianecx.discordlinker.architectury.util.SnowflakeCodeArgumentType.snowflakeCode;
 import static me.lianecx.discordlinker.common.DiscordLinkerCommon.getMinecraftCommandBus;
 import static net.minecraft.commands.Commands.*;
 
@@ -32,7 +31,7 @@ public final class ModCommands {
                                     .executes(ModCommands::forward))
                     )
                     .then(literal("connect")
-                            .then(argument("code", word())
+                            .then(argument("code", snowflakeCode())
                                     .executes(ModCommands::forward)
                             )
                     )

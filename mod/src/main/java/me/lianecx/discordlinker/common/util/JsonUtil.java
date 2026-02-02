@@ -3,9 +3,12 @@ package me.lianecx.discordlinker.common.util;
 import com.google.gson.*;
 import me.lianecx.discordlinker.common.ConnJson;
 import org.jetbrains.annotations.Nullable;
+import org.json.JSONObject;
 
 import java.io.IOException;
 import java.io.Reader;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class JsonUtil {
 
@@ -53,12 +56,13 @@ public class JsonUtil {
     }
 
     /**
-     * Treats the first object in the given array as a JSON string and attempts to parse it into a JsonObject.
+     * Treats the first object in the given array as a JSON string or JSONObject and attempts to parse it into a JsonObject.
      */
     public static @Nullable JsonObject parseJsonObject(Object[] objects) {
         if(objects.length == 0) return null;
-        if(!(objects[0] instanceof String)) return null;
-        return parseJsonObject((String) objects[0]);
+        if(objects[0] instanceof JSONObject) return parseJsonObject(objects[0].toString());
+        else if(objects[0] instanceof String) return parseJsonObject((String) objects[0]);
+        return null;
     }
 
     public static @Nullable JsonObject parseJsonObject(String jsonString) {
@@ -95,5 +99,13 @@ public class JsonUtil {
         } catch(Exception err) {
             return null;
         }
+    }
+
+    public static @Nullable String parseJsonPropertyFast(String arg, String property) {
+        //Parse with regex
+        Pattern pattern = Pattern.compile("\"" + property + "\"\\s*:\\s*\"([^\"]*)\"");
+        Matcher matcher = pattern.matcher(arg);
+        if(matcher.find()) return matcher.group(1);
+        return null;
     }
 }
