@@ -71,7 +71,7 @@ public final class WebSocketDiscordClient implements DiscordClient {
             if(args[0].equals("io server disconnect")) { // Server initiated disconnect, do not reconnect
                 getLogger().info(MinecraftChatColor.RED + "Disconnected from the Discord Bot!");
                 if(getConnJson() == null) {
-                    getLogger().info(MinecraftChatColor.RED + "No connection data found to clean up.");
+                    getLogger().info(MinecraftChatColor.YELLOW + "No connection data found to clean up.");
                     return;
                 }
                 getConnJson().delete();
@@ -113,6 +113,7 @@ public final class WebSocketDiscordClient implements DiscordClient {
         socket.on(Socket.EVENT_CONNECT, connectListener.get());
         socket.on(Socket.EVENT_DISCONNECT, errorListener.get());
 
+        getLogger().info("Client attempting to connect to the Discord Bot...");
         socket.connect();
     }
 

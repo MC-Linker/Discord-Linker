@@ -113,11 +113,11 @@ public class DiscordLinkerCommon {
         return getInstance().minecraftCommandBus;
     }
 
-    public static void shutdown() {
-        getMinecraftEventBus().emit(new ServerStopEventData());
-        getClientManager().disconnect();
+    public void shutdown() {
+        minecraftEventBus.emit(new ServerStopEventData());
+        clientManager.disconnect();
 
-        getLogger().info(MinecraftChatColor.RED + "Discord-Linker disabled.");
+        logger.info(MinecraftChatColor.RED + "Discord-Linker disabled.");
         discordLinker = null;
     }
 

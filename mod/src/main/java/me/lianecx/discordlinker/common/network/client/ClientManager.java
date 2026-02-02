@@ -131,6 +131,7 @@ public final class ClientManager {
             boolean writeSuccess = ConnJson.update(connJson);
             callback.accept(writeSuccess);
             if(!writeSuccess) {
+                callback.accept(false);
                 disconnect();
                 return completedFuture(DiscordEventJsonResponse.ERROR_WRITE_CONN);
             }
