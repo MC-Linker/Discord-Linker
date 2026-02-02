@@ -14,7 +14,7 @@ public class ChatChannelPayload implements DiscordEventPayload {
 
     @Contract("_ -> new")
     public static ChatChannelPayload decode(Object[] objects) throws InvalidPayloadException {
-        JsonObject payload = JsonUtil.getJsonObjectFromObjects(objects);
+        JsonObject payload = JsonUtil.parseJsonObject(objects);
         if(payload == null) throw new InvalidPayloadException(objects);
 
         ConnJson.ChatChannel channel = JsonUtil.fromJson(payload, ConnJson.ChatChannel.class);

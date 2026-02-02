@@ -12,7 +12,7 @@ public class VerifyUserDiscordEvent implements LinkerSyncDiscordEvent<VerifyUser
 
     @Override
     public VerifyUserPayload decode(Object[] objects) {
-        JsonObject payload = JsonUtil.getJsonObjectFromObjects(objects);
+        JsonObject payload = JsonUtil.parseJsonObject(objects);
         if (payload == null) throw new InvalidPayloadException(objects);
 
         String uuid = payload.get("uuid").getAsString();

@@ -20,7 +20,7 @@ import static me.lianecx.discordlinker.architectury.DiscordLinkerMod.MOD_ID;
 
 public class ModConfig implements LinkerConfig {
 
-    private static final String CONFIG_FILENAME = "linker.yml";
+    private static final String CONFIG_FILENAME = "config.yml";
     private static final String DEFAULT_CONFIG_FILENAME = "config.yml";
 
     private final Yaml YAML;
@@ -40,7 +40,7 @@ public class ModConfig implements LinkerConfig {
 
         YAML = new Yaml(constructor, representer, dumperOptions, loaderOptions);
 
-        this.configFile = new File(new File(configFolder), CONFIG_FILENAME);
+        this.configFile = new File(configFolder, CONFIG_FILENAME);
 
         loadDefaults();
         if(!configFile.exists()) copyDefault();
@@ -58,7 +58,13 @@ public class ModConfig implements LinkerConfig {
 
     private void copyDefault() {
         try(InputStream in = getClass().getClassLoader().getResourceAsStream(DEFAULT_CONFIG_FILENAME)) {
-            if(in != null) Files.copy(in, configFile.toPath());
+            if(in == null) {
+                throw new IllegalStateException("Default config not found: " + DEFAULT_CONFIG_FILENAME);
+            }
+
+            // Create parent directories
+            Files.createDirectories(configFile.toPath().getParent());
+            Files.copy(in, configFile.toPath());
         }
         catch(IOException e) {
             e.printStackTrace();
@@ -198,11 +204,6 @@ public class ModConfig implements LinkerConfig {
     @Override
     public String getTemplateReplyMessage() {
         return getFieldOrDefault("reply_message");
-    }
-
-    @Override
-    public boolean shouldDebug() {
-        return getBoolOrDefault("debug_mode");
     }
 
     @Override

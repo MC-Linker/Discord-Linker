@@ -228,7 +228,7 @@ public final class WebSocketDiscordClient implements DiscordClient {
                 }
 
                 // JSON response
-                JsonObject json = JsonUtil.getJsonObjectFromObjects(args);
+                JsonObject json = JsonUtil.parseJsonObject(args);
                 if(json == null) {
                     callback.accept(null);
                     return;

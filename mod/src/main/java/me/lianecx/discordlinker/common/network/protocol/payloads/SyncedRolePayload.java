@@ -14,7 +14,7 @@ public class SyncedRolePayload implements DiscordEventPayload {
 
     @Contract("_ -> new")
     public static SyncedRolePayload decode(Object[] objects) throws InvalidPayloadException {
-        JsonObject payload = JsonUtil.getJsonObjectFromObjects(objects);
+        JsonObject payload = JsonUtil.parseJsonObject(objects);
         if(payload == null) throw new InvalidPayloadException(objects);
 
         ConnJson.SyncedRole role = JsonUtil.fromJson(payload, ConnJson.SyncedRole.class);

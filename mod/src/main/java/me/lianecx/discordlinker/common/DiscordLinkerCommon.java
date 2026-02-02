@@ -46,18 +46,21 @@ public class DiscordLinkerCommon {
         this.connJson = ConnJson.load(server, logger);
 
         String token = connJson != null ? connJson.getToken() : null;
-        this.clientManager = token != null ? new ClientManager(token) : new ClientManager();
-
-        ClientManager.checkVersion();
-        reconnectToBot();
-
-        logger.info(MinecraftChatColor.GREEN + "Discord-Linker enabled.");
-        minecraftEventBus.emit(new ServerStartEventData());
+        int botPort = config.isTestVersion() ? 81 : config.getBotPort();
+        this.clientManager = token != null ? new ClientManager(token, botPort) : new ClientManager(botPort);
     }
 
     public static synchronized DiscordLinkerCommon init(LinkerLogger logger, LinkerConfig config, LinkerServer server, LinkerScheduler scheduler, TeamsBridge teamsBridge) {
         if(discordLinker != null) throw new IllegalStateException("DiscordLinkerCommon already initialized!");
+        // Initialize instance with fields
         discordLinker = new DiscordLinkerCommon(logger, config, server, scheduler, new TeamsAndGroupsBridge(server, teamsBridge));
+
+        // Init logic
+        ClientManager.checkVersion();
+        discordLinker.reconnectToBot();
+
+        logger.info(MinecraftChatColor.GREEN + "Discord-Linker enabled.");
+        discordLinker.minecraftEventBus.emit(new ServerStartEventData());
         return discordLinker;
     }
 

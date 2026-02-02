@@ -10,8 +10,6 @@ import me.lianecx.discordlinker.common.util.JsonUtil;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.UnsupportedEncodingException;
-import java.net.URLDecoder;
 
 import static me.lianecx.discordlinker.common.util.URLEncoderUtil.decodeURL;
 
@@ -19,7 +17,7 @@ public class PutFileDiscordEvent implements LinkerSyncDiscordEvent<PutFilePayloa
 
     @Override
     public PutFilePayload decode(Object[] objects) throws InvalidPayloadException {
-        JsonObject payload = JsonUtil.getJsonObjectFromObjects(objects);
+        JsonObject payload = JsonUtil.parseJsonObject(objects);
         if(payload == null || objects.length < 2) throw new InvalidPayloadException(objects);
         if(!(objects[1] instanceof InputStream))
             throw new InvalidPayloadException(objects);

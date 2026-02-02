@@ -6,7 +6,6 @@ import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
 import java.io.Reader;
-import java.util.List;
 
 public class JsonUtil {
 
@@ -26,7 +25,7 @@ public class JsonUtil {
         return GSON.toJson(connJson);
     }
 
-    public static ConnJson getConnJson(String jsonString) {
+    public static ConnJson parseConnJson(String jsonString) {
         try {
             return GSON.fromJson(jsonString, ConnJson.class);
         }
@@ -35,7 +34,7 @@ public class JsonUtil {
         }
     }
 
-    public static ConnJson getConnJson(JsonObject jsonObject) {
+    public static ConnJson parseConnJson(JsonObject jsonObject) {
         try {
             return GSON.fromJson(jsonObject, ConnJson.class);
         }
@@ -44,7 +43,7 @@ public class JsonUtil {
         }
     }
 
-    public static ConnJson getConnJson(Reader reader) {
+    public static ConnJson parseConnJson(Reader reader) {
         try {
             return GSON.fromJson(reader, ConnJson.class);
         }
@@ -56,13 +55,13 @@ public class JsonUtil {
     /**
      * Treats the first object in the given array as a JSON string and attempts to parse it into a JsonObject.
      */
-    public static @Nullable JsonObject getJsonObjectFromObjects(Object[] objects) {
+    public static @Nullable JsonObject parseJsonObject(Object[] objects) {
         if(objects.length == 0) return null;
         if(!(objects[0] instanceof String)) return null;
-        return getJsonObjectFromString((String) objects[0]);
+        return parseJsonObject((String) objects[0]);
     }
 
-    public static @Nullable JsonObject getJsonObjectFromString(String jsonString) {
+    public static @Nullable JsonObject parseJsonObject(String jsonString) {
         try {
             JsonElement json = PARSER.parse(jsonString);
             if(!json.isJsonObject()) return null;

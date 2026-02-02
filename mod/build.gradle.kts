@@ -94,8 +94,9 @@ dependencies {
 
     apis.forEach { it.applyDependency(this, env) }
 
+    modCompileOnly("net.luckperms:api:5.4")
+
     implementation("io.socket:socket.io-client:2.1.2")
-    compileOnly("net.luckperms:api:5.4")
     implementation("org.yaml:snakeyaml:2.5")
 }
 

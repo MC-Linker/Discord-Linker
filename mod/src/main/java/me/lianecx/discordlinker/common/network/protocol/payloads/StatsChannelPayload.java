@@ -14,7 +14,7 @@ public class StatsChannelPayload implements DiscordEventPayload {
 
     @Contract("_ -> new")
     public static StatsChannelPayload decode(Object[] objects) throws InvalidPayloadException {
-        JsonObject payload = JsonUtil.getJsonObjectFromObjects(objects);
+        JsonObject payload = JsonUtil.parseJsonObject(objects);
         if(payload == null) throw new InvalidPayloadException(objects);
 
         ConnJson.StatsChannel channel = JsonUtil.fromJson(payload, ConnJson.StatsChannel.class);

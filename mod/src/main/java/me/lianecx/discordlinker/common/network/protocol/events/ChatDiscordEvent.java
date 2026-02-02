@@ -19,7 +19,7 @@ public class ChatDiscordEvent implements LinkerSyncDiscordEvent<ChatPayload> {
 
     @Override
     public ChatPayload decode(Object[] objects) {
-        JsonObject payload = JsonUtil.getJsonObjectFromObjects(objects);
+        JsonObject payload = JsonUtil.parseJsonObject(objects);
         if (payload == null) throw new InvalidPayloadException(objects);
 
         String username = payload.get("username").getAsString();

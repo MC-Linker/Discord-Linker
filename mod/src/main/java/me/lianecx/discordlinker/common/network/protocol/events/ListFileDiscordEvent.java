@@ -8,7 +8,6 @@ import me.lianecx.discordlinker.common.network.protocol.responses.DiscordEventJs
 import me.lianecx.discordlinker.common.util.JsonUtil;
 
 import java.io.IOException;
-import java.net.URLDecoder;
 import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
@@ -18,7 +17,7 @@ import java.util.stream.Stream;
 public class ListFileDiscordEvent implements LinkerSyncDiscordEvent<ListFilePayload> {
     @Override
     public ListFilePayload decode(Object[] objects) {
-        JsonObject payload = JsonUtil.getJsonObjectFromObjects(objects);
+        JsonObject payload = JsonUtil.parseJsonObject(objects);
         if (payload == null) throw new InvalidPayloadException(objects);
 
         String folder = payload.get("folder").getAsString();

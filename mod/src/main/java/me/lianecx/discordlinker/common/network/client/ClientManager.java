@@ -36,16 +36,19 @@ public final class ClientManager {
     public static int DEFAULT_BOT_PORT = 80;
 
     //If snapshot version, request test-bot at port 81 otherwise request main-bot at port 80/config-port
-    public static int BOT_PORT = getConfig().isTestVersion() ? 81 : getConfig().getBotPort();
-    public static URI BOT_URI = URI.create("http://api.mclinker.com:" + BOT_PORT);
+    public static int BOT_PORT;
+    public static URI BOT_URI;
 
     private final LinkerDiscordEventBus linkerDiscordEventBus = new LinkerDiscordEventBus();
 
     private @Nullable DiscordClient client;
 
-    public ClientManager() {}
+    public ClientManager(int botPort) {
+        setBotPort(botPort);
+    }
 
-    public ClientManager(String token) {
+    public ClientManager(String token, int botPort) {
+        setBotPort(botPort);
         this.client = new WebSocketDiscordClient(Collections.singletonMap("token", token), getConnectionQuery());
         client.onAny(linkerDiscordEventBus::emit);
     }
@@ -107,7 +110,7 @@ public final class ClientManager {
             tempClient.setReconnectionAttempts(DEFAULT_RECONNECTION_ATTEMPTS);
             client = tempClient;
 
-            JsonObject dataObject = JsonUtil.getJsonObjectFromObjects(data);
+            JsonObject dataObject = JsonUtil.parseJsonObject(data);
             if(dataObject == null) {
                 callback.accept(false);
                 disconnect();

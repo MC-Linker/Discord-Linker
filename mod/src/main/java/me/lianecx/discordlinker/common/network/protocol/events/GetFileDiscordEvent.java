@@ -9,8 +9,6 @@ import me.lianecx.discordlinker.common.network.protocol.responses.DiscordEventRe
 import me.lianecx.discordlinker.common.util.JsonUtil;
 
 import java.io.File;
-import java.io.UnsupportedEncodingException;
-import java.net.URLDecoder;
 
 import static me.lianecx.discordlinker.common.util.URLEncoderUtil.decodeURL;
 
@@ -18,7 +16,7 @@ public class GetFileDiscordEvent implements LinkerSyncDiscordEvent<GetFilePayloa
 
     @Override
     public GetFilePayload decode(Object[] objects) throws InvalidPayloadException {
-        JsonObject jsonObject = JsonUtil.getJsonObjectFromObjects(objects);
+        JsonObject jsonObject = JsonUtil.parseJsonObject(objects);
         if(jsonObject == null || !jsonObject.has("path")) throw new InvalidPayloadException(objects);
         String path = decodeURL(jsonObject.get("path").getAsString());
         return new GetFilePayload(path);

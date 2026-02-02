@@ -86,7 +86,7 @@ public class ConnJson {
     }
 
     public static boolean update(JsonObject connJson) {
-        ConnJson conn = JsonUtil.getConnJson(connJson);
+        ConnJson conn = JsonUtil.parseConnJson(connJson);
         if(conn == null) return false;
         setConnJson(conn);
         return conn.write();
@@ -100,7 +100,7 @@ public class ConnJson {
         Path connJsonPath = Paths.get(server.getDataFolder() + CONNJSON_FILENAME);
         if(Files.exists(connJsonPath)) {
             try(Reader connReader = Files.newBufferedReader(Paths.get(server.getDataFolder() + CONNJSON_FILENAME))) {
-                 return JsonUtil.getConnJson(connReader);
+                return JsonUtil.parseConnJson(connReader);
             }
             catch(IOException ignored) {
                 logger.error(MinecraftChatColor.RED + "Failed to read connection.conn file! Please restart your server or reconnect in Discord using `/connect`.");
