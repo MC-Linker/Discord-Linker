@@ -4,6 +4,8 @@ import me.lianecx.discordlinker.common.DiscordLinkerCommon;
 import me.lianecx.discordlinker.spigot.implementation.*;
 import org.bukkit.plugin.java.JavaPlugin;
 
+import static me.lianecx.discordlinker.common.DiscordLinkerCommon.getInstance;
+
 public class DiscordLinkerSpigot extends JavaPlugin {
 
     @Override
@@ -21,5 +23,10 @@ public class DiscordLinkerSpigot extends JavaPlugin {
         getCommand("linker").setTabCompleter(new SpigotCommands());
         getCommand("discord").setExecutor(new SpigotCommands());
         getCommand("verify").setExecutor(new SpigotCommands());
+    }
+
+    @Override
+    public void onDisable() {
+        getInstance().shutdown();
     }
 }
