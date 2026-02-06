@@ -24,6 +24,7 @@ import java.net.URI;
 import java.net.URL;
 import java.security.SecureRandom;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 
 import static java.util.concurrent.CompletableFuture.completedFuture;
@@ -75,25 +76,19 @@ public final class ClientManager {
 
     /**
      * Connects to the bot with the saved token passed in the constructor.
-     *
-     * @param callback The callback to run when the connection is established or fails.
      */
-    public void reconnect(Consumer<Boolean> callback) {
-        if(client == null) {
-            callback.accept(false);
-            return;
-        }
+    public CompletableFuture<Boolean> reconnect() {
+        if(client == null) return completedFuture(false);
         client.disconnect();
-        client.connect(callback);
+        return client.connect();
     }
 
     /**
      * Connects to the bot with a verification code for the first time.
      *
-     * @param code     The verification code to connect with.
-     * @param callback The callback to run when the connection is established or fails.
+     * @param code The verification code to connect with.
      */
-    public void connectWithCode(String code, Consumer<Boolean> callback) {
+    public CompletableFuture<Boolean> connectWithCode(String code) {
         disconnect();
 
         //Create random 32-character hex string as token
@@ -104,6 +99,8 @@ public final class ClientManager {
 
         WebSocketDiscordClient tempClient = new WebSocketDiscordClient(auth, getConnectionQuery(), 5);
 
+        CompletableFuture<Boolean> future = new CompletableFuture<>();
+
         //Set listeners
         tempClient.once("auth-success", data -> {
             //Code is valid, set the adapter to the new one
@@ -112,7 +109,7 @@ public final class ClientManager {
 
             JsonObject dataObject = JsonUtil.parseJsonObject(data);
             if(dataObject == null) {
-                callback.accept(false);
+                future.complete(false);
                 disconnect();
                 return completedFuture(new DiscordEventJsonResponse(DiscordEventJsonResponse.JsonStatus.ERROR, "Invalid payload: " + Arrays.toString(data)));
             }
@@ -129,7 +126,7 @@ public final class ClientManager {
                 connJson.add("requiredRoleToJoin", dataObject.get("requiredRoleToJoin"));
 
             boolean writeSuccess = ConnJson.update(connJson);
-            callback.accept(writeSuccess);
+            future.complete(writeSuccess);
             if(!writeSuccess) {
                 disconnect();
                 return completedFuture(DiscordEventJsonResponse.ERROR_WRITE_CONN);
@@ -138,15 +135,16 @@ public final class ClientManager {
             return completedFuture(DiscordEventJsonResponse.SUCCESS);
         });
 
-        tempClient.connect(connected -> {
+        tempClient.connect().thenAccept(connected -> {
             //If connected, the bot will call auth-success above
             if(connected) return;
 
             tempClient.disconnect();
-            callback.accept(false);
+            future.complete(false);
             //Connect to old adapter if it exists
-            reconnect(ignored -> {});
+            reconnect();
         });
+        return future;
     }
 
     public void chat(ConnJson.ChatChannel.ChatChannelType type) {

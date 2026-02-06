@@ -1,13 +1,21 @@
 package me.lianecx.discordlinker.common.abstraction.core;
 
-public interface LinkerLogger {
-    //TODO Debug Flag
+public abstract class LinkerLogger {
+    protected boolean debug;
 
-    void info(String message);
+    public void setDebug(boolean enabled) {
+        this.debug = enabled;
+    }
 
-    void warn(String message);
+    public boolean isDebug() {
+        return debug;
+    }
 
-    void error(String message);
+    public abstract void info(String message);
 
-    void debug(String message);
+    public abstract void warn(String message);
+
+    public abstract void error(String message);
+
+    public abstract void debug(String message);
 }

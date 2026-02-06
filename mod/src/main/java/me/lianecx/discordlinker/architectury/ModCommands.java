@@ -24,18 +24,19 @@ public final class ModCommands {
 
             // /linker reload|bot_port|message|private_message|connect|disconnect
             dispatcher.register(literal("linker")
-                    .then(literal("reload").executes(ModCommands::forward))
-                    .then(literal("bot_port")
-                            .executes(ModCommands::forward)
-                            .then(argument("port", integer(1, 65535))
-                                    .executes(ModCommands::forward))
-                    )
                     .then(literal("connect")
                             .then(argument("code", snowflakeCode())
                                     .executes(ModCommands::forward)
                             )
                     )
                     .then(literal("disconnect").executes(ModCommands::forward))
+                    .then(literal("bot_port")
+                            .executes(ModCommands::forward)
+                            .then(argument("port", integer(1, 65535))
+                                    .executes(ModCommands::forward))
+                    )
+                    .then(literal("debug").executes(ModCommands::forward))
+                    .then(literal("reload").executes(ModCommands::forward))
             );
 
             // /verify <code>

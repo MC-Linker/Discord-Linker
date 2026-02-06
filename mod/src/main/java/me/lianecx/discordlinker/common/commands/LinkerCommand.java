@@ -12,7 +12,7 @@ import static me.lianecx.discordlinker.common.DiscordLinkerCommon.*;
 
 public class LinkerCommand implements LinkerMinecraftCompletableCommand {
 
-    private final List<String> suggestions = Lists.newArrayList("reload", "bot_port", "connect", "disconnect");
+    private final List<String> suggestions = Lists.newArrayList("connect", "disconnect", "bot_port", "debug", "reload");
 
     @Override
     public void execute(LinkerCommandSender sender, String[] args) {
@@ -26,10 +26,15 @@ public class LinkerCommand implements LinkerMinecraftCompletableCommand {
         }
 
         switch(args[0]) {
+            case "debug":
+                boolean newDebug = !getLogger().isDebug();
+                getLogger().setDebug(newDebug);
+                sender.sendMessage(MinecraftChatColor.GREEN + "Successfully set debug to " + MinecraftChatColor.DARK_AQUA + newDebug + MinecraftChatColor.GREEN + ".");
+                break;
             case "reload":
                 getConfig().reload();
 
-                getClientManager().reconnect(connected -> sender.sendMessage(MinecraftChatColor.GREEN + "Successfully reloaded config."));
+                getClientManager().reconnect().thenAccept(connected -> sender.sendMessage(MinecraftChatColor.GREEN + "Successfully reloaded config."));
                 break;
             case "bot_port":
                 if(args.length == 1) {
@@ -75,7 +80,7 @@ public class LinkerCommand implements LinkerMinecraftCompletableCommand {
 
                 String code = args[1];
                 sender.sendMessage(MinecraftChatColor.YELLOW + "Attempting to connect to the Discord bot...");
-                getClientManager().connectWithCode(code, success -> {
+                getClientManager().connectWithCode(code).thenAccept(success -> {
                     if(success)
                         sender.sendMessage(MinecraftChatColor.GREEN + "Successfully connected to Discord!");
                     else

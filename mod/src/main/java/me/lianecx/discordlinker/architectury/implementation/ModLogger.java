@@ -5,12 +5,13 @@ import me.lianecx.discordlinker.common.abstraction.core.LinkerLogger;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-public class ModLogger implements LinkerLogger {
+public class ModLogger extends LinkerLogger {
 
     private final Logger logger;
 
-    public ModLogger() {
+    public ModLogger(boolean debug) {
         this.logger = LogManager.getLogger(DiscordLinkerMod.MOD_ID);
+        this.debug = debug;
     }
 
     @Override
@@ -30,6 +31,6 @@ public class ModLogger implements LinkerLogger {
 
     @Override
     public void debug(String message) {
-        logger.debug(message);
+        if(debug) logger.info(message);
     }
 }

@@ -10,15 +10,16 @@ public class DiscordLinkerSpigot extends JavaPlugin {
 
     @Override
     public void onEnable() {
+        SpigotConfig config = new SpigotConfig(this);
         DiscordLinkerCommon.init(
-                new SpigotLogger(getLogger()),
-                new SpigotConfig(this),
+                new SpigotLogger(this.getLogger(), config.isTestVersion()),
+                config,
                 new SpigotServer(getDataFolder().getAbsolutePath()),
                 new SpigotScheduler(this),
                 new SpigotTeamsBridge()
         );
 
-        getServer().getPluginManager().registerEvents(new SpigotEvents(), this);
+        this.getServer().getPluginManager().registerEvents(new SpigotEvents(), this);
         getCommand("linker").setExecutor(new SpigotCommands());
         getCommand("linker").setTabCompleter(new SpigotCommands());
         getCommand("discord").setExecutor(new SpigotCommands());

@@ -126,7 +126,7 @@ public class DiscordLinkerCommon {
         if(protocol == null)
             logger.warn(MinecraftChatColor.YELLOW + "No Discord server connected! Please invite the \"MC-Linker\" Discord-Bot (https://discord.com/discovery/applications/712759741528408064) and run `/connect` in your Discord server.");
         else if(protocol == ConnJson.ConnProtocol.WEBSOCKET) {
-            clientManager.reconnect(connected -> {
+            clientManager.reconnect().thenAccept(connected -> {
                 if(!connected) return;
                 clientManager.chat(ConnJson.ChatChannel.ChatChannelType.START);
                 clientManager.updateStatsChannel(ConnJson.StatsChannel.StatsChannelEvent.ONLINE);

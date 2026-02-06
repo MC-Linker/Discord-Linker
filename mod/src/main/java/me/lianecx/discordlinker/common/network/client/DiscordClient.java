@@ -10,7 +10,7 @@ import java.util.function.Function;
 
 public interface DiscordClient {
 
-    void connect(Consumer<Boolean> onReady);
+    CompletableFuture<Boolean> connect();
 
     void disconnect();
 

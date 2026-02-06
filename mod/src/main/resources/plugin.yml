@@ -11,7 +11,7 @@ softdepend:
 commands:
   linker:
     description: "Settings for the Discord-Linker plugin"
-    usage: "/linker reload|bot_port|connect|disconnect"
+    usage: "/linker connect|disconnect|bot_port|debug|reload"
     permission: "discordlinker.linker"
     permission-message: "You do not have permission to use this command."
   verify:

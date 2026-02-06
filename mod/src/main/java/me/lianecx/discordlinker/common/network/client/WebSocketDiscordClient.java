@@ -15,14 +15,14 @@ import me.lianecx.discordlinker.common.network.protocol.responses.DiscordEventRe
 import okhttp3.Dispatcher;
 import okhttp3.OkHttpClient;
 
+import java.io.FileInputStream;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
+import java.util.Arrays;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -97,34 +97,39 @@ public final class WebSocketDiscordClient implements DiscordClient {
     }
 
     @Override
-    public void connect(Consumer<Boolean> callback) {
-        //Add listeners and remove them after the first event
-        AtomicReference<Emitter.Listener> connectListener = new AtomicReference<>();
-        AtomicReference<Emitter.Listener> errorListener = new AtomicReference<>();
+    public CompletableFuture<Boolean> connect() {
+        CompletableFuture<Boolean> future = new CompletableFuture<>();
+        AtomicBoolean done = new AtomicBoolean(false);
 
-        connectListener.set(new Emitter.Listener() {
-            @Override
-            public void call(Object... args) {
-                callback.accept(true);
-                socket.off(Socket.EVENT_CONNECT, this);
-                socket.off(Socket.EVENT_CONNECT_ERROR, errorListener.get());
+        final Emitter.Listener[] connectListener = new Emitter.Listener[1];
+        final Emitter.Listener[] errorListener = new Emitter.Listener[1];
+
+        Runnable cleanup = () -> {
+            socket.off(Socket.EVENT_CONNECT, connectListener[0]);
+            socket.off(Socket.EVENT_CONNECT_ERROR, errorListener[0]);
+        };
+
+        connectListener[0] = args -> {
+            if(done.compareAndSet(false, true)) {
+                cleanup.run();
+                future.complete(true);
             }
-        });
+        };
 
-        errorListener.set(new Emitter.Listener() {
-            @Override
-            public void call(Object... args) {
-                callback.accept(false);
-                socket.off(Socket.EVENT_CONNECT, connectListener.get());
-                socket.off(Socket.EVENT_CONNECT_ERROR, this);
+        errorListener[0] = args -> {
+            if(done.compareAndSet(false, true)) {
+                cleanup.run();
+                future.complete(false);
             }
-        });
+        };
 
-        socket.on(Socket.EVENT_CONNECT, connectListener.get());
-        socket.on(Socket.EVENT_CONNECT_ERROR, errorListener.get());
+        socket.on(Socket.EVENT_CONNECT, connectListener[0]);
+        socket.on(Socket.EVENT_CONNECT_ERROR, errorListener[0]);
 
         socket.connect();
+        return future;
     }
+
 
     @Override
     public void on(String event, Function<Object[], CompletableFuture<DiscordEventResponse>> handler) {
@@ -170,6 +175,7 @@ public final class WebSocketDiscordClient implements DiscordClient {
     public void onAny(BiFunction<String, Object[], CompletableFuture<DiscordEventResponse>> handler) {
         socket.onAnyIncoming(args -> {
             try {
+                getLogger().debug("[Socket.io] Received raw event: " + Arrays.toString(args));
                 if (args == null || args.length < 1) return;
                 if (!(args[0] instanceof String)) return;
 
@@ -183,8 +189,10 @@ public final class WebSocketDiscordClient implements DiscordClient {
                 data = new Object[dataLength];
                 System.arraycopy(args, 1, data, 0, dataLength);
 
-                CompletableFuture<DiscordEventResponse> respones = handler.apply(event, data);
-                respondToAckFuture(ack, respones);
+                getLogger().debug("[Socket.io] Parsed event: " + event + ", data: " + Arrays.toString(data) + ", ack: " + (ack != null));
+
+                CompletableFuture<DiscordEventResponse> response = handler.apply(event, data);
+                respondToAckFuture(ack, response);
             }
             catch(JsonSyntaxException ignored) {} // Ignore invalid messages
         });
@@ -207,11 +215,14 @@ public final class WebSocketDiscordClient implements DiscordClient {
     }
 
     private void respondToAck(Ack ack, DiscordEventResponse response) {
-        if(response instanceof DiscordEventJsonResponse)
+        if(response instanceof DiscordEventJsonResponse) {
+            getLogger().debug("[Socket.io] Responding to Ack with JSON: " + ((DiscordEventJsonResponse) response).getData());
             ack.call(((DiscordEventJsonResponse) response).getData());
+        }
         else if(response instanceof DiscordEventFileResponse) {
             try {
-                byte[] file = Files.readAllBytes(Paths.get(((DiscordEventFileResponse) response).getPath()));
+                getLogger().debug("[Socket.io] Responding to Ack with file: " + ((DiscordEventFileResponse) response).getPath());
+                FileInputStream file = new FileInputStream(((DiscordEventFileResponse) response).getPath());
                 ack.call(file);
             }
             catch(IOException e) {

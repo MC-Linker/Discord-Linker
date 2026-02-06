@@ -5,12 +5,13 @@ import org.bukkit.Bukkit;
 
 import java.util.logging.Logger;
 
-public class SpigotLogger implements LinkerLogger {
+public class SpigotLogger extends LinkerLogger {
 
     private final Logger logger;
 
-    public SpigotLogger(Logger logger) {
+    public SpigotLogger(Logger logger, boolean debug) {
         this.logger = logger;
+        this.debug = debug;
     }
 
     @Override
@@ -30,6 +31,6 @@ public class SpigotLogger implements LinkerLogger {
 
     @Override
     public void debug(String message) {
-        logger.fine(message);
+        if(debug) logger.info(message);
     }
 }
