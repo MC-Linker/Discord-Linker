@@ -18,6 +18,8 @@ public class JsonUtil {
 
     private static final TypeAdapter<JsonElement> strictGsonAdapter = new Gson().getAdapter(JsonElement.class);
 
+    private JsonUtil() {}
+
     public static JsonObject singleton(String key, String value) {
         JsonObject jsonObject = new JsonObject();
         jsonObject.addProperty(key, value);

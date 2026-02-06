@@ -44,14 +44,22 @@ public final class ClientManager {
 
     private @Nullable DiscordClient client;
 
+    /**
+     * Initializes the ClientManager with the given bot port.
+     * The bot port is used to determine which bot to connect to (main/test/custom bot).
+     */
     public ClientManager(int botPort) {
         setBotPort(botPort);
     }
 
-    public ClientManager(String token, int botPort) {
+    /**
+     * Initializes the ClientManager with the given token and bot port.
+     * The token is used to authenticate with the bot, and the bot port is used to determine which bot to connect to (main/test/custom bot).
+     * The connection query is generated from the server's information and sent to the bot upon connection for authentication and configuration purposes.
+     */
+    public ClientManager(String token, int botPort, LinkerServer server) {
         setBotPort(botPort);
-        this.client = new WebSocketDiscordClient(Collections.singletonMap("token", token), getConnectionQuery());
-        client.onAny(linkerDiscordEventBus::emit);
+        this.client = new WebSocketDiscordClient(Collections.singletonMap("token", token), getConnectionQuery(server));
     }
 
     public void setBotPort(int port) {
@@ -80,7 +88,10 @@ public final class ClientManager {
     public CompletableFuture<Boolean> reconnect() {
         if(client == null) return completedFuture(false);
         client.disconnect();
-        return client.connect();
+        return client.connect().thenApply(connected -> {
+            if(connected) client.onAny(linkerDiscordEventBus::emit);
+            return connected;
+        });
     }
 
     /**
@@ -97,7 +108,7 @@ public final class ClientManager {
         auth.put("code", code);
         auth.put("token", token);
 
-        WebSocketDiscordClient tempClient = new WebSocketDiscordClient(auth, getConnectionQuery(), 5);
+        WebSocketDiscordClient tempClient = new WebSocketDiscordClient(auth, getConnectionQuery(getServer()), 5);
 
         CompletableFuture<Boolean> future = new CompletableFuture<>();
 
@@ -132,6 +143,7 @@ public final class ClientManager {
                 return completedFuture(DiscordEventJsonResponse.ERROR_WRITE_CONN);
             }
 
+            client.onAny(linkerDiscordEventBus::emit);
             return completedFuture(DiscordEventJsonResponse.SUCCESS);
         });
 
@@ -152,6 +164,8 @@ public final class ClientManager {
     }
 
     public void chat(String message, ConnJson.ChatChannel.ChatChannelType type, String player) {
+        if(getConnJson() == null || getConnJson().getChatChannels().isEmpty()) return;
+
         JsonObject payload = new JsonObject();
         payload.addProperty("message", message);
         payload.addProperty("type", type.toString());
@@ -160,14 +174,17 @@ public final class ClientManager {
     }
 
     public void updateStatsChannel(ConnJson.StatsChannel.StatsChannelEvent event) {
+        if(getConnJson() == null || getConnJson().getStatsChannels().isEmpty()) return;
         send("update-stats-channels", JsonUtil.singleton("event", event.toString()));
     }
 
     public void addSyncedRoleMember(String name, boolean isGroup, UUID uuid) {
+        if(getConnJson() == null || getConnJson().getSyncedRoles().isEmpty()) return;
         updateSyncedRoleMember(name, isGroup, uuid, "add");
     }
 
     public void removeSyncedRoleMember(String name, boolean isGroup, UUID uuid) {
+        if(getConnJson() == null || getConnJson().getSyncedRoles().isEmpty()) return;
         updateSyncedRoleMember(name, isGroup, uuid, "remove");
     }
 
@@ -186,7 +203,7 @@ public final class ClientManager {
     }
 
     public void removeSyncedRole(String name, boolean isGroup) {
-        if(getConnJson() == null || getConnJson().getSyncedRoles() == null) return;
+        if(getConnJson() == null || getConnJson().getSyncedRoles().isEmpty()) return;
 
         getSyncedRoleAndUpdatePlayers(name, isGroup, role -> {
             if(role == null) return;
@@ -239,6 +256,12 @@ public final class ClientManager {
     }
 
     public void hasRequiredRole(String uuid, Consumer<HasRequiredRoleResponses> callback) {
+        // If no join requirement to join is set, return true
+        if(getConnJson() == null || getConnJson().getRequiredRoleToJoin() == null) {
+            callback.accept(HasRequiredRoleResponses.TRUE);
+            return;
+        }
+
         JsonObject verifyJson = new JsonObject();
         verifyJson.addProperty("uuid", uuid);
 
@@ -322,8 +345,7 @@ public final class ClientManager {
         client.disconnect();
     }
 
-    public @NotNull Map<String, String> getConnectionQuery() {
-        LinkerServer server = getServer();
+    public @NotNull Map<String, String> getConnectionQuery(LinkerServer server) {
         boolean isMinehut = server.isPluginOrModEnabled("MinehutPlugin");
 
         Map<String, String> response = new HashMap<>();

@@ -10,6 +10,7 @@ import me.lianecx.discordlinker.common.util.JsonUtil;
 import me.lianecx.discordlinker.common.util.MinecraftChatColor;
 import org.jetbrains.annotations.Nullable;
 
+import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.Reader;
@@ -97,9 +98,9 @@ public class ConnJson {
      * Takes in the server and logger as this is likely called during initialization.
      */
     public static @Nullable ConnJson load(LinkerServer server, LinkerLogger logger) {
-        Path connJsonPath = Paths.get(server.getDataFolder() + CONNJSON_FILENAME);
+        Path connJsonPath = Paths.get(server.getDataFolder(), CONNJSON_FILENAME);
         if(Files.exists(connJsonPath)) {
-            try(Reader connReader = Files.newBufferedReader(Paths.get(server.getDataFolder() + CONNJSON_FILENAME))) {
+            try(Reader connReader = Files.newBufferedReader(Paths.get(server.getDataFolder(), CONNJSON_FILENAME))) {
                 return JsonUtil.parseConnJson(connReader);
             }
             catch(IOException ignored) {
@@ -115,7 +116,7 @@ public class ConnJson {
     public boolean delete() {
         setConnJson(null);
 
-        Path connJsonPath = Paths.get(getServer().getDataFolder() + CONNJSON_FILENAME);
+        Path connJsonPath = Paths.get(getServer().getDataFolder(), CONNJSON_FILENAME);
         if(!Files.exists(connJsonPath)) return true;
 
         try {
@@ -130,7 +131,8 @@ public class ConnJson {
     }
 
     public boolean write() {
-        try (FileWriter writer = new FileWriter(getServer().getDataFolder() + CONNJSON_FILENAME)) {
+        try(FileWriter writer = new FileWriter(new File(getServer().getDataFolder(), CONNJSON_FILENAME))) {
+            Files.createDirectories(Paths.get(getServer().getDataFolder()));
             writer.write(JsonUtil.toJsonString(this));
             return true;
         }
@@ -142,7 +144,13 @@ public class ConnJson {
     }
 
     public enum ConnProtocol {
-        WEBSOCKET,
+        @SerializedName("websocket")
+        WEBSOCKET;
+
+        @Override
+        public String toString() {
+            return name().toLowerCase();
+        }
     }
 
     public static class RequiredRoleToJoin {

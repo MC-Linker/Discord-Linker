@@ -1,85 +1,65 @@
 package me.lianecx.discordlinker.architectury.implementation;
 
 import dev.architectury.platform.Platform;
+import me.lianecx.discordlinker.common.util.YamlUtil;
 import me.lianecx.discordlinker.common.abstraction.core.LinkerConfig;
 import org.jetbrains.annotations.NotNull;
-import org.yaml.snakeyaml.DumperOptions;
-import org.yaml.snakeyaml.LoaderOptions;
-import org.yaml.snakeyaml.Yaml;
-import org.yaml.snakeyaml.comments.CommentLine;
-import org.yaml.snakeyaml.constructor.BaseConstructor;
-import org.yaml.snakeyaml.constructor.SafeConstructor;
-import org.yaml.snakeyaml.nodes.*;
-import org.yaml.snakeyaml.representer.Representer;
+import org.yaml.snakeyaml.nodes.MappingNode;
+import org.yaml.snakeyaml.nodes.NodeTuple;
+import org.yaml.snakeyaml.nodes.ScalarNode;
 
-import java.io.*;
+import java.io.IOException;
 import java.nio.file.Files;
-import java.util.List;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 import static me.lianecx.discordlinker.architectury.DiscordLinkerMod.MOD_ID;
 
 public class ModConfig implements LinkerConfig {
 
     private static final String CONFIG_FILENAME = "config.yml";
-    private static final String DEFAULT_CONFIG_FILENAME = "config.yml";
 
-    private final Yaml YAML;
-    private final File configFile;
+    private final Path configFile;
 
     private MappingNode defaults;
     private MappingNode config;
 
     public ModConfig(String configFolder) {
-        LoaderOptions loaderOptions = new LoaderOptions();
-        loaderOptions.setProcessComments(true);
-        DumperOptions dumperOptions = new DumperOptions();
-        dumperOptions.setProcessComments(true);
-
-        BaseConstructor constructor = new SafeConstructor(loaderOptions);
-        Representer representer = new Representer(dumperOptions);
-
-        YAML = new Yaml(constructor, representer, dumperOptions, loaderOptions);
-
-        this.configFile = new File(configFolder, CONFIG_FILENAME);
+        this.configFile = Paths.get(configFolder, CONFIG_FILENAME);
 
         loadDefaults();
-        if(!configFile.exists()) copyDefault();
+        if(Files.notExists(configFile)) copyDefault();
         load();
     }
 
     private void loadDefaults() {
-        try(InputStream in = getClass().getClassLoader().getResourceAsStream(DEFAULT_CONFIG_FILENAME)) {
-            if(in != null) this.defaults = (MappingNode) YAML.compose(new InputStreamReader(in));
+        try {
+            defaults = YamlUtil.loadResource(getClass().getClassLoader(), CONFIG_FILENAME);
         }
         catch(IOException e) {
-            e.printStackTrace();
+            throw new RuntimeException("Failed to load default config", e);
         }
     }
 
     private void copyDefault() {
-        try(InputStream in = getClass().getClassLoader().getResourceAsStream(DEFAULT_CONFIG_FILENAME)) {
-            if(in == null) {
-                throw new IllegalStateException("Default config not found: " + DEFAULT_CONFIG_FILENAME);
-            }
-
-            // Create parent directories
-            Files.createDirectories(configFile.toPath().getParent());
-            Files.copy(in, configFile.toPath());
+        try {
+            Files.createDirectories(configFile.getParent());
+            Files.copy(getClass().getClassLoader().getResourceAsStream(CONFIG_FILENAME), configFile);
         }
-        catch(IOException e) {
-            e.printStackTrace();
+        catch(Exception e) {
+            throw new RuntimeException("Failed to copy default config", e);
         }
     }
 
     private void load() {
-        try(InputStream in = Files.newInputStream(configFile.toPath())) {
-            this.config = (MappingNode) YAML.compose(new InputStreamReader(in));
+        try {
+            config = YamlUtil.load(configFile);
 
             boolean changed = false;
             for(NodeTuple tuple : defaults.getValue()) {
-                String key = ((ScalarNode) tuple.getKeyNode()).getValue();
-                if(getFieldFromMapping(key, config) == null) {
-                    setField(key, ((ScalarNode) tuple.getValueNode()).getValue());
+                String key = YamlUtil.getString(((ScalarNode) tuple.getKeyNode()).getValue(), config);
+                if(key == null) {
+                    YamlUtil.setField(((ScalarNode) tuple.getKeyNode()).getValue(), ((ScalarNode) tuple.getValueNode()).getValue(), config);
                     changed = true;
                 }
             }
@@ -87,74 +67,27 @@ public class ModConfig implements LinkerConfig {
             if(changed) save();
         }
         catch(IOException e) {
-            e.printStackTrace();
+            throw new RuntimeException("Failed to load config", e);
         }
     }
 
-    public void save() {
-        try(Writer writer = new FileWriter(configFile)) {
-            YAML.serialize(config, writer);
+    private void save() {
+        try {
+            YamlUtil.save(configFile, config);
         }
         catch(IOException e) {
-            e.printStackTrace();
+            throw new RuntimeException("Failed to save config", e);
         }
-    }
-
-    private String getFieldFromMapping(String key, MappingNode node) {
-        for(NodeTuple tuple : node.getValue()) {
-            if(((ScalarNode) tuple.getKeyNode()).getValue().equals(key))
-                return ((ScalarNode) tuple.getValueNode()).getValue();
-        }
-        return null;
     }
 
     private @NotNull String getFieldOrDefault(String key) {
-        String value = getFieldFromMapping(key, config);
+        String value = YamlUtil.getString(key, config);
         if(value != null) return value;
 
-        value = getFieldFromMapping(key, defaults);
+        value = YamlUtil.getString(key, defaults);
         if(value != null) return value;
 
         throw new IllegalStateException("Missing config field: " + key);
-    }
-
-    private void setField(String key, Object value) {
-        int index = getNodeTupleIndex(key);
-        NodeTuple oldTuple = index != -1 ? config.getValue().get(index) : null;
-
-        List<CommentLine> blockComments = oldTuple != null ? oldTuple.getKeyNode().getBlockComments() : null;
-        List<CommentLine> inlineComments = oldTuple != null ? oldTuple.getValueNode().getInLineComments() : null;
-
-        Node valueNode;
-        if(value instanceof String)
-            valueNode = new ScalarNode(Tag.STR, (String) value, null, null, DumperOptions.ScalarStyle.DOUBLE_QUOTED);
-        else if(value instanceof Integer)
-            valueNode = new ScalarNode(Tag.INT, value.toString(), null, null, DumperOptions.ScalarStyle.PLAIN);
-        else if(value instanceof Boolean)
-            valueNode = new ScalarNode(Tag.BOOL, value.toString(), null, null, DumperOptions.ScalarStyle.PLAIN);
-        else
-            throw new IllegalArgumentException("Unsupported value type: " + value.getClass());
-
-        if(inlineComments != null)
-            valueNode.setInLineComments(inlineComments);
-
-        if(oldTuple != null)
-            config.getValue().remove(oldTuple);
-
-        ScalarNode keyNode = new ScalarNode(Tag.STR, key, null, null, DumperOptions.ScalarStyle.PLAIN);
-        if(blockComments != null)
-            keyNode.setBlockComments(blockComments);
-
-        config.getValue().add(index == -1 ? config.getValue().size() : index, new NodeTuple(keyNode, valueNode));
-    }
-
-    private int getNodeTupleIndex(String key) {
-        for(int i = 0; i < config.getValue().size(); i++) {
-            NodeTuple tuple = config.getValue().get(i);
-            if(((ScalarNode) tuple.getKeyNode()).getValue().equals(key))
-                return i;
-        }
-        return -1;
     }
 
     private int getIntOrDefault(String key) {
@@ -164,10 +97,6 @@ public class ModConfig implements LinkerConfig {
         catch(NumberFormatException e) {
             throw new IllegalStateException("Invalid number in config field: " + key);
         }
-    }
-
-    private boolean getBoolOrDefault(String key) {
-        return Boolean.parseBoolean(getFieldOrDefault(key));
     }
 
     @Override
@@ -187,7 +116,7 @@ public class ModConfig implements LinkerConfig {
 
     @Override
     public void setBotPort(int port) {
-        setField("bot_port", port);
+        YamlUtil.setField("bot_port", port, config);
         save();
     }
 

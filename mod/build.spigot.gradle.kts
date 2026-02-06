@@ -27,10 +27,10 @@ val properties = mapOf(
 
 dependencies {
     compileOnly("org.spigotmc:spigot-api:${properties["spigot_version_range"]}-R0.1-SNAPSHOT")
-    implementation("org.apache.logging.log4j:log4j-core:2.19.0")
+
     implementation("io.socket:socket.io-client:2.1.2")
-    implementation("io.github.bananapuncher714:nbteditor:7.19.10")
     implementation("org.bstats:bstats-bukkit:3.0.0")
+    implementation("org.yaml:snakeyaml:2.5")
     compileOnly("net.luckperms:api:5.4")
 }
 

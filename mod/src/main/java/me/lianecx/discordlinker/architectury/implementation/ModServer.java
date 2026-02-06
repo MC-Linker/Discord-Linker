@@ -4,28 +4,36 @@ import com.mojang.authlib.GameProfile;
 //? if >=1.21
 //import com.mojang.authlib.yggdrasil.ProfileResult;
 import dev.architectury.platform.Platform;
+import dev.architectury.utils.GameInstance;
 import me.lianecx.discordlinker.common.abstraction.LinkerOfflinePlayer;
 import me.lianecx.discordlinker.common.abstraction.LinkerPlayer;
 import me.lianecx.discordlinker.common.abstraction.LinkerServer;
+import me.lianecx.discordlinker.common.util.YamlUtil;
 import net.minecraft.commands.CommandSource;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.network.chat.*;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.dedicated.DedicatedServerProperties;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.storage.LevelResource;
 import net.minecraft.world.phys.Vec2;
 import net.minecraft.world.phys.Vec3;
+import org.apache.logging.log4j.core.config.yaml.YamlConfiguration;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.yaml.snakeyaml.nodes.MappingNode;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 import static me.lianecx.discordlinker.architectury.util.URLComponent.buildURLComponent;
+import static me.lianecx.discordlinker.common.DiscordLinkerCommon.getLogger;
 
 public final class ModServer implements LinkerServer {
 
@@ -148,7 +156,7 @@ public final class ModServer implements LinkerServer {
 
     @Override
     public boolean isOnline() {
-        return server.getPreventProxyConnections();
+        return server.usesAuthentication();
     }
 
     @Override
@@ -163,13 +171,27 @@ public final class ModServer implements LinkerServer {
 
     @Override
     public String getWorldContainerPath() {
-        return server.getWorldPath(LevelResource.ROOT).getParent().toAbsolutePath().toString();
+        //? if <1.21 {
+        return server.getServerDirectory().getAbsolutePath();
+        //? } else
+        //return server.getServerDirectory().toString();
     }
 
     @Override
     public @Nullable String getFloodgatePrefix() {
-        //TODO
-        return null;
+        //TODO test
+        //Load yaml file
+        File floodgateConfig = Platform.getConfigFolder().resolve("floodgate").resolve("config.yml").toFile();
+        if(!floodgateConfig.exists()) return null;
+
+        try {
+            MappingNode config = YamlUtil.load(floodgateConfig.toPath());
+            return YamlUtil.getString("username-prefix", config);
+        }
+        catch(IOException e) {
+            getLogger().error("Failed to load Floodgate config: " + e.getMessage());
+            return null;
+        }
     }
 
     @Override

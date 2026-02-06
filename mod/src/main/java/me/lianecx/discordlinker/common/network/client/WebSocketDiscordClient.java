@@ -17,6 +17,9 @@ import okhttp3.OkHttpClient;
 
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -65,6 +68,7 @@ public final class WebSocketDiscordClient implements DiscordClient {
         Socket socket = IO.socket(BOT_URI, ioOptions);
 
         socket.on(Socket.EVENT_CONNECT_ERROR, args -> {
+            getLogger().debug("[Socket.io] Connect error: " + Arrays.toString(args));
             try {
                 String message = JsonUtil.parseJsonObject(args).get("message").getAsString();
                 // Handled elsewhere, no reconnect
@@ -74,9 +78,14 @@ public final class WebSocketDiscordClient implements DiscordClient {
 
             getLogger().info(MinecraftChatColor.RED + "Could not reach the Discord Bot! Reconnecting...");
         });
-        socket.on(Socket.EVENT_CONNECT, args -> getLogger().info(MinecraftChatColor.GREEN + "Connected to the Discord Bot!"));
+        socket.on(Socket.EVENT_CONNECT, args -> {
+            getLogger().debug("[Socket.io] Connected with args: " + Arrays.toString(args));
+            getLogger().info(MinecraftChatColor.GREEN + "Connected to the Discord Bot!");
+        });
 
         socket.on(Socket.EVENT_DISCONNECT, args -> {
+            getLogger().debug("[Socket.io] Disconnected with args: " + Arrays.toString(args));
+
             // Server or client initiated disconnect, no reconnect
             if(args[0].equals("io server disconnect") || args[0].equals("io client disconnect")) {
                 getLogger().info(MinecraftChatColor.RED + "Disconnected from the Discord Bot!");
@@ -86,7 +95,10 @@ public final class WebSocketDiscordClient implements DiscordClient {
                 }
                 getConnJson().delete();
             }
-            else getLogger().info(MinecraftChatColor.RED + "Disconnected from the Discord Bot! Reconnecting...");
+            else {
+                getLogger().info(MinecraftChatColor.RED + "Disconnected from the Discord Bot! Reconnecting...");
+                socket.connect();
+            }
         });
 
         this.socket = socket;
@@ -104,21 +116,21 @@ public final class WebSocketDiscordClient implements DiscordClient {
         final Emitter.Listener[] connectListener = new Emitter.Listener[1];
         final Emitter.Listener[] errorListener = new Emitter.Listener[1];
 
-        Runnable cleanup = () -> {
+        Runnable listenerCleanup = () -> {
             socket.off(Socket.EVENT_CONNECT, connectListener[0]);
             socket.off(Socket.EVENT_CONNECT_ERROR, errorListener[0]);
         };
 
         connectListener[0] = args -> {
             if(done.compareAndSet(false, true)) {
-                cleanup.run();
+                listenerCleanup.run();
                 future.complete(true);
             }
         };
 
         errorListener[0] = args -> {
             if(done.compareAndSet(false, true)) {
-                cleanup.run();
+                listenerCleanup.run();
                 future.complete(false);
             }
         };
@@ -222,11 +234,12 @@ public final class WebSocketDiscordClient implements DiscordClient {
         else if(response instanceof DiscordEventFileResponse) {
             try {
                 getLogger().debug("[Socket.io] Responding to Ack with file: " + ((DiscordEventFileResponse) response).getPath());
-                FileInputStream file = new FileInputStream(((DiscordEventFileResponse) response).getPath());
+                byte[] file = Files.readAllBytes(Paths.get(((DiscordEventFileResponse) response).getPath()));
                 ack.call(file);
             }
             catch(IOException e) {
-                throw new RuntimeException(e);
+                getLogger().error("Failed to read file for Ack response: " + e.getMessage());
+                ack.call(new DiscordEventJsonResponse(DiscordEventJsonResponse.JsonStatus.ERROR, "Failed to read file: " + e.getMessage()).getData());
             }
         }
     }

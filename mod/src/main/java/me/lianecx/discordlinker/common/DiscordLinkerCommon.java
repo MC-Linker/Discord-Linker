@@ -47,7 +47,7 @@ public class DiscordLinkerCommon {
 
         String token = connJson != null ? connJson.getToken() : null;
         int botPort = config.isTestVersion() ? 81 : config.getBotPort();
-        this.clientManager = token != null ? new ClientManager(token, botPort) : new ClientManager(botPort);
+        this.clientManager = token != null ? new ClientManager(token, botPort, server) : new ClientManager(botPort);
     }
 
     public static synchronized DiscordLinkerCommon init(LinkerLogger logger, LinkerConfig config, LinkerServer server, LinkerScheduler scheduler, TeamsBridge teamsBridge) {
@@ -60,7 +60,6 @@ public class DiscordLinkerCommon {
         discordLinker.reconnectToBot();
 
         logger.info(MinecraftChatColor.GREEN + "Discord-Linker enabled.");
-        discordLinker.minecraftEventBus.emit(new ServerStartEventData());
         return discordLinker;
     }
 

@@ -5,6 +5,8 @@ import static me.lianecx.discordlinker.common.util.UrlParser.URL_REGEX;
 public class MarkdownUtil {
     public static final String MD_URL_REGEX = "(?i)\\[([^]]+)]\\((" + URL_REGEX + ")\\)";
 
+    private MarkdownUtil() {}
+
     public static String markdownToColorCodes(String markdown) {
         //Format **bold**
         markdown = markdown.replaceAll("\\*\\*(.+?)\\*\\*", "&l$1&r");
