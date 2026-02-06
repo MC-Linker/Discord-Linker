@@ -234,14 +234,17 @@ public final class WebSocketDiscordClient implements DiscordClient {
 
     @Override
     public void send(String event, Object[] payload) {
+        getLogger().debug("[Socket.io] Emitting event: " + event + ", payload: " + Arrays.toString(payload));
         socket.emit(event, payload);
     }
 
     @Override
     public void send(String event, Object[] payload, Consumer<DiscordEventResponse> callback) {
+        getLogger().debug("[Socket.io] Emitting event with callback: " + event + ", payload: " + Arrays.toString(payload));
         socket.emit(event, payload, new AckWithTimeout(5000) {
             @Override
             public void onSuccess(Object... args) {
+                getLogger().debug("[Socket.io] Received raw Ack response: " + Arrays.toString(args));
                 // Assume the response is JSON
                 if(args.length == 0) {
                     callback.accept(null);
@@ -256,6 +259,7 @@ public final class WebSocketDiscordClient implements DiscordClient {
                 }
 
                 DiscordEventJsonResponse response = new DiscordEventJsonResponse(json);
+                getLogger().debug("[Socket.io] Parsed Ack response: " + response.getData());
                 callback.accept(response);
             }
 
