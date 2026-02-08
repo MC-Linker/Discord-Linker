@@ -1,5 +1,6 @@
 package me.lianecx.discordlinker.architectury;
 
+import dev.architectury.utils.GameInstance;
 import me.lianecx.discordlinker.architectury.implementation.ModPlayer;
 import me.lianecx.discordlinker.common.events.data.*;
 import net.minecraft.commands.CommandSourceStack;
@@ -69,7 +70,11 @@ public class ModEvents {
             /*String quitMessage = new TranslatableComponent("multiplayer.player.left", player.getDisplayName()).getString();
             *///? } else
             String quitMessage = Component.translatable("multiplayer.player.left", player.getDisplayName()).getString();
-            getMinecraftEventBus().emit(new PlayerQuitEventData(new ModPlayer(player), quitMessage));
+            try {
+                getMinecraftEventBus().emit(new PlayerQuitEventData(new ModPlayer(player), quitMessage));
+            }
+            // This can happen if the server is stopping and the event bus is already closed
+            catch(IllegalStateException ignored) {}
         });
         CommandPerformEvent.EVENT.register((event) -> {
             CommandSourceStack source = event.getResults().getContext().getSource();

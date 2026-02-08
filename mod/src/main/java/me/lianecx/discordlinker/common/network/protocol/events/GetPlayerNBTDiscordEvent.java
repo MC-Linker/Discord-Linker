@@ -6,6 +6,7 @@ import me.lianecx.discordlinker.common.network.protocol.payloads.GetPlayerNBTPay
 import me.lianecx.discordlinker.common.network.protocol.payloads.InvalidPayloadException;
 import me.lianecx.discordlinker.common.network.protocol.responses.DiscordEventJsonResponse;
 import me.lianecx.discordlinker.common.network.protocol.responses.DiscordEventResponse;
+import me.lianecx.discordlinker.common.util.JsonUtil;
 
 import java.util.UUID;
 
@@ -15,9 +16,10 @@ public class GetPlayerNBTDiscordEvent implements LinkerSyncDiscordEvent<GetPlaye
 
     @Override
     public GetPlayerNBTPayload decode(Object[] objects) {
-        if (objects.length != 1) throw new InvalidPayloadException(objects);
+        JsonObject payload = JsonUtil.parseJsonObject(objects);
+        if(payload == null) throw new InvalidPayloadException(objects);
 
-        String uuid = (String) objects[0];
+        String uuid = payload.get("uuid").getAsString();
         return new GetPlayerNBTPayload(uuid);
     }
 

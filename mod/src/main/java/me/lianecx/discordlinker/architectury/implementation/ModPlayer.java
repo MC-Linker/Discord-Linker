@@ -1,6 +1,7 @@
 package me.lianecx.discordlinker.architectury.implementation;
 
 import me.lianecx.discordlinker.common.abstraction.LinkerPlayer;
+import net.minecraft.Util;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.*;
 import net.minecraft.server.level.ServerPlayer;
@@ -19,7 +20,7 @@ public class ModPlayer extends LinkerPlayer {
     @Override
     public void sendMessage(String message) {
         //? if <1.19 {
-        /*player.sendMessage(new TextComponent(message), null);
+        /*player.sendMessage(new TextComponent(message), Util.NIL_UUID);
         *///?} else
         player.sendSystemMessage(Component.literal(message));
     }
@@ -28,7 +29,7 @@ public class ModPlayer extends LinkerPlayer {
     public void sendMessageWithClickableURLs(String message) {
         Component component = buildURLComponent(message);
         //? if <1.19 {
-        /*player.sendMessage(component, null);
+        /*player.sendMessage(component, Util.NIL_UUID);
         *///? } else
         player.sendSystemMessage(component);
     }
@@ -50,7 +51,7 @@ public class ModPlayer extends LinkerPlayer {
     @Override
     public String getNBTAsString() {
         CompoundTag nbt = new CompoundTag();
-        player.save(nbt);
+        player.saveWithoutId(nbt);
         return nbt.toString();
     }
 }

@@ -26,6 +26,11 @@ public class SpigotScheduler implements LinkerScheduler {
     }
 
     @Override
+    public void runAsync(Runnable task) {
+        Bukkit.getScheduler().runTaskAsynchronously(plugin, task);
+    }
+
+    @Override
     public LinkerSchedulerTask runDelayedAsync(Runnable task, int delay) {
         BukkitTask bukkitTask = Bukkit.getScheduler().runTaskLaterAsynchronously(plugin, task, delay);
         return wrapTask(task, true, delay, bukkitTask);

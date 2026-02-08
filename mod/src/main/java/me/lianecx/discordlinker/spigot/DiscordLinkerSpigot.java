@@ -1,8 +1,6 @@
 package me.lianecx.discordlinker.spigot;
 
 import me.lianecx.discordlinker.common.DiscordLinkerCommon;
-import me.lianecx.discordlinker.common.events.data.ServerStartEventData;
-import me.lianecx.discordlinker.common.events.data.ServerStopEventData;
 import me.lianecx.discordlinker.spigot.implementation.*;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -27,13 +25,10 @@ public class DiscordLinkerSpigot extends JavaPlugin {
         getCommand("linker").setTabCompleter(new SpigotCommands());
         getCommand("discord").setExecutor(new SpigotCommands());
         getCommand("verify").setExecutor(new SpigotCommands());
-
-        getMinecraftEventBus().emit(new ServerStartEventData());
     }
 
     @Override
     public void onDisable() {
-        getMinecraftEventBus().emit(new ServerStopEventData());
         getInstance().shutdown();
     }
 }

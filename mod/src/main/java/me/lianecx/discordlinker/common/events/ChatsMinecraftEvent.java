@@ -4,8 +4,7 @@ import me.lianecx.discordlinker.common.ConnJson;
 import me.lianecx.discordlinker.common.events.data.*;
 import me.lianecx.discordlinker.common.util.MinecraftChatColor;
 
-import static me.lianecx.discordlinker.common.DiscordLinkerCommon.getClientManager;
-import static me.lianecx.discordlinker.common.DiscordLinkerCommon.getScheduler;
+import static me.lianecx.discordlinker.common.DiscordLinkerCommon.*;
 
 public class ChatsMinecraftEvent {
 
@@ -18,9 +17,10 @@ public class ChatsMinecraftEvent {
     }
 
     public static void handleServerStop(ServerStopEventData event) {
-        sendChatAsync("", ConnJson.ChatChannel.ChatChannelType.CLOSE, null);
-        sendStatsAsync(ConnJson.StatsChannel.StatsChannelEvent.OFFLINE);
-        sendStatsAsync(ConnJson.StatsChannel.StatsChannelEvent.MEMBERS);
+        // Sending sync because the server is stopping and async tasks might not run
+        getClientManager().chat(ConnJson.ChatChannel.ChatChannelType.CLOSE);
+        getClientManager().updateStatsChannel(ConnJson.StatsChannel.StatsChannelEvent.OFFLINE);
+        getClientManager().updateStatsChannel(ConnJson.StatsChannel.StatsChannelEvent.MEMBERS);
     }
 
     public static void handleChat(ChatEventData event) {
@@ -64,10 +64,15 @@ public class ChatsMinecraftEvent {
     }
 
     public static void sendChatAsync(String message, ConnJson.ChatChannel.ChatChannelType type, String sender) {
-        getScheduler().runDelayedAsync(() -> getClientManager().chat(message, type, sender), 0);
+        if(getConnJson() == null || getConnJson().getChatChannels().isEmpty()) return;
+        getScheduler().runDelayedAsync(() -> {
+            System.out.println("Sending chat message to bot: " + message + " (type: " + type + ", sender: " + sender + ")");
+            getClientManager().chat(message, type, sender);
+        }, 0);
     }
 
     public static void sendStatsAsync(ConnJson.StatsChannel.StatsChannelEvent type) {
-        getScheduler().runDelayedAsync(() -> getClientManager().updateStatsChannel(type), 0);
+        if(getConnJson() == null || getConnJson().getStatsChannels().isEmpty()) return;
+        getScheduler().runAsync(() -> getClientManager().updateStatsChannel(type));
     }
 }

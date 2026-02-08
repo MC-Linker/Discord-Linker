@@ -23,7 +23,7 @@ public class DiscordEventJsonResponse implements DiscordEventResponse {
     public DiscordEventJsonResponse(JsonStatus status, String message) {
         this.data = new JsonObject();
         this.data.addProperty("status", status.name().toLowerCase());
-        this.data.addProperty("message", message);
+        this.data.addProperty("data", message);
     }
 
     public DiscordEventJsonResponse(JsonStatus status, JsonElement additionalData) {

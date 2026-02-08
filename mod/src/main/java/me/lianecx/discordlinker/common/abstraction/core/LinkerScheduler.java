@@ -5,6 +5,8 @@ public interface LinkerScheduler {
     LinkerSchedulerTask runDelayedSync(Runnable task, int delay);
 
     LinkerSchedulerRepeatingTask runRepeatingSync(Runnable task, int initialDelay, int period, int delay);
+    
+    void runAsync(Runnable task);
 
     LinkerSchedulerTask runDelayedAsync(Runnable task, int delay);
 

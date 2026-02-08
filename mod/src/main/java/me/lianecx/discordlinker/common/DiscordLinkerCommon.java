@@ -47,7 +47,7 @@ public class DiscordLinkerCommon {
 
         String token = connJson != null ? connJson.getToken() : null;
         int botPort = config.isTestVersion() ? 81 : config.getBotPort();
-        this.clientManager = token != null ? new ClientManager(token, botPort, server) : new ClientManager(botPort);
+        this.clientManager = token != null ? new ClientManager(token, botPort, server, discordEventBus) : new ClientManager(discordEventBus, botPort);
     }
 
     public static synchronized DiscordLinkerCommon init(LinkerLogger logger, LinkerConfig config, LinkerServer server, LinkerScheduler scheduler, TeamsBridge teamsBridge) {
@@ -127,8 +127,7 @@ public class DiscordLinkerCommon {
         else if(protocol == ConnJson.ConnProtocol.WEBSOCKET) {
             clientManager.reconnect().thenAccept(connected -> {
                 if(!connected) return;
-                clientManager.chat(ConnJson.ChatChannel.ChatChannelType.START);
-                clientManager.updateStatsChannel(ConnJson.StatsChannel.StatsChannelEvent.ONLINE);
+                minecraftEventBus.emit(new ServerStartEventData());
             });
         }
         else {

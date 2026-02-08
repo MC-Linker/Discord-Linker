@@ -32,7 +32,9 @@ public class CommandDiscordEvent implements LinkerDiscordEvent<CommandPayload> {
             getServer().executeCommand(payload.command)
                     .thenAccept(response -> {
                         // Replace all color codes with & to properly display in Discord
-                        future.complete(new DiscordEventJsonResponse(DiscordEventJsonResponse.JsonStatus.SUCCESS, MinecraftChatColor.replaceColorKey(response, '&')));
+                        JsonObject jsonResponse = new JsonObject();
+                        jsonResponse.addProperty("message", MinecraftChatColor.replaceColorKey(response, '&'));
+                        future.complete(new DiscordEventJsonResponse(DiscordEventJsonResponse.JsonStatus.SUCCESS, jsonResponse));
                     });
         }, 0);
 

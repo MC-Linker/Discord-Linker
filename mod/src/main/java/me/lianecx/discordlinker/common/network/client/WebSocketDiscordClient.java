@@ -15,9 +15,7 @@ import me.lianecx.discordlinker.common.network.protocol.responses.DiscordEventRe
 import okhttp3.Dispatcher;
 import okhttp3.OkHttpClient;
 
-import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Arrays;
@@ -36,7 +34,8 @@ import static me.lianecx.discordlinker.common.network.client.ClientManager.BOT_U
 
 public final class WebSocketDiscordClient implements DiscordClient {
 
-    public static final int DEFAULT_RECONNECTION_ATTEMPTS = 0; // Default to unlimited reconnection attempts
+    public static final int DEFAULT_RECONNECTION_ATTEMPTS = Integer.MAX_VALUE; // Default to unlimited reconnection attempts
+
     private final Dispatcher dispatcher = new Dispatcher();
     private final ExecutorService pool = dispatcher.executorService();
     private Socket socket;
@@ -62,7 +61,7 @@ public final class WebSocketDiscordClient implements DiscordClient {
         ioOptions.webSocketFactory = okHttpClient;
         ioOptions.auth = auth;
         ioOptions.query = queryString;
-        ioOptions.reconnectionDelayMax = 30000;
+        ioOptions.reconnectionDelayMax = 32000;
         ioOptions.reconnectionAttempts = reconnectionAttempts;
 
         Socket socket = IO.socket(BOT_URI, ioOptions);
@@ -77,6 +76,7 @@ public final class WebSocketDiscordClient implements DiscordClient {
             catch(Exception ignored) {}
 
             getLogger().info(MinecraftChatColor.RED + "Could not reach the Discord Bot! Reconnecting...");
+            socket.connect(); // Need to manually reconnect
         });
         socket.on(Socket.EVENT_CONNECT, args -> {
             getLogger().debug("[Socket.io] Connected with args: " + Arrays.toString(args));
@@ -87,17 +87,17 @@ public final class WebSocketDiscordClient implements DiscordClient {
             getLogger().debug("[Socket.io] Disconnected with args: " + Arrays.toString(args));
 
             // Server or client initiated disconnect, no reconnect
-            if(args[0].equals("io server disconnect") || args[0].equals("io client disconnect")) {
+            if(args[0].equals("io server disconnect") || args[0].equals("io client disconnect"))
                 getLogger().info(MinecraftChatColor.RED + "Disconnected from the Discord Bot!");
+            else getLogger().info(MinecraftChatColor.RED + "Disconnected from the Discord Bot! Reconnecting...");
+
+            // Server disconnected, meaning someone ran /disconnect
+            if(args[0].equals("io server disconnect")) {
                 if(getConnJson() == null) {
                     getLogger().info(MinecraftChatColor.YELLOW + "No connection data found to clean up.");
                     return;
                 }
                 getConnJson().delete();
-            }
-            else {
-                getLogger().info(MinecraftChatColor.RED + "Disconnected from the Discord Bot! Reconnecting...");
-                socket.connect();
             }
         });
 

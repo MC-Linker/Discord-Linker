@@ -4,23 +4,21 @@ import com.mojang.authlib.GameProfile;
 //? if >=1.21
 //import com.mojang.authlib.yggdrasil.ProfileResult;
 import dev.architectury.platform.Platform;
-import dev.architectury.utils.GameInstance;
 import me.lianecx.discordlinker.common.abstraction.LinkerOfflinePlayer;
 import me.lianecx.discordlinker.common.abstraction.LinkerPlayer;
 import me.lianecx.discordlinker.common.abstraction.LinkerServer;
 import me.lianecx.discordlinker.common.util.YamlUtil;
+import net.minecraft.Util;
 import net.minecraft.commands.CommandSource;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.network.chat.*;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.dedicated.DedicatedServerProperties;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.storage.LevelResource;
 import net.minecraft.world.phys.Vec2;
 import net.minecraft.world.phys.Vec3;
-import org.apache.logging.log4j.core.config.yaml.YamlConfiguration;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.yaml.snakeyaml.nodes.MappingNode;
@@ -135,7 +133,7 @@ public final class ModServer implements LinkerServer {
     @Override
     public void broadcastMessage(String message) {
         //? if <1.19 {
-        /*server.getPlayerList().broadcastMessage(new TextComponent(message), ChatType.CHAT, null);
+        /*server.getPlayerList().broadcastMessage(new TextComponent(message), ChatType.CHAT, Util.NIL_UUID);
         *///?} else
         server.getPlayerList().broadcastSystemMessage(Component.literal(message), false);
     }
@@ -144,7 +142,7 @@ public final class ModServer implements LinkerServer {
     public void broadcastMessageWithClickableURLs(String message) {
         Component component = buildURLComponent(message);
         //? if <1.19 {
-        /*server.getPlayerList().broadcastMessage(component, ChatType.CHAT, null);
+        /*server.getPlayerList().broadcastMessage(component, ChatType.CHAT, Util.NIL_UUID);
         *///?} else
         server.getPlayerList().broadcastSystemMessage(component, false);
     }
@@ -238,7 +236,7 @@ public final class ModServer implements LinkerServer {
                 "Discord",
                 //? if <1.19 {
                 /*new TextComponent("Discord"),
-                 *///? } else
+                *///? } else
                 Component.literal("Discord"),
                 server,
                 null

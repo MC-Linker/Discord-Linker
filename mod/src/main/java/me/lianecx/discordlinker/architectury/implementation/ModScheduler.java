@@ -43,6 +43,11 @@ public class ModScheduler implements LinkerScheduler {
     }
 
     @Override
+    public void runAsync(Runnable task) {
+        ASYNC_EXECUTOR.execute(task);
+    }
+
+    @Override
     public LinkerSchedulerTask runDelayedAsync(Runnable task, int delay) {
         LinkerSchedulerTask wrapper = new LinkerSchedulerTask(task, true, delay);
         tasks.add(wrapper);

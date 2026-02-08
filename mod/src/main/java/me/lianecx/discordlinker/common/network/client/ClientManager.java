@@ -40,7 +40,7 @@ public final class ClientManager {
     public static int BOT_PORT;
     public static URI BOT_URI;
 
-    private final LinkerDiscordEventBus linkerDiscordEventBus = new LinkerDiscordEventBus();
+    private final LinkerDiscordEventBus discordEventBus;
 
     private @Nullable DiscordClient client;
 
@@ -48,8 +48,9 @@ public final class ClientManager {
      * Initializes the ClientManager with the given bot port.
      * The bot port is used to determine which bot to connect to (main/test/custom bot).
      */
-    public ClientManager(int botPort) {
+    public ClientManager(LinkerDiscordEventBus discordEventBus, int botPort) {
         setBotPort(botPort);
+        this.discordEventBus = discordEventBus;
     }
 
     /**
@@ -57,8 +58,9 @@ public final class ClientManager {
      * The token is used to authenticate with the bot, and the bot port is used to determine which bot to connect to (main/test/custom bot).
      * The connection query is generated from the server's information and sent to the bot upon connection for authentication and configuration purposes.
      */
-    public ClientManager(String token, int botPort, LinkerServer server) {
+    public ClientManager(String token, int botPort, LinkerServer server, LinkerDiscordEventBus discordEventBus) {
         setBotPort(botPort);
+        this.discordEventBus = discordEventBus;
         this.client = new WebSocketDiscordClient(Collections.singletonMap("token", token), getConnectionQuery(server));
     }
 
@@ -89,7 +91,7 @@ public final class ClientManager {
         if(client == null) return completedFuture(false);
         client.disconnect();
         return client.connect().thenApply(connected -> {
-            if(connected) client.onAny(linkerDiscordEventBus::emit);
+            if(connected) client.onAny(discordEventBus::emit);
             return connected;
         });
     }
@@ -143,7 +145,7 @@ public final class ClientManager {
                 return completedFuture(DiscordEventJsonResponse.ERROR_WRITE_CONN);
             }
 
-            client.onAny(linkerDiscordEventBus::emit);
+            client.onAny(discordEventBus::emit);
             return completedFuture(DiscordEventJsonResponse.SUCCESS);
         });
 
@@ -175,7 +177,13 @@ public final class ClientManager {
 
     public void updateStatsChannel(ConnJson.StatsChannel.StatsChannelEvent event) {
         if(getConnJson() == null || getConnJson().getStatsChannels().isEmpty()) return;
-        send("update-stats-channels", JsonUtil.singleton("event", event.toString()));
+
+        JsonObject payload = new JsonObject();
+        payload.addProperty("event", event.toString());
+        if(event == ConnJson.StatsChannel.StatsChannelEvent.MEMBERS)
+            payload.addProperty("members", getServer().getOnlinePlayers().size());
+
+        send("update-stats-channels", payload);
     }
 
     public void addSyncedRoleMember(String name, boolean isGroup, UUID uuid) {
@@ -270,7 +278,7 @@ public final class ClientManager {
             else {
                 try {
                     String responseString = ((DiscordEventJsonResponse) response).getData().getAsJsonObject().get("response").getAsString();
-                    HasRequiredRoleResponses roleResponse = HasRequiredRoleResponses.valueOf(responseString);
+                    HasRequiredRoleResponses roleResponse = HasRequiredRoleResponses.valueOf(responseString.toUpperCase());
                     callback.accept(roleResponse);
                 }
                 catch(Exception e) {
@@ -329,7 +337,7 @@ public final class ClientManager {
      */
     public void send(String eventName, JsonObject data, Consumer<DiscordEventResponse> callback) {
         if(client == null) return;
-        client.send(eventName, new Object[] {data.toString()}, callback);
+        client.send(eventName, new Object[] { data.toString() }, callback);
     }
 
     /**
