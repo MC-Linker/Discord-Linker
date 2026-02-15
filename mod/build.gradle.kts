@@ -96,8 +96,12 @@ dependencies {
 
     modCompileOnly("net.luckperms:api:5.4")
 
-    implementation("io.socket:socket.io-client:2.1.2")
     implementation("org.yaml:snakeyaml:2.5")
+    implementation("io.socket:socket.io-client:2.1.2")
+    if (env.isForge || env.isNeo) {
+        "forgeRuntimeLibrary"("org.yaml:snakeyaml:2.5")
+        "forgeRuntimeLibrary"("io.socket:socket.io-client:2.1.2")
+    }
 }
 
 configurations.all {

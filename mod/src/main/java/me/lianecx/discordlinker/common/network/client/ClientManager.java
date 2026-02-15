@@ -89,7 +89,6 @@ public final class ClientManager {
      */
     public CompletableFuture<Boolean> reconnect() {
         if(client == null) return completedFuture(false);
-        client.disconnect();
         return client.connect().thenApply(connected -> {
             if(connected) client.onAny(discordEventBus::emit);
             return connected;

@@ -7,6 +7,7 @@ import io.socket.client.AckWithTimeout;
 import io.socket.client.IO;
 import io.socket.client.Socket;
 import io.socket.emitter.Emitter;
+import io.socket.engineio.client.EngineIOException;
 import me.lianecx.discordlinker.common.network.protocol.responses.DiscordEventFileResponse;
 import me.lianecx.discordlinker.common.util.JsonUtil;
 import me.lianecx.discordlinker.common.util.MinecraftChatColor;
@@ -68,6 +69,7 @@ public final class WebSocketDiscordClient implements DiscordClient {
 
         socket.on(Socket.EVENT_CONNECT_ERROR, args -> {
             getLogger().debug("[Socket.io] Connect error: " + Arrays.toString(args));
+
             try {
                 String message = JsonUtil.parseJsonObject(args).get("message").getAsString();
                 // Handled elsewhere, no reconnect
@@ -110,6 +112,8 @@ public final class WebSocketDiscordClient implements DiscordClient {
 
     @Override
     public CompletableFuture<Boolean> connect() {
+        if(isConnected()) socket.disconnect(); // Reset connection if already connected
+
         CompletableFuture<Boolean> future = new CompletableFuture<>();
         AtomicBoolean done = new AtomicBoolean(false);
 

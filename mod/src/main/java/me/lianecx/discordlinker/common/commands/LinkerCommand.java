@@ -34,8 +34,12 @@ public class LinkerCommand implements LinkerMinecraftCompletableCommand {
             case "reload":
                 getConfig().reload();
 
-                getClientManager().reconnect().thenAccept(connected ->
-                        sender.sendMessage(MinecraftChatColor.GREEN + "Successfully reloaded config and reconnected."));
+                getClientManager().reconnect().thenAccept(connected -> {
+                    if(connected)
+                        sender.sendMessage(MinecraftChatColor.GREEN + "Successfully reloaded the configuration and reconnected to Discord!");
+                    else
+                        sender.sendMessage(MinecraftChatColor.RED + "Failed to reconnect to Discord!");
+                });
                 break;
             case "bot_port":
                 if(args.length == 1) {

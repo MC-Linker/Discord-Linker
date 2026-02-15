@@ -171,8 +171,8 @@ public final class ModServer implements LinkerServer {
     public String getWorldContainerPath() {
         //? if <1.21 {
         return server.getServerDirectory().getAbsolutePath();
-        //? } else
-        //return server.getServerDirectory().toString();
+         //? } else
+        //return server.getServerDirectory().toAbsolutePath().toString();
     }
 
     @Override
