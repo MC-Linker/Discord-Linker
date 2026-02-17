@@ -3,6 +3,7 @@ plugins {
     id("dev.architectury.loom")
     id("architectury-plugin")
     id("me.modmuss50.mod-publish-plugin")
+    id("com.gradleup.shadow") version "9.3.1"
 }
 
 // Repositories
@@ -85,6 +86,12 @@ base {
     archivesName.set(env.archivesBaseName)
 }
 
+val shadowLib by configurations.creating
+
+configurations.implementation {
+    extendsFrom(shadowLib)
+}
+
 dependencies {
     minecraft("com.mojang:minecraft:${env.mcVersion.min}")
     mappings(loom.officialMojangMappings())
@@ -96,8 +103,9 @@ dependencies {
 
     modCompileOnly("net.luckperms:api:5.4")
 
-    implementation("org.yaml:snakeyaml:2.5")
-    implementation("io.socket:socket.io-client:2.1.2")
+    shadowLib("org.yaml:snakeyaml:2.5")
+    shadowLib("io.socket:socket.io-client:2.1.2")
+
     if (env.isForge || env.isNeo) {
         "forgeRuntimeLibrary"("org.yaml:snakeyaml:2.5")
         "forgeRuntimeLibrary"("io.socket:socket.io-client:2.1.2")
@@ -107,6 +115,30 @@ dependencies {
 configurations.all {
     resolutionStrategy {
         force("net.fabricmc:fabric-loader:${env.fabricLoaderVersion.min}")
+    }
+}
+
+tasks {
+    shadowJar {
+        configurations = listOf(shadowLib)
+
+//        archiveClassifier.set("")
+
+        relocate("org.yaml.snakeyaml", "me.lianecx.snakeyaml")
+        relocate("io.socket", "me.lianecx.iosocket")
+        relocate("okio", "me.lianecx.okio")
+        relocate("okhttp3", "me.lianecx.okhttp3")
+        relocate("org.json", "me.lianecx.json")
+
+        destinationDirectory = layout.buildDirectory.dir("devlibs")
+    }
+
+    remapJar {
+        inputFile = shadowJar.flatMap { it.archiveFile }
+    }
+
+    jar {
+        enabled = false
     }
 }
 
