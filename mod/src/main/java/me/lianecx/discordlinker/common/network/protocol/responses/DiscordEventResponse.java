@@ -29,6 +29,7 @@ public class DiscordEventResponse {
     public static final DiscordEventResponse UNKNOWN_EVENT = new DiscordEventResponse(ProtocolError.UNKNOWN_EVENT);
     public static final DiscordEventResponse NBT_ERROR = new DiscordEventResponse(ProtocolError.NBT_ERROR);
     public static final DiscordEventResponse CONN_JSON_MISSING = new DiscordEventResponse(ProtocolError.CONN_JSON_MISSING);
+    public static final DiscordEventResponse RATE_LIMITED = new DiscordEventResponse(ProtocolError.RATE_LIMITED);
 
     private final JsonObject data;
 
@@ -106,6 +107,27 @@ public class DiscordEventResponse {
             return ProtocolError.fromCode(code);
         }
         return null;
+    }
+
+    /**
+     * Checks whether this response is a rate-limit error.
+     */
+    public boolean isRateLimited() {
+        return getError() == ProtocolError.RATE_LIMITED;
+    }
+
+    /**
+     * Returns the {@code retryMs} value from the response data if this is a rate-limit error, or {@code -1} otherwise.
+     */
+    public long getRetryMs() {
+        if(!isRateLimited()) return -1;
+
+        JsonElement responseData = getResponseData();
+        if(responseData != null && responseData.isJsonObject()) {
+            JsonObject obj = responseData.getAsJsonObject();
+            if(obj.has("retryMs")) return obj.get("retryMs").getAsLong();
+        }
+        return -1;
     }
 
     /**

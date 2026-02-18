@@ -15,6 +15,7 @@ import okhttp3.OkHttpClient;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -32,6 +33,7 @@ public final class WebSocketDiscordClient implements DiscordClient {
 
     private final Dispatcher dispatcher = new Dispatcher();
     private final ExecutorService pool = dispatcher.executorService();
+    private final Map<String, Long> rateLimitedUntil = new ConcurrentHashMap<>();
     private Socket socket;
 
     public WebSocketDiscordClient(Map<String, String> auth, Map<String, String> query) {
@@ -231,12 +233,23 @@ public final class WebSocketDiscordClient implements DiscordClient {
 
     @Override
     public void send(String event, Object[] payload) {
+        if(isRateLimited(event)) {
+            getLogger().warn("[Socket.io] Dropping event '" + event + "' due to rate limit.");
+//            return; TODO don't drop for now
+        }
+
         getLogger().debug("[Socket.io] Emitting event: " + event + ", payload: " + Arrays.toString(payload));
         socket.emit(event, payload);
     }
 
     @Override
     public void send(String event, Object[] payload, Consumer<DiscordEventResponse> callback) {
+        if(isRateLimited(event)) {
+            getLogger().warn("[Socket.io] Dropping event '" + event + "' due to rate limit.");
+//            callback.accept(DiscordEventResponse.RATE_LIMITED);
+//            return; TODO don't drop for now
+        }
+
         getLogger().debug("[Socket.io] Emitting event with callback: " + event + ", payload: " + Arrays.toString(payload));
         socket.emit(event, payload, new AckWithTimeout(5000) {
             @Override
@@ -257,6 +270,14 @@ public final class WebSocketDiscordClient implements DiscordClient {
 
                 DiscordEventResponse response = new DiscordEventResponse(json, true);
                 getLogger().debug("[Socket.io] Parsed Ack response: " + response.getData());
+
+                // If rate-limited, store the per-event expiry and forward the response
+                if(response.isRateLimited()) {
+                    long retryMs = response.getRetryMs();
+                    if(retryMs > 0) rateLimitedUntil.put(event, System.currentTimeMillis() + retryMs);
+                    getLogger().warn("[Socket.io] Rate limited on '" + event + "' for " + retryMs + "ms.");
+                }
+
                 callback.accept(response);
             }
 
@@ -266,6 +287,16 @@ public final class WebSocketDiscordClient implements DiscordClient {
                 callback.accept(null);
             }
         });
+    }
+
+    private boolean isRateLimited(String event) {
+        Long expiry = rateLimitedUntil.get(event);
+        if(expiry == null) return false;
+        if(System.currentTimeMillis() >= expiry) {
+            rateLimitedUntil.remove(event);
+            return false;
+        }
+        return true;
     }
 
     @Override
