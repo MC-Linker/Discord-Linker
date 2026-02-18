@@ -7,18 +7,11 @@ import io.socket.client.AckWithTimeout;
 import io.socket.client.IO;
 import io.socket.client.Socket;
 import io.socket.emitter.Emitter;
-import io.socket.engineio.client.EngineIOException;
-import me.lianecx.discordlinker.common.network.protocol.responses.DiscordEventFileResponse;
 import me.lianecx.discordlinker.common.util.JsonUtil;
 import me.lianecx.discordlinker.common.util.MinecraftChatColor;
-import me.lianecx.discordlinker.common.network.protocol.responses.DiscordEventJsonResponse;
 import me.lianecx.discordlinker.common.network.protocol.responses.DiscordEventResponse;
 import okhttp3.Dispatcher;
 import okhttp3.OkHttpClient;
-
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -225,27 +218,14 @@ public final class WebSocketDiscordClient implements DiscordClient {
         if(ack == null || future == null) return;
 
         future.whenComplete((response, err) -> {
-            if (err != null) respondToAck(ack, new DiscordEventJsonResponse(DiscordEventJsonResponse.JsonStatus.ERROR, err.getMessage()));
+            if(err != null) respondToAck(ack, DiscordEventResponse.UNKNOWN);
             else respondToAck(ack, response);
         });
     }
 
     private void respondToAck(Ack ack, DiscordEventResponse response) {
-        if(response instanceof DiscordEventJsonResponse) {
-            getLogger().debug("[Socket.io] Responding to Ack with JSON: " + ((DiscordEventJsonResponse) response).getData());
-            ack.call(((DiscordEventJsonResponse) response).getData());
-        }
-        else if(response instanceof DiscordEventFileResponse) {
-            try {
-                getLogger().debug("[Socket.io] Responding to Ack with file: " + ((DiscordEventFileResponse) response).getPath());
-                byte[] file = Files.readAllBytes(Paths.get(((DiscordEventFileResponse) response).getPath()));
-                ack.call(file);
-            }
-            catch(IOException e) {
-                getLogger().error("Failed to read file for Ack response: " + e.getMessage());
-                ack.call(new DiscordEventJsonResponse(DiscordEventJsonResponse.JsonStatus.ERROR, "Failed to read file: " + e.getMessage()).getData());
-            }
-        }
+        getLogger().debug("[Socket.io] Responding to Ack with JSON: " + response.getData());
+        ack.call(response.getData());
     }
 
 
@@ -275,7 +255,7 @@ public final class WebSocketDiscordClient implements DiscordClient {
                     return;
                 }
 
-                DiscordEventJsonResponse response = new DiscordEventJsonResponse(json);
+                DiscordEventResponse response = new DiscordEventResponse(json, true);
                 getLogger().debug("[Socket.io] Parsed Ack response: " + response.getData());
                 callback.accept(response);
             }

@@ -4,7 +4,6 @@ import me.lianecx.discordlinker.common.abstraction.LinkerServer;
 import me.lianecx.discordlinker.common.abstraction.TeamsBridge;
 import me.lianecx.discordlinker.common.hooks.LuckPermsBridge;
 import me.lianecx.discordlinker.common.network.protocol.payloads.SyncedRoleMemberPayload;
-import me.lianecx.discordlinker.common.network.protocol.responses.DiscordEventJsonResponse;
 import me.lianecx.discordlinker.common.network.protocol.responses.DiscordEventResponse;
 import org.jetbrains.annotations.Nullable;
 
@@ -32,11 +31,11 @@ public final class TeamsAndGroupsBridge {
      * @return A CompletableFuture of DiscordEventResponse containing the synced role with updated members or an error response.
      */
     public static CompletableFuture<DiscordEventResponse> getRoleResponseFromPayload(SyncedRoleMemberPayload payload) {
-        if(getConnJson() == null) return CompletableFuture.completedFuture(DiscordEventJsonResponse.CONN_JSON_MISSING);
+        if(getConnJson() == null) return CompletableFuture.completedFuture(DiscordEventResponse.CONN_JSON_MISSING);
 
         return getTeamsAndGroupsBridge().getPlayersInGroupOrTeam(payload.role.getName(), payload.role.isGroup()).thenApply(players -> {
             if(players == null)
-                return payload.role.isGroup() ? DiscordEventJsonResponse.INVALID_GROUP : DiscordEventJsonResponse.INVALID_TEAM;
+                return DiscordEventResponse.INVALID_GROUP_OR_TEAM;
             ConnJson.SyncedRole role = getConnJson().getSyncedRole(payload.role.getName(), payload.role.isGroup());
             if(role == null) {
                 getConnJson().getSyncedRoles().add(payload.role);
@@ -44,7 +43,7 @@ public final class TeamsAndGroupsBridge {
             }
             role.setPlayers(players);
             getConnJson().write();
-            return DiscordEventJsonResponse.toJson(players);
+            return DiscordEventResponse.toJson(players);
         });
     }
 

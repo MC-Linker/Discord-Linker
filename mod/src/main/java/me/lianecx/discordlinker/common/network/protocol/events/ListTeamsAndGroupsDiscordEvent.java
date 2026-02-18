@@ -2,7 +2,6 @@ package me.lianecx.discordlinker.common.network.protocol.events;
 
 import com.google.gson.JsonObject;
 import me.lianecx.discordlinker.common.network.protocol.payloads.EmptyPayload;
-import me.lianecx.discordlinker.common.network.protocol.responses.DiscordEventJsonResponse;
 import me.lianecx.discordlinker.common.network.protocol.responses.DiscordEventResponse;
 import me.lianecx.discordlinker.common.util.JsonUtil;
 
@@ -25,6 +24,6 @@ public class ListTeamsAndGroupsDiscordEvent implements LinkerSyncDiscordEvent<Em
         JsonObject responseData = new JsonObject();
         responseData.add("groups", JsonUtil.toJson(groups));
         responseData.add("teams", JsonUtil.toJson(teams));
-        return new DiscordEventJsonResponse(DiscordEventJsonResponse.JsonStatus.SUCCESS, responseData);
+        return new DiscordEventResponse(responseData);
     }
 }

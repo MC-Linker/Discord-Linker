@@ -4,7 +4,7 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import me.lianecx.discordlinker.common.network.protocol.payloads.InvalidPayloadException;
 import me.lianecx.discordlinker.common.network.protocol.payloads.ListFilePayload;
-import me.lianecx.discordlinker.common.network.protocol.responses.DiscordEventJsonResponse;
+import me.lianecx.discordlinker.common.network.protocol.responses.DiscordEventResponse;
 import me.lianecx.discordlinker.common.util.JsonUtil;
 
 import java.io.IOException;
@@ -25,7 +25,7 @@ public class ListFileDiscordEvent implements LinkerSyncDiscordEvent<ListFilePayl
     }
 
     @Override
-    public DiscordEventJsonResponse handle(ListFilePayload payload) {
+    public DiscordEventResponse handle(ListFilePayload payload) {
         try {
             Path folder = Paths.get(payload.folder);
 
@@ -39,13 +39,13 @@ public class ListFileDiscordEvent implements LinkerSyncDiscordEvent<ListFilePayl
             }).forEach(content::add);
             stream.close();
 
-            return new DiscordEventJsonResponse(DiscordEventJsonResponse.JsonStatus.SUCCESS, content);
+            return new DiscordEventResponse(content);
         }
         catch(InvalidPathException err) {
-            return DiscordEventJsonResponse.INVALID_PATH;
+            return DiscordEventResponse.NOT_FOUND;
         }
         catch(IOException err) {
-            return DiscordEventJsonResponse.IO_ERROR;
+            return DiscordEventResponse.IO_ERROR;
         }
     }
 }

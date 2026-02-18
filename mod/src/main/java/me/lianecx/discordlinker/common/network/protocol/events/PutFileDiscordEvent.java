@@ -3,7 +3,6 @@ package me.lianecx.discordlinker.common.network.protocol.events;
 import com.google.gson.JsonObject;
 import me.lianecx.discordlinker.common.network.protocol.payloads.InvalidPayloadException;
 import me.lianecx.discordlinker.common.network.protocol.payloads.PutFilePayload;
-import me.lianecx.discordlinker.common.network.protocol.responses.DiscordEventJsonResponse;
 import me.lianecx.discordlinker.common.network.protocol.responses.DiscordEventResponse;
 import me.lianecx.discordlinker.common.util.JsonUtil;
 
@@ -37,12 +36,10 @@ public class PutFileDiscordEvent implements LinkerSyncDiscordEvent<PutFilePayloa
                 outputStream.write(buf, 0, length);
             }
 
-            return DiscordEventJsonResponse.SUCCESS;
+            return DiscordEventResponse.SUCCESS;
         }
         catch(IOException err) {
-            JsonObject error = new JsonObject();
-            error.addProperty("message", err.toString());
-            return new DiscordEventJsonResponse(error);
+            return DiscordEventResponse.IO_ERROR;
         }
     }
 

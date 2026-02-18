@@ -3,7 +3,6 @@ package me.lianecx.discordlinker.common.network.protocol.events;
 import com.google.gson.JsonObject;
 import me.lianecx.discordlinker.common.network.protocol.payloads.CommandPayload;
 import me.lianecx.discordlinker.common.network.protocol.payloads.InvalidPayloadException;
-import me.lianecx.discordlinker.common.network.protocol.responses.DiscordEventJsonResponse;
 import me.lianecx.discordlinker.common.network.protocol.responses.DiscordEventResponse;
 import me.lianecx.discordlinker.common.util.JsonUtil;
 import me.lianecx.discordlinker.common.util.MinecraftChatColor;
@@ -34,7 +33,7 @@ public class CommandDiscordEvent implements LinkerDiscordEvent<CommandPayload> {
                         // Replace all color codes with & to properly display in Discord
                         JsonObject jsonResponse = new JsonObject();
                         jsonResponse.addProperty("message", MinecraftChatColor.replaceColorKey(response, '&'));
-                        future.complete(new DiscordEventJsonResponse(DiscordEventJsonResponse.JsonStatus.SUCCESS, jsonResponse));
+                        future.complete(new DiscordEventResponse(jsonResponse));
                     });
         }, 0);
 

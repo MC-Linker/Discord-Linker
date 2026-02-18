@@ -2,7 +2,6 @@ package me.lianecx.discordlinker.common.network.protocol.events;
 
 import me.lianecx.discordlinker.common.network.protocol.payloads.ChatChannelPayload;
 import me.lianecx.discordlinker.common.network.protocol.payloads.InvalidPayloadException;
-import me.lianecx.discordlinker.common.network.protocol.responses.DiscordEventJsonResponse;
 import me.lianecx.discordlinker.common.network.protocol.responses.DiscordEventResponse;
 
 import static me.lianecx.discordlinker.common.DiscordLinkerCommon.getConnJson;
@@ -16,10 +15,10 @@ public class RemoveChatChannelDiscordEvent implements LinkerSyncDiscordEvent<Cha
 
     @Override
     public DiscordEventResponse handle(ChatChannelPayload payload) {
-        if(getConnJson() == null) return DiscordEventJsonResponse.CONN_JSON_MISSING;
+        if(getConnJson() == null) return DiscordEventResponse.CONN_JSON_MISSING;
         getConnJson().getChatChannels().removeIf(channel -> channel.getId().equals(payload.channel.getId()));
         getConnJson().write();
 
-        return DiscordEventJsonResponse.toJson(getConnJson().getChatChannels());
+        return DiscordEventResponse.toJson(getConnJson().getChatChannels());
     }
 }

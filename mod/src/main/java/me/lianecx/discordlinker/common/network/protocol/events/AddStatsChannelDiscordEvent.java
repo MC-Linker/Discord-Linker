@@ -3,7 +3,6 @@ package me.lianecx.discordlinker.common.network.protocol.events;
 import com.google.gson.JsonElement;
 import me.lianecx.discordlinker.common.network.protocol.payloads.InvalidPayloadException;
 import me.lianecx.discordlinker.common.network.protocol.payloads.StatsChannelPayload;
-import me.lianecx.discordlinker.common.network.protocol.responses.DiscordEventJsonResponse;
 import me.lianecx.discordlinker.common.network.protocol.responses.DiscordEventResponse;
 import me.lianecx.discordlinker.common.util.JsonUtil;
 
@@ -18,7 +17,7 @@ public class AddStatsChannelDiscordEvent implements LinkerSyncDiscordEvent<Stats
 
     @Override
     public DiscordEventResponse handle(StatsChannelPayload payload) {
-        if(getConnJson() == null) return DiscordEventJsonResponse.CONN_JSON_MISSING;
+        if(getConnJson() == null) return DiscordEventResponse.CONN_JSON_MISSING;
 
         // Remove existing channel with the same ID if it exists
         getConnJson().getStatsChannels().removeIf(existingChannel -> existingChannel.getId().equals(payload.channel.getId()));
@@ -26,6 +25,6 @@ public class AddStatsChannelDiscordEvent implements LinkerSyncDiscordEvent<Stats
         getConnJson().getStatsChannels().add(payload.channel);
         getConnJson().write();
 
-        return DiscordEventJsonResponse.toJson(getConnJson().getStatsChannels());
+        return DiscordEventResponse.toJson(getConnJson().getStatsChannels());
     }
 }

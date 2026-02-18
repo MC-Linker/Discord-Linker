@@ -3,7 +3,6 @@ package me.lianecx.discordlinker.common.network.protocol.events;
 import me.lianecx.discordlinker.common.network.protocol.payloads.ChatChannelPayload;
 import me.lianecx.discordlinker.common.network.protocol.payloads.InvalidPayloadException;
 import me.lianecx.discordlinker.common.network.protocol.payloads.StatsChannelPayload;
-import me.lianecx.discordlinker.common.network.protocol.responses.DiscordEventJsonResponse;
 import me.lianecx.discordlinker.common.network.protocol.responses.DiscordEventResponse;
 
 import static me.lianecx.discordlinker.common.DiscordLinkerCommon.*;
@@ -17,10 +16,10 @@ public class RemoveStatsChannelDiscordEvent implements LinkerSyncDiscordEvent<St
 
     @Override
     public DiscordEventResponse handle(StatsChannelPayload payload) {
-        if(getConnJson() == null) return DiscordEventJsonResponse.CONN_JSON_MISSING;
+        if(getConnJson() == null) return DiscordEventResponse.CONN_JSON_MISSING;
         getConnJson().getStatsChannels().removeIf(channel -> channel.getId().equals(payload.channel.getId()));
         getConnJson().write();
 
-        return DiscordEventJsonResponse.toJson(getConnJson().getStatsChannels());
+        return DiscordEventResponse.toJson(getConnJson().getStatsChannels());
     }
 }

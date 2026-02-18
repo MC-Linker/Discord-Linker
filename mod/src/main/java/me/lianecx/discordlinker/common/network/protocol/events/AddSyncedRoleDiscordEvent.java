@@ -2,7 +2,6 @@ package me.lianecx.discordlinker.common.network.protocol.events;
 
 import me.lianecx.discordlinker.common.network.protocol.payloads.InvalidPayloadException;
 import me.lianecx.discordlinker.common.network.protocol.payloads.SyncedRolePayload;
-import me.lianecx.discordlinker.common.network.protocol.responses.DiscordEventJsonResponse;
 import me.lianecx.discordlinker.common.network.protocol.responses.DiscordEventResponse;
 
 import java.util.concurrent.CompletableFuture;
@@ -19,14 +18,14 @@ public class AddSyncedRoleDiscordEvent implements LinkerDiscordEvent<SyncedRoleP
 
     @Override
     public CompletableFuture<DiscordEventResponse> handleAsync(SyncedRolePayload payload) {
-        if(getConnJson() == null) return completedFuture(DiscordEventJsonResponse.CONN_JSON_MISSING);
+        if(getConnJson() == null) return completedFuture(DiscordEventResponse.CONN_JSON_MISSING);
 
         if(!getServer().isPluginOrModEnabled("LuckPerms"))
-            return completedFuture(DiscordEventJsonResponse.LUCKPERMS_NOT_LOADED);
+            return completedFuture(DiscordEventResponse.LUCKPERMS_NOT_LOADED);
 
         return getTeamsAndGroupsBridge().getPlayersInGroupOrTeam(payload.role.getName(), payload.role.isGroup()).thenApply(players -> {
             if(players == null)
-                return payload.role.isGroup() ? DiscordEventJsonResponse.INVALID_GROUP : DiscordEventJsonResponse.INVALID_TEAM;
+                return DiscordEventResponse.INVALID_GROUP_OR_TEAM;
 
             payload.role.setPlayers(players);
             getConnJson().getSyncedRoles().add(payload.role);
@@ -36,7 +35,7 @@ public class AddSyncedRoleDiscordEvent implements LinkerDiscordEvent<SyncedRoleP
             boolean hasTeamSyncedRole = getConnJson().hasTeamSyncedRole();
             if(hasTeamSyncedRole) getTeamsAndGroupsBridge().startTeamCheck();
 
-            return DiscordEventJsonResponse.toJson(getConnJson().getSyncedRoles());
+            return DiscordEventResponse.toJson(getConnJson().getSyncedRoles());
         });
     }
 }

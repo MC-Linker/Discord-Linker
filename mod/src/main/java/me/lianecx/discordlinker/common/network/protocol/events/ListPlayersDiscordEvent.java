@@ -2,7 +2,6 @@ package me.lianecx.discordlinker.common.network.protocol.events;
 
 import me.lianecx.discordlinker.common.abstraction.LinkerPlayer;
 import me.lianecx.discordlinker.common.network.protocol.payloads.EmptyPayload;
-import me.lianecx.discordlinker.common.network.protocol.responses.DiscordEventJsonResponse;
 import me.lianecx.discordlinker.common.network.protocol.responses.DiscordEventResponse;
 
 import java.util.List;
@@ -24,6 +23,6 @@ public class ListPlayersDiscordEvent implements LinkerSyncDiscordEvent<EmptyPayl
                 .stream()
                 .map(LinkerPlayer::getName)
                 .collect(Collectors.toList());
-        return DiscordEventJsonResponse.toJson(onlinePlayers);
+        return DiscordEventResponse.toJson(onlinePlayers);
     }
 }

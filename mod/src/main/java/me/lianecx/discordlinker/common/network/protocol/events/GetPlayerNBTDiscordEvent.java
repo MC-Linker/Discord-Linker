@@ -4,7 +4,6 @@ import com.google.gson.JsonObject;
 import me.lianecx.discordlinker.common.abstraction.LinkerPlayer;
 import me.lianecx.discordlinker.common.network.protocol.payloads.GetPlayerNBTPayload;
 import me.lianecx.discordlinker.common.network.protocol.payloads.InvalidPayloadException;
-import me.lianecx.discordlinker.common.network.protocol.responses.DiscordEventJsonResponse;
 import me.lianecx.discordlinker.common.network.protocol.responses.DiscordEventResponse;
 import me.lianecx.discordlinker.common.util.JsonUtil;
 
@@ -26,15 +25,15 @@ public class GetPlayerNBTDiscordEvent implements LinkerSyncDiscordEvent<GetPlaye
     @Override
     public DiscordEventResponse handle(GetPlayerNBTPayload payload) {
         LinkerPlayer player = getServer().getPlayer(UUID.fromString(payload.uuid));
-        if(player == null) return DiscordEventJsonResponse.INVALID_PLAYER;
+        if(player == null) return DiscordEventResponse.PLAYER_NOT_ONLINE;
 
         String nbt = player.getNBTAsString();
-        if(nbt == null) return DiscordEventJsonResponse.NBT_ERROR;
+        if(nbt == null) return DiscordEventResponse.NBT_ERROR;
 
         JsonObject responseJson = new JsonObject();
         responseJson.addProperty("data", nbt);
 
-        return new DiscordEventJsonResponse(DiscordEventJsonResponse.JsonStatus.SUCCESS, responseJson);
+        return new DiscordEventResponse(responseJson);
     }
 
 }

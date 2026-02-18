@@ -5,7 +5,6 @@ import me.lianecx.discordlinker.common.abstraction.LinkerOfflinePlayer;
 import me.lianecx.discordlinker.common.abstraction.LinkerPlayer;
 import me.lianecx.discordlinker.common.network.protocol.payloads.ChatPayload;
 import me.lianecx.discordlinker.common.network.protocol.payloads.InvalidPayloadException;
-import me.lianecx.discordlinker.common.network.protocol.responses.DiscordEventJsonResponse;
 import me.lianecx.discordlinker.common.network.protocol.responses.DiscordEventResponse;
 import me.lianecx.discordlinker.common.util.JsonUtil;
 import me.lianecx.discordlinker.common.util.MinecraftChatColor;
@@ -68,13 +67,13 @@ public class ChatDiscordEvent implements LinkerSyncDiscordEvent<ChatPayload> {
 
         if(privateMsg) {
             LinkerOfflinePlayer player = getServer().getOfflinePlayer(targetUsername);
-            if(!(player instanceof LinkerPlayer)) return DiscordEventJsonResponse.INVALID_PLAYER;
+            if(!(player instanceof LinkerPlayer)) return DiscordEventResponse.PLAYER_NOT_ONLINE;
             ((LinkerPlayer) player).sendMessageWithClickableURLs(chatMessage);
         }
         else {
             getServer().broadcastMessageWithClickableURLs(chatMessage);
         }
 
-        return DiscordEventJsonResponse.SUCCESS;
+        return DiscordEventResponse.SUCCESS;
     }
 }

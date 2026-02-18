@@ -3,7 +3,6 @@ package me.lianecx.discordlinker.common.network.protocol.events;
 import me.lianecx.discordlinker.common.network.protocol.payloads.ChatChannelPayload;
 import me.lianecx.discordlinker.common.network.protocol.payloads.InvalidPayloadException;
 import me.lianecx.discordlinker.common.network.protocol.payloads.SyncedRolePayload;
-import me.lianecx.discordlinker.common.network.protocol.responses.DiscordEventJsonResponse;
 import me.lianecx.discordlinker.common.network.protocol.responses.DiscordEventResponse;
 
 import static me.lianecx.discordlinker.common.DiscordLinkerCommon.*;
@@ -17,13 +16,13 @@ public class RemoveSyncedRoleDiscordEvent implements LinkerSyncDiscordEvent<Sync
 
     @Override
     public DiscordEventResponse handle(SyncedRolePayload payload) {
-        if(getConnJson() == null) return DiscordEventJsonResponse.CONN_JSON_MISSING;
+        if(getConnJson() == null) return DiscordEventResponse.CONN_JSON_MISSING;
         getConnJson().getSyncedRoles().removeIf(channel -> channel.getId().equals(payload.role.getId()));
         getConnJson().write();
 
         boolean hasTeamSyncedRole = getConnJson().hasTeamSyncedRole();
         if(!hasTeamSyncedRole) getTeamsAndGroupsBridge().stopTeamCheck();
 
-        return DiscordEventJsonResponse.toJson(getConnJson().getSyncedRoles());
+        return DiscordEventResponse.toJson(getConnJson().getSyncedRoles());
     }
 }

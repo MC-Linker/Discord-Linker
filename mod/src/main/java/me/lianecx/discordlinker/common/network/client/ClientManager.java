@@ -6,9 +6,9 @@ import me.lianecx.discordlinker.common.ConnJson;
 import me.lianecx.discordlinker.common.abstraction.LinkerPlayer;
 import me.lianecx.discordlinker.common.abstraction.LinkerServer;
 import me.lianecx.discordlinker.common.network.protocol.events.LinkerDiscordEventBus;
-import me.lianecx.discordlinker.common.network.protocol.responses.DiscordEventJsonResponse;
 import me.lianecx.discordlinker.common.network.protocol.responses.DiscordEventResponse;
 import me.lianecx.discordlinker.common.network.protocol.responses.HasRequiredRoleResponses;
+import me.lianecx.discordlinker.common.network.protocol.responses.ProtocolError;
 import me.lianecx.discordlinker.common.util.JsonUtil;
 import me.lianecx.discordlinker.common.util.MinecraftChatColor;
 import org.jetbrains.annotations.NotNull;
@@ -123,8 +123,13 @@ public final class ClientManager {
             if(dataObject == null) {
                 future.complete(false);
                 disconnect();
-                return completedFuture(new DiscordEventJsonResponse(DiscordEventJsonResponse.JsonStatus.ERROR, "Invalid payload: " + Arrays.toString(data)));
+                return completedFuture(DiscordEventResponse.INVALID_JSON);
             }
+
+            // Extract data field from protocol response if present
+            JsonObject authData = dataObject;
+            if(dataObject.has("data") && dataObject.get("data").isJsonObject())
+                authData = dataObject.getAsJsonObject("data");
 
             //Save connection data
             JsonObject connJson = new JsonObject();
@@ -134,18 +139,18 @@ public final class ClientManager {
             connJson.add("channels", new JsonArray());
             connJson.add("synced-roles", new JsonArray());
             connJson.add("stats-channels", new JsonArray());
-            if(dataObject.has("requiredRoleToJoin") && !dataObject.get("requiredRoleToJoin").isJsonNull())
-                connJson.add("requiredRoleToJoin", dataObject.get("requiredRoleToJoin"));
+            if(authData.has("requiredRoleToJoin"))
+                connJson.add("requiredRoleToJoin", authData.get("requiredRoleToJoin"));
 
             boolean writeSuccess = ConnJson.update(connJson);
             future.complete(writeSuccess);
             if(!writeSuccess) {
                 disconnect();
-                return completedFuture(DiscordEventJsonResponse.ERROR_WRITE_CONN);
+                return completedFuture(DiscordEventResponse.IO_ERROR);
             }
 
             client.onAny(discordEventBus::emit);
-            return completedFuture(DiscordEventJsonResponse.SUCCESS);
+            return completedFuture(DiscordEventResponse.SUCCESS);
         });
 
         tempClient.connect().thenAccept(connected -> {
@@ -273,16 +278,22 @@ public final class ClientManager {
         verifyJson.addProperty("uuid", uuid);
 
         send("has-required-role", verifyJson, response -> {
-            if(!(response instanceof DiscordEventJsonResponse)) callback.accept(HasRequiredRoleResponses.ERROR);
-            else {
-                try {
-                    String responseString = ((DiscordEventJsonResponse) response).getData().getAsJsonObject().get("response").getAsString();
-                    HasRequiredRoleResponses roleResponse = HasRequiredRoleResponses.valueOf(responseString.toUpperCase());
-                    callback.accept(roleResponse);
+            try {
+                if(response.isSuccess()) {
+                    // Expected: { status: "success", data: { hasRole: true/false } }
+                    JsonObject responseData = response.getResponseData().getAsJsonObject();
+                    boolean hasRole = responseData.get("hasRole").getAsBoolean();
+                    callback.accept(hasRole ? HasRequiredRoleResponses.TRUE : HasRequiredRoleResponses.FALSE);
                 }
-                catch(Exception e) {
-                    callback.accept(HasRequiredRoleResponses.ERROR);
+                else {
+                    // Expected: { status: "error", error: "not_connected" | "unknown" }
+                    if(ProtocolError.NOT_CONNECTED == response.getError())
+                        callback.accept(HasRequiredRoleResponses.NOT_CONNECTED);
+                    else callback.accept(HasRequiredRoleResponses.ERROR);
                 }
+            }
+            catch(Exception e) {
+                callback.accept(HasRequiredRoleResponses.ERROR);
             }
         });
     }
@@ -301,15 +312,16 @@ public final class ClientManager {
 
     public void getInviteURL(Consumer<String> callback) {
         send("invite-url", new JsonObject(), response -> {
-            if(!(response instanceof DiscordEventJsonResponse)) {
-                callback.accept(null);
-                return;
-            }
-
             try {
-                JsonObject bodyObject = ((DiscordEventJsonResponse) response).getData().getAsJsonObject();
-                if(bodyObject.get("url").isJsonNull()) callback.accept(null);
-                else callback.accept(bodyObject.get("url").getAsString());
+                if(!response.isSuccess()) {
+                    callback.accept(null);
+                    return;
+                }
+
+                // Expected: { status: "success", data: { url: "..." } }
+                JsonObject responseData = response.getResponseData().getAsJsonObject();
+                if(responseData.get("url").isJsonNull()) callback.accept(null);
+                else callback.accept(responseData.get("url").getAsString());
             }
             catch(Exception e) {
                 callback.accept(null);

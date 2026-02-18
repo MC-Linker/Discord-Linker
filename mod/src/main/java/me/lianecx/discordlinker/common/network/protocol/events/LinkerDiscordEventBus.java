@@ -2,7 +2,6 @@ package me.lianecx.discordlinker.common.network.protocol.events;
 
 import me.lianecx.discordlinker.common.network.protocol.payloads.DiscordEventPayload;
 import me.lianecx.discordlinker.common.network.protocol.payloads.InvalidPayloadException;
-import me.lianecx.discordlinker.common.network.protocol.responses.DiscordEventJsonResponse;
 import me.lianecx.discordlinker.common.network.protocol.responses.DiscordEventResponse;
 
 import java.util.HashMap;
@@ -39,7 +38,7 @@ public class LinkerDiscordEventBus {
     public CompletableFuture<DiscordEventResponse> emit(String event, Object[] objects) {
         LinkerDiscordEvent<? extends DiscordEventPayload> discordEvent = listeners.get(event);
         if (discordEvent == null)
-            return completedFuture(DiscordEventJsonResponse.UNKNOWN_EVENT);
+            return completedFuture(DiscordEventResponse.UNKNOWN_EVENT);
 
         return emitTyped(discordEvent, objects);
     }
@@ -49,7 +48,7 @@ public class LinkerDiscordEventBus {
             T payload = event.decode(objects);
             return event.handleAsync(payload);
         } catch (InvalidPayloadException e) {
-            return completedFuture(new DiscordEventJsonResponse(DiscordEventJsonResponse.JsonStatus.ERROR, e.getMessage()));
+            return completedFuture(DiscordEventResponse.INVALID_JSON);
         }
     }
 }

@@ -1,7 +1,6 @@
 package me.lianecx.discordlinker.common.network.protocol.events;
 
 import me.lianecx.discordlinker.common.network.protocol.payloads.DiscordEventPayload;
-import me.lianecx.discordlinker.common.network.protocol.responses.DiscordEventJsonResponse;
 import me.lianecx.discordlinker.common.network.protocol.responses.DiscordEventResponse;
 
 import java.util.concurrent.CompletableFuture;
@@ -22,7 +21,7 @@ public interface LinkerSyncDiscordEvent<T extends DiscordEventPayload> extends L
         try {
             return completedFuture(handle(payload));
         } catch (Exception e) {
-            return completedFuture(new DiscordEventJsonResponse(DiscordEventJsonResponse.JsonStatus.ERROR, "Internal error: " + e.getMessage()));
+            return completedFuture(DiscordEventResponse.UNKNOWN);
         }
     }
 }

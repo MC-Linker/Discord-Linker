@@ -2,7 +2,6 @@ package me.lianecx.discordlinker.common.network.protocol.events;
 
 import me.lianecx.discordlinker.common.network.protocol.payloads.EmptyPayload;
 import me.lianecx.discordlinker.common.network.protocol.payloads.InvalidPayloadException;
-import me.lianecx.discordlinker.common.network.protocol.responses.DiscordEventJsonResponse;
 import me.lianecx.discordlinker.common.network.protocol.responses.DiscordEventResponse;
 import me.lianecx.discordlinker.common.util.MinecraftChatColor;
 
@@ -17,13 +16,13 @@ public class DisconnectDiscordEvent implements LinkerSyncDiscordEvent<EmptyPaylo
 
     @Override
     public DiscordEventResponse handle(EmptyPayload payload) {
-        if(getConnJson() == null) return DiscordEventJsonResponse.CONN_JSON_MISSING;
+        if(getConnJson() == null) return DiscordEventResponse.CONN_JSON_MISSING;
         boolean deleted = getConnJson().delete();
 
         if(deleted) {
             getLogger().info(MinecraftChatColor.YELLOW + "Disconnected from discord...");
-            return DiscordEventJsonResponse.SUCCESS;
+            return DiscordEventResponse.SUCCESS;
         }
-        else return new DiscordEventJsonResponse(DiscordEventJsonResponse.JsonStatus.ERROR, "Could not delete connection file");
+        else return DiscordEventResponse.IO_ERROR;
     }
 }
