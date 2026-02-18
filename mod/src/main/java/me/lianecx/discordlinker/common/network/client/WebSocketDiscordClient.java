@@ -144,69 +144,52 @@ public final class WebSocketDiscordClient implements DiscordClient {
 
     @Override
     public void on(String event, Function<Object[], CompletableFuture<DiscordEventResponse>> handler) {
-        socket.on(event, args -> {
-            try {
-                Ack ack = getAckFromArgs(args);
-
-                // Remove the last argument if it's an Ack
-                Object[] data = args;
-                if(ack != null) {
-                    data = new Object[args.length - 1];
-                    System.arraycopy(args, 0, data, 0, args.length - 1);
-                }
-
-                CompletableFuture<DiscordEventResponse> response = handler.apply(data);
-                respondToAckFuture(ack, response);
-            }
-            catch(JsonSyntaxException ignored) {}
-        });
+        socket.on(event, args -> handleEvent(args, handler));
     }
 
     @Override
     public void once(String event, Function<Object[], CompletableFuture<DiscordEventResponse>> handler) {
-        socket.once(event, args -> {
-            try {
-                Ack ack = getAckFromArgs(args);
-
-                // Remove the last argument if it's an Ack
-                Object[] data = args;
-                if(ack != null) {
-                    data = new Object[args.length - 1];
-                    System.arraycopy(args, 0, data, 0, args.length - 1);
-                }
-
-                CompletableFuture<DiscordEventResponse> response = handler.apply(data);
-                respondToAckFuture(ack, response);
-            }
-            catch(JsonSyntaxException ignored) {}
-        });
+        socket.once(event, args -> handleEvent(args, handler));
     }
 
     @Override
     public void onAny(BiFunction<String, Object[], CompletableFuture<DiscordEventResponse>> handler) {
         socket.onAnyIncoming(args -> {
-            try {
-                getLogger().debug("[Socket.io] Received raw event: " + Arrays.toString(args));
-                if (args == null || args.length < 1) return;
-                if (!(args[0] instanceof String)) return;
+            getLogger().debug("[Socket.io] Received raw event: " + Arrays.toString(args));
+            if(args == null || args.length < 1) return;
+            if(!(args[0] instanceof String)) return;
 
-                String event = (String) args[0];
-                Ack ack = getAckFromArgs(args);
+            String event = (String) args[0];
 
-                // Remove the first argument (event name) and the last argument if it's an Ack
-                Object[] data;
-                int dataLength = args.length - 1; // Exclude event name
-                if(ack != null) dataLength--; // Exclude Ack if present
-                data = new Object[dataLength];
-                System.arraycopy(args, 1, data, 0, dataLength);
+            // Strip event name from args, keep rest (including potential Ack)
+            Object[] eventArgs = new Object[args.length - 1];
+            System.arraycopy(args, 1, eventArgs, 0, args.length - 1);
 
-                getLogger().debug("[Socket.io] Parsed event: " + event + ", data: " + Arrays.toString(data) + ", ack: " + (ack != null));
-
-                CompletableFuture<DiscordEventResponse> response = handler.apply(event, data);
-                respondToAckFuture(ack, response);
-            }
-            catch(JsonSyntaxException ignored) {} // Ignore invalid messages
+            handleEvent(eventArgs, data -> {
+                getLogger().debug("[Socket.io] Parsed event: " + event + ", data: " + Arrays.toString(data));
+                return handler.apply(event, data);
+            });
         });
+    }
+
+    /**
+     * Extracts the Ack from the raw args, strips it from the data, calls the handler, and responds to the Ack.
+     */
+    private void handleEvent(Object[] args, Function<Object[], CompletableFuture<DiscordEventResponse>> handler) {
+        try {
+            Ack ack = getAckFromArgs(args);
+
+            // Remove the last argument if it's an Ack
+            Object[] data = args;
+            if(ack != null) {
+                data = new Object[args.length - 1];
+                System.arraycopy(args, 0, data, 0, args.length - 1);
+            }
+
+            CompletableFuture<DiscordEventResponse> response = handler.apply(data);
+            respondToAckFuture(ack, response);
+        }
+        catch(JsonSyntaxException ignored) {}
     }
 
     private Ack getAckFromArgs(Object[] args) {
