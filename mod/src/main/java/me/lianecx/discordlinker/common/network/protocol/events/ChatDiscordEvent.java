@@ -60,7 +60,7 @@ public class ChatDiscordEvent implements LinkerSyncDiscordEvent<ChatPayload> {
         }
 
         //Translate color codes
-        chatMessage = MinecraftChatColor.replaceColorKey(chatMessage, '&');
+        chatMessage = MinecraftChatColor.translateAlternateColorCodes(chatMessage, '&');
 
         //Insert username
         chatMessage = chatMessage.replaceAll("%username%", username);

@@ -32,8 +32,18 @@ public enum MinecraftChatColor {
         this.code = code;
     }
 
+    /**
+     * Replaces all Minecraft color codes in the input string with the specified character followed by the color code.
+     */
     public static String replaceColorKey(String response, char c) {
-        return response.replaceAll("§", String.valueOf(c));
+        return response.replaceAll("(?i)§([0-9A-FK-OR])", c + "$1");
+    }
+
+    /**
+     * Translates a string using an alternate color code character into a string that uses the internal Minecraft color code character (§).
+     */
+    public static String translateAlternateColorCodes(String textToTranslate, char altColorChar) {
+        return textToTranslate.replaceAll("(?i)" + altColorChar + "([0-9A-FK-OR])", "§$1");
     }
 
     @Override
