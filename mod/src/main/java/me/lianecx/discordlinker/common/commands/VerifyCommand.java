@@ -35,7 +35,7 @@ public class VerifyCommand implements LinkerMinecraftCommand {
             sender.sendMessage("You must be a player to use this command.");
             return;
         }
-        else if(!sender.hasPermission("discordlinker.discord")) {
+        else if(!sender.hasPermission("discordlinker.verify")) {
             sender.sendMessage(MinecraftChatColor.RED + "You do not have permission to use this command!");
             return;
         }

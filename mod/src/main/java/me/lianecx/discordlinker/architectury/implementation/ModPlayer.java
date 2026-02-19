@@ -1,10 +1,18 @@
 package me.lianecx.discordlinker.architectury.implementation;
 
 import me.lianecx.discordlinker.common.abstraction.LinkerPlayer;
-import net.minecraft.Util;
+//? if <1.19
+//import net.minecraft.Util;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.*;
 import net.minecraft.server.level.ServerPlayer;
+//? if >=1.21 {
+/*import net.minecraft.resources.Identifier;
+import net.minecraft.server.permissions.Permission;
+import net.minecraft.util.ProblemReporter;
+import net.minecraft.world.level.storage.TagValueOutput;
+import net.minecraft.world.level.storage.ValueOutput;
+*///? }
 
 import static me.lianecx.discordlinker.architectury.util.URLComponent.buildURLComponent;
 
@@ -36,8 +44,11 @@ public class ModPlayer extends LinkerPlayer {
 
     @Override
     public boolean hasPermission(String permission) {
-        // TODO luckperms
-        return player.hasPermissions(4); // OP level 4
+        // TODO implement this correctly
+        //? if <1.21 {
+        return player.hasPermissions(4);
+         //? } else
+        //return player.permissions().hasPermission(new Permission.Atom(Identifier.withDefaultNamespace(permission)));
     }
 
     @Override
@@ -50,8 +61,14 @@ public class ModPlayer extends LinkerPlayer {
 
     @Override
     public String getNBTAsString() {
+        //? if <1.21 {
         CompoundTag nbt = new CompoundTag();
         player.saveWithoutId(nbt);
         return nbt.toString();
+         //? } else {
+        /*TagValueOutput output = TagValueOutput.createWithoutContext(ProblemReporter.DISCARDING);
+        player.saveWithoutId(output);
+        return output.buildResult().toString();
+        *///? }
     }
 }

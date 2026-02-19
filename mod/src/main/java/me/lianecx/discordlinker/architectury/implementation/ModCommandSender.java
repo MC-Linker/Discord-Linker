@@ -3,6 +3,11 @@ package me.lianecx.discordlinker.architectury.implementation;
 import me.lianecx.discordlinker.common.abstraction.LinkerCommandSender;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.network.chat.*;
+//? if >=1.21 {
+/*import net.minecraft.resources.Identifier;
+import net.minecraft.server.permissions.Permission;
+import net.minecraft.server.permissions.Permissions;
+*///? }
 
 public final class ModCommandSender implements LinkerCommandSender {
 
@@ -22,7 +27,11 @@ public final class ModCommandSender implements LinkerCommandSender {
 
     @Override
     public boolean hasPermission(String permission) {
+        //TODO implement this correctly
+        //? if <1.21 {
         return source.hasPermission(4);
+        //? } else
+        //return source.permissions().hasPermission(new Permission.Atom(Identifier.withDefaultNamespace(permission)));
     }
 
     @Override

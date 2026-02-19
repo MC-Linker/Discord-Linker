@@ -1,14 +1,13 @@
 package me.lianecx.discordlinker.architectury.implementation;
 
 import com.mojang.authlib.GameProfile;
-//? if >=1.21
-//import com.mojang.authlib.yggdrasil.ProfileResult;
 import dev.architectury.platform.Platform;
 import me.lianecx.discordlinker.common.abstraction.LinkerOfflinePlayer;
 import me.lianecx.discordlinker.common.abstraction.LinkerPlayer;
 import me.lianecx.discordlinker.common.abstraction.LinkerServer;
 import me.lianecx.discordlinker.common.util.YamlUtil;
-import net.minecraft.Util;
+//? if <1.19
+//import net.minecraft.Util;
 import net.minecraft.commands.CommandSource;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.network.chat.*;
@@ -16,6 +15,10 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+//? if >=1.21 {
+/*import net.minecraft.server.permissions.PermissionSet;
+import net.minecraft.server.players.NameAndId;
+*///? }
 import net.minecraft.world.level.storage.LevelResource;
 import net.minecraft.world.phys.Vec2;
 import net.minecraft.world.phys.Vec3;
@@ -84,6 +87,7 @@ public final class ModServer implements LinkerServer {
 
         // Player is offline
 
+        //? if <1.21 {
         //TODO test if this is null in offline mode
         if(server.getProfileCache() == null) return null;
 
@@ -93,8 +97,15 @@ public final class ModServer implements LinkerServer {
                 /*.get(name);
                 *///? } else {
                 .get(name)
-                .orElse(null);//? }
+                .orElse(null);
+                //? }
         if(profile != null) return new LinkerOfflinePlayer(profile.getId().toString(), profile.getName());
+        //? } else {
+        /*UUID uuid = server.services().nameToIdCache().get(name)
+                .map(NameAndId::id)
+                .orElse(null);
+        if(uuid != null) return new LinkerOfflinePlayer(uuid.toString(), name);
+        *///? }
         return null;
     }
 
@@ -106,6 +117,7 @@ public final class ModServer implements LinkerServer {
 
         // Player is offline
 
+        //? if <1.21 {
         //TODO test if this is null in offline mode
         if(server.getProfileCache() == null) return null;
 
@@ -114,7 +126,8 @@ public final class ModServer implements LinkerServer {
                 /*.get(uuid);
                 *///? } else {
                 .get(uuid)
-                .orElse(null);//? }
+                .orElse(null);
+                //? }
 
         if(profile != null) return new LinkerOfflinePlayer(profile.getId().toString(), profile.getName());
 
@@ -127,6 +140,13 @@ public final class ModServer implements LinkerServer {
         else return null;
         *///? }
         return new LinkerOfflinePlayer(profile.getId().toString(), profile.getName());
+        //? } else {
+        /*String name = server.services().nameToIdCache().get(uuid)
+                .map(NameAndId::name)
+                .orElse(null);
+        if(name != null) return new LinkerOfflinePlayer(uuid.toString(), name);
+        return null;
+        *///? }
     }
 
 
@@ -229,10 +249,10 @@ public final class ModServer implements LinkerServer {
                         return false;
                     }
                 },
-                serverLevel == null ? Vec3.ZERO : Vec3.atLowerCornerOf(serverLevel.getSharedSpawnPos()),
+                serverLevel == null ? Vec3.ZERO : Vec3.atLowerCornerOf(/*? if <1.21 {*/serverLevel.getSharedSpawnPos() /*? } else { *//*serverLevel.getRespawnData().pos()*//*? }*/),
                 Vec2.ZERO,
-                server.overworld(),
-                4, // permission level
+                serverLevel,
+                /*? if <1.21 {*/4/*? } else {*//*PermissionSet.ALL_PERMISSIONS*//*? }*/,
                 "Discord",
                 //? if <1.19 {
                 /*new TextComponent("Discord"),

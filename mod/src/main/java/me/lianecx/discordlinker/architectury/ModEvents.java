@@ -13,8 +13,8 @@ import dev.architectury.event.events.common.*;
 import dev.architectury.event.EventResult;
 //? }
 import net.minecraft.network.chat.*;
-
-import net.minecraft.world.InteractionResultHolder;
+//? if <=1.16.5
+//import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.entity.player.Player;
 
 import static me.lianecx.discordlinker.common.DiscordLinkerCommon.getMinecraftEventBus;
