@@ -107,15 +107,17 @@ public final class TeamsAndGroupsBridge {
             Set<String> storedSet = new HashSet<>(storedPlayers);
             Set<String> currentSet = new HashSet<>(currentPlayers);
 
-            for(String uuid : currentPlayers) {
-                if(!storedSet.contains(uuid)) {
-                    getClientManager().addSyncedRoleMember(role.getName(), false, UUID.fromString(uuid));
+            if(role.syncsToDiscord()) {
+                for(String uuid : currentPlayers) {
+                    if(!storedSet.contains(uuid)) {
+                        getClientManager().addSyncedRoleMember(role.getName(), false, UUID.fromString(uuid));
+                    }
                 }
-            }
 
-            for(String uuid : storedPlayers) {
-                if(!currentSet.contains(uuid)) {
-                    getClientManager().removeSyncedRoleMember(role.getName(), false, UUID.fromString(uuid));
+                for(String uuid : storedPlayers) {
+                    if(!currentSet.contains(uuid)) {
+                        getClientManager().removeSyncedRoleMember(role.getName(), false, UUID.fromString(uuid));
+                    }
                 }
             }
 

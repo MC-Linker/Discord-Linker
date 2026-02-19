@@ -80,7 +80,7 @@ public final class LuckPermsBridge {
 
             if(!wasMember && isMember) {
                 // Player was added to the group
-                getClientManager().addSyncedRoleMember(groupName, true, uuid);
+                if(role.syncsToDiscord()) getClientManager().addSyncedRoleMember(groupName, true, uuid);
                 if(role.getPlayers() != null && !role.getPlayers().contains(uuid.toString())) {
                     role.getPlayers().add(uuid.toString());
                     changed = true;
@@ -88,7 +88,7 @@ public final class LuckPermsBridge {
             }
             else if(wasMember && !isMember) {
                 // Player was removed from the group
-                getClientManager().removeSyncedRoleMember(groupName, true, uuid);
+                if(role.syncsToDiscord()) getClientManager().removeSyncedRoleMember(groupName, true, uuid);
                 if(role.getPlayers() != null) {
                     role.getPlayers().remove(uuid.toString());
                     changed = true;

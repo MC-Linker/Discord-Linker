@@ -282,14 +282,17 @@ public final class ClientManager {
                                 JsonArray added = data.has("added") ? data.getAsJsonArray("added") : new JsonArray();
                                 JsonArray removed = data.has("removed") ? data.getAsJsonArray("removed") : new JsonArray();
 
-                                // Add players that have the Discord role but are missing from MC
-                                for(JsonElement uuid : added) {
-                                    getTeamsAndGroupsBridge().addPlayerToGroupOrTeam(role.getName(), role.isGroup(), uuid.getAsString());
-                                }
+                                // Apply Discord→MC changes only if direction allows it
+                                if(role.syncsToMinecraft()) {
+                                    // Add players that have the Discord role but are missing from MC
+                                    for(JsonElement uuid : added) {
+                                        getTeamsAndGroupsBridge().addPlayerToGroupOrTeam(role.getName(), role.isGroup(), uuid.getAsString());
+                                    }
 
-                                // Remove players from MC that don't have the Discord role
-                                for(JsonElement uuid : removed) {
-                                    getTeamsAndGroupsBridge().removePlayerFromGroupOrTeam(role.getName(), role.isGroup(), uuid.getAsString());
+                                    // Remove players from MC that don't have the Discord role
+                                    for(JsonElement uuid : removed) {
+                                        getTeamsAndGroupsBridge().removePlayerFromGroupOrTeam(role.getName(), role.isGroup(), uuid.getAsString());
+                                    }
                                 }
 
                                 // Refresh the player list after reconciliation

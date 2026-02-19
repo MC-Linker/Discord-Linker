@@ -1,5 +1,6 @@
 package me.lianecx.discordlinker.common.network.protocol.events;
 
+import me.lianecx.discordlinker.common.ConnJson;
 import me.lianecx.discordlinker.common.TeamsAndGroupsBridge;
 import me.lianecx.discordlinker.common.network.protocol.payloads.InvalidPayloadException;
 import me.lianecx.discordlinker.common.network.protocol.payloads.SyncedRoleMemberPayload;
@@ -24,7 +25,8 @@ public class RemoveSyncedRoleMemberDiscordEvent implements LinkerDiscordEvent<Sy
             return CompletableFuture.completedFuture(DiscordEventResponse.LUCKPERMS_NOT_LOADED);
         }
 
-        getTeamsAndGroupsBridge().removePlayerFromGroupOrTeam(payload.role.getName(), payload.role.isGroup(), payload.uuid);
+        if(payload.role.syncsToMinecraft())
+            getTeamsAndGroupsBridge().removePlayerFromGroupOrTeam(payload.role.getName(), payload.role.isGroup(), payload.uuid);
         return TeamsAndGroupsBridge.getRoleResponseFromPayload(payload);
     }
 }

@@ -284,6 +284,7 @@ public class ConnJson {
         private String name;
         private boolean isGroup; // true if group, false if team
         private List<String> players; // List of player UUIDs
+        private SyncedRoleDirection direction;
 
         public String getId() {
             return id;
@@ -303,6 +304,36 @@ public class ConnJson {
 
         public void setPlayers(List<String> players) {
             this.players = players;
+        }
+
+        /**
+         * Gets the sync direction for this role. Defaults to {@link SyncedRoleDirection#BOTH}
+         * for backward compatibility when the field is absent.
+         */
+        public SyncedRoleDirection getDirection() {
+            return direction != null ? direction : SyncedRoleDirection.BOTH;
+        }
+
+        /**
+         * Whether changes from Discord should be applied to Minecraft (Discord → MC).
+         * True when direction is {@code both} or {@code to_minecraft}.
+         */
+        public boolean syncsToMinecraft() {
+            return direction == SyncedRoleDirection.BOTH || direction == SyncedRoleDirection.TO_MINECRAFT;
+        }
+
+        /**
+         * Whether changes from Minecraft should be sent to Discord (MC → Discord).
+         * True when direction is {@code both} or {@code to_discord}.
+         */
+        public boolean syncsToDiscord() {
+            return direction == SyncedRoleDirection.BOTH || direction == SyncedRoleDirection.TO_DISCORD;
+        }
+
+        public enum SyncedRoleDirection {
+            @SerializedName("both") BOTH,
+            @SerializedName("to_minecraft") TO_MINECRAFT,
+            @SerializedName("to_discord") TO_DISCORD;
         }
     }
 }
