@@ -16,5 +16,7 @@ public interface LinkerConfig {
 
     String getTemplateReplyMessage();
 
+    int getTeamCheckIntervalSeconds();
+
     void reload();
 }

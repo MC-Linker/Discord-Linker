@@ -10,3 +10,6 @@ private_message: "&9&o&lDiscord &8&o| &7&o%username% whispers to you: %message%"
 # %reply_message% is the full message that was replied to
 # %reply_username% is the username of the person who sent the message that was replied to
 reply_message: "&l&7(replying to %reply_username%) &8->&r %reply_message_reduced% \n &l&9Discord &8| &l&7%username% &8>>&r %message%"
+
+# The interval in seconds for checking team membership changes (used for synced roles with vanilla teams)
+team_check_interval: 30

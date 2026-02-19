@@ -52,6 +52,11 @@ public class SpigotConfig implements LinkerConfig {
     }
 
     @Override
+    public int getTeamCheckIntervalSeconds() {
+        return config.getInt("team_check_interval");
+    }
+
+    @Override
     public void reload() {
         plugin.reloadConfig();
     }

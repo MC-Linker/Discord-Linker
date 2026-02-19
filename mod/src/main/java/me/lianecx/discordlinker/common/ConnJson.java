@@ -78,6 +78,13 @@ public class ConnJson {
         return false;
     }
 
+    public boolean hasGroupSyncedRole() {
+        for(SyncedRole role : syncedRoles) {
+            if(role.isGroup()) return true;
+        }
+        return false;
+    }
+
     public SyncedRole getSyncedRole(String name, boolean isGroup) {
         for(SyncedRole role : syncedRoles) {
             if(role.getName().equalsIgnoreCase(name) && role.isGroup() == isGroup)

@@ -14,17 +14,16 @@ import java.util.concurrent.CompletableFuture;
 
 public final class ModTeamsBridge implements TeamsBridge {
 
-    private final LinkerServer linkerServer;
     private final MinecraftServer server;
 
-    public ModTeamsBridge(LinkerServer linkerServer) {
-        this.linkerServer = linkerServer;
+    public ModTeamsBridge() {
         this.server = GameInstance.getServer();
     }
 
     @Override
     public CompletableFuture<List<String>> getPlayersInTeam(String teamName) {
         Team team = getTeam(teamName);
+        if(team == null) return CompletableFuture.completedFuture(null);
         return CompletableFuture.completedFuture(new ArrayList<>(team.getPlayers()));
     }
 

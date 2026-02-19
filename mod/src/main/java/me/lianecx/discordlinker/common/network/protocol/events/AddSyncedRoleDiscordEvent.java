@@ -20,7 +20,7 @@ public class AddSyncedRoleDiscordEvent implements LinkerDiscordEvent<SyncedRoleP
     public CompletableFuture<DiscordEventResponse> handleAsync(SyncedRolePayload payload) {
         if(getConnJson() == null) return completedFuture(DiscordEventResponse.CONN_JSON_MISSING);
 
-        if(!getServer().isPluginOrModEnabled("LuckPerms"))
+        if(payload.role.isGroup() && !getServer().isPluginOrModEnabled("LuckPerms"))
             return completedFuture(DiscordEventResponse.LUCKPERMS_NOT_LOADED);
 
         return getTeamsAndGroupsBridge().getPlayersInGroupOrTeam(payload.role.getName(), payload.role.isGroup()).thenApply(players -> {

@@ -136,6 +136,11 @@ public class ModConfig implements LinkerConfig {
     }
 
     @Override
+    public int getTeamCheckIntervalSeconds() {
+        return getIntOrDefault("team_check_interval");
+    }
+
+    @Override
     public void reload() {
         load();
     }
