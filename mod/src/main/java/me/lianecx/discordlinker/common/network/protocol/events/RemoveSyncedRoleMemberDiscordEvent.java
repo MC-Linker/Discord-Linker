@@ -21,7 +21,7 @@ public class RemoveSyncedRoleMemberDiscordEvent implements LinkerDiscordEvent<Sy
     public CompletableFuture<DiscordEventResponse> handleAsync(SyncedRoleMemberPayload payload) {
         if(getConnJson() == null) return CompletableFuture.completedFuture(DiscordEventResponse.CONN_JSON_MISSING);
 
-        if(payload.role.isGroup() && !getServer().isPluginOrModEnabled("LuckPerms")) {
+        if(payload.role.isGroup() && !getTeamsAndGroupsBridge().isLuckPermsEnabled()) {
             return CompletableFuture.completedFuture(DiscordEventResponse.LUCKPERMS_NOT_LOADED);
         }
 

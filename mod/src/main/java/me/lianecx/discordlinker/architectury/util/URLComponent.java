@@ -43,7 +43,7 @@ public class URLComponent {
                                 .withHoverEvent(new HoverEvent.ShowText(
                                 //? if <1.19 {
                                 /^new TextComponent("Click to open link")
-                                 ^///? } else
+                                ^///? } else
                                 Component.literal("Click to open link")
                                 ))
                         )

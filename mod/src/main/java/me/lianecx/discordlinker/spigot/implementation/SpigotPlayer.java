@@ -29,7 +29,7 @@ public class SpigotPlayer extends LinkerPlayer {
     }
 
     @Override
-    public boolean hasPermission(String permission) {
+    public boolean hasPermission(int defaultLevel, String permission) {
         return player.hasPermission(permission);
     }
 

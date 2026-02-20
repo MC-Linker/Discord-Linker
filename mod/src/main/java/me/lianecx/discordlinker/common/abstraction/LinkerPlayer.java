@@ -6,11 +6,7 @@ public abstract class LinkerPlayer extends LinkerOfflinePlayer implements Linker
         super(uuid, name);
     }
 
-    public abstract void sendMessage(String message);
-
     public abstract void sendMessageWithClickableURLs(String message);
-
-    public abstract boolean hasPermission(String permission);
 
     public abstract void kick(String reason);
 

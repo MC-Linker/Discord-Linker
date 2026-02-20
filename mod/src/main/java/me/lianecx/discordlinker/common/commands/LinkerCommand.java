@@ -16,7 +16,7 @@ public class LinkerCommand implements LinkerMinecraftCompletableCommand {
 
     @Override
     public void execute(LinkerCommandSender sender, String[] args) {
-        if(!sender.hasPermission("discordlinker.linker")) {
+        if(!sender.hasPermission(4, "discordlinker.linker")) {
             sender.sendMessage(MinecraftChatColor.RED + "You do not have permission to use this command!");
             return;
         }

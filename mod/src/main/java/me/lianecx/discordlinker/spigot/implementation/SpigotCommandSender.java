@@ -17,7 +17,7 @@ public class SpigotCommandSender implements LinkerCommandSender {
     }
 
     @Override
-    public boolean hasPermission(String permission) {
+    public boolean hasPermission(int defaultLevel, String permission) {
         return sender.hasPermission(permission);
     }
 

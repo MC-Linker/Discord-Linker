@@ -11,7 +11,7 @@ public class DiscordCommand implements LinkerMinecraftCommand {
 
     @Override
     public void execute(LinkerCommandSender sender, String[] args) {
-        if(!sender.hasPermission("discordlinker.discord")) {
+        if(!sender.hasPermission(0, "discordlinker.discord")) {
             sender.sendMessage(MinecraftChatColor.RED + "You do not have permission to use this command!");
             return;
         }
@@ -25,7 +25,6 @@ public class DiscordCommand implements LinkerMinecraftCommand {
                 sender.sendMessage(MinecraftChatColor.RED + "An error occurred while getting the invite URL. Please try again later.");
                 return;
             }
-
 
             if(sender instanceof LinkerPlayer)
                 ((LinkerPlayer) sender).sendMessageWithClickableURLs(MinecraftChatColor.GREEN + "Click the following link to join the Discord server: " + MinecraftChatColor.DARK_GREEN + url);

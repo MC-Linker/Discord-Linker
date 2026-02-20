@@ -1,6 +1,7 @@
 package me.lianecx.discordlinker.common.hooks;
 
 import me.lianecx.discordlinker.common.ConnJson;
+import me.lianecx.discordlinker.common.abstraction.LinkerOfflinePlayer;
 import net.luckperms.api.LuckPerms;
 import net.luckperms.api.LuckPermsProvider;
 import net.luckperms.api.event.node.NodeMutateEvent;
@@ -25,6 +26,12 @@ public final class LuckPermsBridge {
     public LuckPermsBridge() {
         api.getEventBus().subscribe(this, NodeMutateEvent.class, this::onNodeMutate);
         api.getEventBus().subscribe(this, GroupDeleteEvent.class, this::onGroupDelete);
+    }
+
+    public boolean hasPermission(LinkerOfflinePlayer player, String permission) {
+        User user = api.getUserManager().getUser(UUID.fromString(player.getUUID()));
+        if(user == null) return false;
+        return user.getCachedData().getPermissionData().checkPermission(permission).asBoolean();
     }
 
     public CompletableFuture<List<String>> getPlayersInGroup(String group) {

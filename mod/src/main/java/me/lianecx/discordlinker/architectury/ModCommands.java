@@ -6,14 +6,20 @@ import com.mojang.brigadier.context.CommandContext;
 *///? } else
 import dev.architectury.event.events.common.CommandRegistrationEvent;
 import me.lianecx.discordlinker.architectury.implementation.ModCommandSender;
+import me.lianecx.discordlinker.architectury.implementation.ModPlayer;
 import me.lianecx.discordlinker.common.abstraction.LinkerCommandSender;
 import net.minecraft.commands.CommandSourceStack;
+import net.minecraft.server.level.ServerPlayer;
+//? if >=1.21 {
+/*import net.minecraft.server.permissions.Permission;
+import net.minecraft.server.permissions.PermissionLevel;
+*///? }
 
 import java.util.Arrays;
 
 import static com.mojang.brigadier.arguments.IntegerArgumentType.integer;
+import static com.mojang.brigadier.arguments.StringArgumentType.greedyString;
 import static com.mojang.brigadier.arguments.StringArgumentType.word;
-import static me.lianecx.discordlinker.architectury.util.SnowflakeCodeArgumentType.snowflakeCode;
 import static me.lianecx.discordlinker.common.DiscordLinkerCommon.getMinecraftCommandBus;
 import static net.minecraft.commands.Commands.*;
 
@@ -24,12 +30,14 @@ public final class ModCommands {
 
             // /linker reload|bot_port|message|private_message|connect|disconnect
             dispatcher.register(literal("linker")
+                    .requires(src -> new ModCommandSender(src).hasPermission(4, "discordlinker.linker"))
                     .then(literal("connect")
-                            .then(argument("code", snowflakeCode())
+                            .then(argument("code", greedyString())
                                     .executes(ModCommands::forward)
                             )
                     )
-                    .then(literal("disconnect").executes(ModCommands::forward))
+                    .then(literal("disconnect")
+                            .executes(ModCommands::forward))
                     .then(literal("bot_port")
                             .executes(ModCommands::forward)
                             .then(argument("port", integer(1, 65535))
@@ -65,7 +73,19 @@ public final class ModCommands {
                 ? Arrays.copyOfRange(split, 1, split.length)
                 : new String[0];
 
-        LinkerCommandSender sender = new ModCommandSender(context.getSource());
+
+        ServerPlayer player = null;
+        //? if <1.20 {
+        /*try {
+            player = context.getSource().getPlayerOrException();
+        }
+        catch(Exception ignored) {}
+        *///? } else
+        player = context.getSource().getPlayer();
+
+        LinkerCommandSender sender = player != null ?
+                new ModPlayer(player) :
+                new ModCommandSender(context.getSource());
 
         getMinecraftCommandBus().emitCommand(commandName, sender, args);
         return 1;

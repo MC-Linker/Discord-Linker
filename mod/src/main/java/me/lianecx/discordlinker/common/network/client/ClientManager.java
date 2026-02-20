@@ -87,7 +87,7 @@ public final class ClientManager {
 
     /**
      * Connects to the bot with the saved token passed in the constructor.
-     * After a successful connection, reconciles synced role members with the bot.
+     * After a successful connection, reconciles synced role members with the bot and syncs member stats channels.
      */
     public CompletableFuture<Boolean> reconnect() {
         if(client == null) return completedFuture(false);
@@ -95,6 +95,7 @@ public final class ClientManager {
             if(connected) {
                 client.onAny(discordEventBus::emit);
                 reconcileSyncedRoles();
+                updateStatsChannel(ConnJson.StatsChannel.StatsChannelEvent.MEMBERS);
             }
             return connected;
         });

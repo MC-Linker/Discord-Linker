@@ -7,14 +7,14 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.*;
 import net.minecraft.server.level.ServerPlayer;
 //? if >=1.21 {
-/*import net.minecraft.resources.Identifier;
-import net.minecraft.server.permissions.Permission;
+/*import net.minecraft.server.permissions.Permission;
+import net.minecraft.server.permissions.PermissionLevel;
 import net.minecraft.util.ProblemReporter;
 import net.minecraft.world.level.storage.TagValueOutput;
-import net.minecraft.world.level.storage.ValueOutput;
 *///? }
 
 import static me.lianecx.discordlinker.architectury.util.URLComponent.buildURLComponent;
+import static me.lianecx.discordlinker.common.DiscordLinkerCommon.*;
 
 public class ModPlayer extends LinkerPlayer {
 
@@ -43,12 +43,14 @@ public class ModPlayer extends LinkerPlayer {
     }
 
     @Override
-    public boolean hasPermission(String permission) {
-        // TODO implement this correctly
+    public boolean hasPermission(int defaultLevel, String permission) {
+        if(getTeamsAndGroupsBridge().isLuckPermsEnabled())
+            return getTeamsAndGroupsBridge().hasPermission(this, permission);
+
         //? if <1.21 {
-        return player.hasPermissions(4);
+        return player.hasPermissions(defaultLevel);
          //? } else
-        //return player.permissions().hasPermission(new Permission.Atom(Identifier.withDefaultNamespace(permission)));
+        //return player.permissions().hasPermission(new Permission.HasCommandLevel(PermissionLevel.byId(defaultLevel)));
     }
 
     @Override

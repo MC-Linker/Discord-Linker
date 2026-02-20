@@ -30,6 +30,15 @@ public final class TeamsAndGroupsBridge {
         this.teams = teamsBridge;
     }
 
+    public boolean isLuckPermsEnabled() {
+        return luckPerms != null;
+    }
+
+    public boolean hasPermission(LinkerOfflinePlayer player, String permission) {
+        if(luckPerms != null) return luckPerms.hasPermission(player, permission);
+        return false;
+    }
+
     /**
      * Helper method to get a DiscordEventResponse for a SyncedRoleMemberPayload after adding or removing a member.
      *
