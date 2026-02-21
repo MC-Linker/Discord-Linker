@@ -2,6 +2,7 @@ package me.lianecx.discordlinker.common.hooks;
 
 import me.lianecx.discordlinker.common.ConnJson;
 import me.lianecx.discordlinker.common.abstraction.LinkerOfflinePlayer;
+import me.lianecx.discordlinker.common.util.MinecraftChatColor;
 import net.luckperms.api.LuckPerms;
 import net.luckperms.api.LuckPermsProvider;
 import net.luckperms.api.event.node.NodeMutateEvent;
@@ -87,18 +88,28 @@ public final class LuckPermsBridge {
 
             if(!wasMember && isMember) {
                 // Player was added to the group
-                if(role.syncsToDiscord()) getClientManager().addSyncedRoleMember(groupName, true, uuid);
-                if(role.getPlayers() != null && !role.getPlayers().contains(uuid.toString())) {
-                    role.getPlayers().add(uuid.toString());
-                    changed = true;
+                if(role.syncsToDiscord()) {
+                    getClientManager().addSyncedRoleMember(groupName, true, uuid);
+                    if(!role.getPlayers().contains(uuid.toString())) {
+                        role.getPlayers().add(uuid.toString());
+                        changed = true;
+                    }
+                }
+                else {
+                    // Re-remove group if discord is authoritative
+                    event.getTarget().data().remove(Node.builder(GROUP_NODE_PREFIX + groupName).build());
                 }
             }
             else if(wasMember && !isMember) {
                 // Player was removed from the group
-                if(role.syncsToDiscord()) getClientManager().removeSyncedRoleMember(groupName, true, uuid);
-                if(role.getPlayers() != null) {
+                if(role.syncsToDiscord()) {
+                    getClientManager().removeSyncedRoleMember(groupName, true, uuid);
                     role.getPlayers().remove(uuid.toString());
                     changed = true;
+                }
+                else {
+                    // Re-add group if discord is authoritative
+                    event.getTarget().data().add(Node.builder(GROUP_NODE_PREFIX + groupName).build());
                 }
             }
         }
@@ -117,7 +128,7 @@ public final class LuckPermsBridge {
         String groupName = event.getGroupName();
         ConnJson.SyncedRole role = conn.getSyncedRole(groupName, true);
         if(role != null) {
-            getLogger().warn("LuckPerms group '" + groupName + "' was deleted. Removing synced role.");
+            getLogger().info(MinecraftChatColor.YELLOW + "LuckPerms group '" + groupName + "' was deleted. Removing synced role.");
             getClientManager().removeSyncedRole(groupName, true);
         }
     }
@@ -129,9 +140,7 @@ public final class LuckPermsBridge {
         Set<String> groups = new HashSet<>();
         for(Node node : nodes) {
             String key = node.getKey();
-            if(key.startsWith(GROUP_NODE_PREFIX)) {
-                groups.add(key.substring(GROUP_NODE_PREFIX.length()));
-            }
+            if(key.startsWith(GROUP_NODE_PREFIX)) groups.add(key.substring(GROUP_NODE_PREFIX.length()));
         }
         return groups;
     }

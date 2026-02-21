@@ -20,6 +20,7 @@ import java.util.Arrays;
 import static com.mojang.brigadier.arguments.IntegerArgumentType.integer;
 import static com.mojang.brigadier.arguments.StringArgumentType.greedyString;
 import static com.mojang.brigadier.arguments.StringArgumentType.word;
+import static me.lianecx.discordlinker.common.DiscordLinkerCommon.getClientManager;
 import static me.lianecx.discordlinker.common.DiscordLinkerCommon.getMinecraftCommandBus;
 import static net.minecraft.commands.Commands.*;
 
@@ -49,6 +50,7 @@ public final class ModCommands {
 
             // /verify <code>
             dispatcher.register(literal("verify")
+                    .requires(src -> getClientManager().isConnected())
                     .then(argument("code", word())
                             .executes(ModCommands::forward)
                     )
@@ -56,6 +58,7 @@ public final class ModCommands {
 
             // /discord
             dispatcher.register(literal("discord")
+                    .requires(src -> getClientManager().isConnected())
                     .executes(ModCommands::forward)
             );
         });

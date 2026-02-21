@@ -70,6 +70,10 @@ public final class ClientManager {
         BOT_URI = URI.create("http://api.mclinker.com:" + BOT_PORT);
     }
 
+    public boolean isConnected() {
+        return client != null && client.isConnected();
+    }
+
     public static void checkVersion() {
         try {
             HttpURLConnection conn = (HttpURLConnection) new URL(BOT_URI + "/version").openConnection();

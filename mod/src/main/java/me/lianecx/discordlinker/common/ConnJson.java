@@ -8,6 +8,7 @@ import me.lianecx.discordlinker.common.abstraction.LinkerServer;
 import me.lianecx.discordlinker.common.abstraction.core.LinkerLogger;
 import me.lianecx.discordlinker.common.util.JsonUtil;
 import me.lianecx.discordlinker.common.util.MinecraftChatColor;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
@@ -54,17 +55,17 @@ public class ConnJson {
         return requiredRoleToJoin;
     }
 
-    public List<ChatChannel> getChatChannels() {
+    public @NotNull List<ChatChannel> getChatChannels() {
         if(chatChannels == null) chatChannels = new ArrayList<>();
         return chatChannels;
     }
 
-    public List<SyncedRole> getSyncedRoles() {
+    public @NotNull List<SyncedRole> getSyncedRoles() {
         if(syncedRoles == null) syncedRoles = new ArrayList<>();
         return syncedRoles;
     }
 
-    public List<StatsChannel> getStatsChannels() {
+    public @NotNull List<StatsChannel> getStatsChannels() {
         if(statsChannels == null) statsChannels = new ArrayList<>();
         return statsChannels;
     }
@@ -283,7 +284,7 @@ public class ConnJson {
         private String id;
         private String name;
         private boolean isGroup; // true if group, false if team
-        private List<String> players; // List of player UUIDs
+        private List<String> players = new ArrayList<>(); // List of player UUIDs
         private SyncedRoleDirection direction;
 
         public String getId() {
@@ -298,7 +299,8 @@ public class ConnJson {
             return isGroup;
         }
 
-        public List<String> getPlayers() {
+        public @NotNull List<String> getPlayers() {
+            if(players == null) players = new ArrayList<>();
             return players;
         }
 

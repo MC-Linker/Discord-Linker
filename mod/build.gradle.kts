@@ -29,19 +29,34 @@ repositories {
 
 val env = Env(project, stonecutter::compare)
 
-val apis = arrayListOf(
-    APISource(
-        DepType.API,
-        APIModInfo("fabric", "fabric-api"),
-        "net.fabricmc.fabric-api:fabric-api",
-        optionalVersionProperty("deps.api.fabric")
-    ) { src -> src.versionRange.isPresent && env.isFabric },
-    APISource(
-        DepType.API,
-        APIModInfo("architectury", "architectury-api"),
-        "${if (env.atLeast("1.18.0")) "dev.architectury" else "me.shedaniel"}:architectury-${env.loader}",
-        optionalVersionProperty("deps.api.architectury")
-    ) { src -> src.versionRange.isPresent }
+val archVersion = versionProperty("deps.api.architectury")
+val lpVersion = versionProperty("deps.api.luckperms")
+
+val deps = arrayListOf(
+    Dependency(
+        ModInfo("architectury", "architectury-api"),
+        archVersion,
+        side = "SERVER"
+    ),
+    Dependency(
+        ModInfo("luckperms", "luckperms"),
+        lpVersion,
+        optional = true,
+        side = "SERVER",
+        ordering = "BEFORE"
+    ),
+    Dependency(
+        ModInfo("fabricloader", "fabricloader"),
+        env.fabricLoaderVersion,
+        enabled = env.isFabric,
+        publish = false
+    ),
+    Dependency(
+        ModInfo("minecraft", "minecraft"),
+        env.mcVersion,
+        enabled = env.isFabric,
+        publish = false
+    )
 )
 
 val modPublish = ModPublish(project, env.mcVersion)
@@ -52,10 +67,10 @@ val metaExclude = MetadataExcludes(env)
 version = "${mod.version}+${env.mcVersion.min}+${env.loader}"
 
 //dependencies.forEachAfter { mid, ver -> stonecutter { dependencies[mid] = ver.min } }
-apis.forEach { src ->
-    src.modInfo.modid?.let {
-        stonecutter { constants[it] = src.enabled }
-        src.versionRange.ifPresent { ver -> stonecutter { dependencies[it] = ver.min } }
+deps.forEach { dep ->
+    dep.modInfo.modid?.let {
+        stonecutter { constants[it] = dep.enabled }
+        stonecutter { dependencies[it] = dep.versionRange.min }
     }
 }
 stonecutter {
@@ -69,7 +84,7 @@ stonecutter {
         replace("net.minecraftforge", "net.neoforged")
     }
 
-    replacements.string(env.atMost("1.16.5")) {
+    replacements.string(env.atMost("1.18.0")) {
         replace("dev.architectury", "me.shedaniel.architectury")
     }
 }
@@ -99,9 +114,10 @@ dependencies {
     if (env.isForge) "forge"("net.minecraftforge:forge:${env.forgeMavenVersion.min}")
     if (env.isNeo) "neoForge"("net.neoforged:neoforge:${env.neoforgeVersion.min}")
 
-    apis.forEach { it.applyDependency(this, env) }
+    val archMaven = "${if (env.atLeast("1.18.0")) "dev.architectury" else "me.shedaniel"}:architectury-${env.loader}"
+    modApi("$archMaven:${archVersion.min}")
 
-    modCompileOnly("net.luckperms:api:5.4")
+    modCompileOnly("net.luckperms:api:${lpVersion.min}")
 
     shadowLib("org.yaml:snakeyaml:2.5")
     shadowLib("io.socket:socket.io-client:2.1.2")
@@ -157,7 +173,7 @@ java {
 }
 
 tasks.processResources {
-    val (fabricDeps, forgeDeps) = dependencyJsonOrToml(apis)
+    val (fabricDeps, forgeDeps) = dependencyJsonOrToml(deps)
 
     val map = env.resourceMap(mod, env) + mapOf(
         "dependencies_json" to fabricDeps,
@@ -211,12 +227,12 @@ publishMods {
         projectId = modPublish.modrinthProjectToken
         accessToken = providers.environmentVariable("MODRINTH_TOKEN")
         minecraftVersions.addAll(modPublish.mcTargets)
-        apis.forEach { src ->
-            if (src.enabled) src.versionRange.ifPresent { ver ->
-                if (src.type.optional)
-                    src.modInfo.rinthSlug?.let { optional { slug = it; version = ver.min } }
+        deps.forEach { dep ->
+            if (dep.enabled && dep.publish) {
+                if (dep.optional)
+                    dep.modInfo.rinthSlug?.let { optional { slug = it; version = dep.versionRange.min } }
                 else
-                    src.modInfo.rinthSlug?.let { requires { slug = it; version = ver.min } }
+                    dep.modInfo.rinthSlug?.let { requires { slug = it; version = dep.versionRange.min } }
             }
         }
     }
@@ -225,12 +241,12 @@ publishMods {
         projectId = modPublish.curseforgeProjectToken
         accessToken = providers.environmentVariable("CURSEFORGE_TOKEN")
         minecraftVersions.addAll(modPublish.mcTargets)
-        apis.forEach { src ->
-            if (src.enabled) src.versionRange.ifPresent { ver ->
-                if (src.type.optional)
-                    src.modInfo.curseSlug?.let { optional { slug = it; version = ver.min } }
+        deps.forEach { dep ->
+            if (dep.enabled && dep.publish) {
+                if (dep.optional)
+                    dep.modInfo.curseSlug?.let { optional { slug = it; version = dep.versionRange.min } }
                 else
-                    src.modInfo.curseSlug?.let { requires { slug = it; version = ver.min } }
+                    dep.modInfo.curseSlug?.let { requires { slug = it; version = dep.versionRange.min } }
             }
         }
     }

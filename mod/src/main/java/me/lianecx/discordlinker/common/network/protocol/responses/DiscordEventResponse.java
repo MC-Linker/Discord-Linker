@@ -24,7 +24,6 @@ public class DiscordEventResponse {
     public static final DiscordEventResponse PLAYER_NOT_ONLINE = new DiscordEventResponse(ProtocolError.PLAYER_NOT_ONLINE);
     public static final DiscordEventResponse LUCKPERMS_NOT_LOADED = new DiscordEventResponse(ProtocolError.LUCKPERMS_NOT_LOADED);
     public static final DiscordEventResponse INVALID_JSON = new DiscordEventResponse(ProtocolError.INVALID_JSON);
-    public static final DiscordEventResponse INVALID_GROUP_OR_TEAM = new DiscordEventResponse(ProtocolError.INVALID_GROUP_OR_TEAM);
     public static final DiscordEventResponse IO_ERROR = new DiscordEventResponse(ProtocolError.IO_ERROR);
     public static final DiscordEventResponse UNKNOWN_EVENT = new DiscordEventResponse(ProtocolError.UNKNOWN_EVENT);
     public static final DiscordEventResponse NBT_ERROR = new DiscordEventResponse(ProtocolError.NBT_ERROR);

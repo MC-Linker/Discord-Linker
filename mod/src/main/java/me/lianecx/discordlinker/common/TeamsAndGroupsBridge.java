@@ -49,8 +49,8 @@ public final class TeamsAndGroupsBridge {
         if(getConnJson() == null) return CompletableFuture.completedFuture(DiscordEventResponse.CONN_JSON_MISSING);
 
         return getTeamsAndGroupsBridge().getPlayersInGroupOrTeam(payload.role.getName(), payload.role.isGroup()).thenApply(players -> {
-            if(players == null)
-                return DiscordEventResponse.INVALID_GROUP_OR_TEAM;
+            if(players == null) return DiscordEventResponse.NOT_FOUND;
+
             ConnJson.SyncedRole role = getConnJson().getSyncedRole(payload.role.getName(), payload.role.isGroup());
             if(role == null) {
                 getConnJson().getSyncedRoles().add(payload.role);
@@ -100,6 +100,7 @@ public final class TeamsAndGroupsBridge {
         for(ConnJson.SyncedRole role : roles) {
             if(role.isGroup()) continue; // Only check teams, not LuckPerms groups
 
+            // We can block here since we're already async
             List<String> currentPlayers = getPlayersInGroupOrTeam(role.getName(), false).join();
 
             if(currentPlayers == null) {
@@ -110,7 +111,7 @@ public final class TeamsAndGroupsBridge {
                 continue;
             }
 
-            List<String> storedPlayers = role.getPlayers() != null ? role.getPlayers() : new ArrayList<>();
+            List<String> storedPlayers = role.getPlayers();
 
             // Find added players (in current but not in stored)
             Set<String> storedSet = new HashSet<>(storedPlayers);
@@ -129,10 +130,20 @@ public final class TeamsAndGroupsBridge {
                     }
                 }
             }
+            else {
+                // If Discord is authoritative, cancel any changes
 
-            if(!storedSet.equals(currentSet)) {
-                role.setPlayers(currentPlayers);
-                changed = true;
+                for(String uuid : currentPlayers) {
+                    if(!storedSet.contains(uuid)) {
+                        teams.removeFromTeam(role.getName(), resolveUUIDToName(uuid));
+                    }
+                }
+
+                for(String uuid : storedPlayers) {
+                    if(!currentSet.contains(uuid)) {
+                        teams.addToTeam(role.getName(), resolveUUIDToName(uuid));
+                    }
+                }
             }
         }
 
