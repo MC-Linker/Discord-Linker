@@ -50,7 +50,6 @@ public final class TeamsAndGroupsBridge {
 
         return getTeamsAndGroupsBridge().getPlayersInGroupOrTeam(payload.role.getName(), payload.role.isGroup())
                 .thenApply(players -> {
-                    System.out.println(MinecraftChatColor.YELLOW + "Updating synced role '" + payload.role.getName() + "' with players: " + players);
                     if(players == null) return DiscordEventResponse.NOT_FOUND;
 
                     ConnJson.SyncedRole role = getConnJson().getSyncedRole(payload.role.getName(), payload.role.isGroup());

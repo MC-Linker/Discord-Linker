@@ -6,8 +6,10 @@ import me.lianecx.discordlinker.common.abstraction.LinkerOfflinePlayer;
 import me.lianecx.discordlinker.common.abstraction.LinkerPlayer;
 import me.lianecx.discordlinker.common.abstraction.LinkerServer;
 import me.lianecx.discordlinker.common.util.YamlUtil;
-//? if <1.19
-//import net.minecraft.Util;
+//? if <1.19 {
+/*import net.minecraft.Util;
+import org.jetbrains.annotations.NotNull;
+*///? }
 import net.minecraft.commands.CommandSource;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.network.chat.*;
