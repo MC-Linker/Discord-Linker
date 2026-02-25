@@ -1,9 +1,6 @@
 package me.lianecx.discordlinker.common.util;
 
-import static me.lianecx.discordlinker.common.util.UrlParser.URL_REGEX;
-
 public class MarkdownUtil {
-    public static final String MD_URL_REGEX = "(?i)\\[([^]]+)]\\((" + URL_REGEX + ")\\)";
 
     private MarkdownUtil() {}
 

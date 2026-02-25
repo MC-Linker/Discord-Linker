@@ -14,7 +14,6 @@ import net.minecraft.world.level.storage.TagValueOutput;
 *///? }
 
 import static me.lianecx.discordlinker.architectury.util.URLComponent.buildURLComponent;
-import static me.lianecx.discordlinker.common.DiscordLinkerCommon.*;
 
 public class ModPlayer extends LinkerPlayer {
 
@@ -44,9 +43,6 @@ public class ModPlayer extends LinkerPlayer {
 
     @Override
     public boolean hasPermission(int defaultLevel, String permission) {
-        if(getTeamsAndGroupsBridge().isLuckPermsEnabled())
-            return getTeamsAndGroupsBridge().hasPermission(this, permission);
-
         //? if <1.21 {
         return player.hasPermissions(defaultLevel);
          //? } else

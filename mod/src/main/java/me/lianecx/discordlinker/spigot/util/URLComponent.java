@@ -7,7 +7,6 @@ import net.md_5.bungee.api.chat.ComponentBuilder;
 import net.md_5.bungee.api.chat.ClickEvent;
 import net.md_5.bungee.api.chat.HoverEvent;
 
-import java.awt.*;
 import java.util.List;
 
 public class URLComponent {
@@ -22,7 +21,7 @@ public class URLComponent {
         for (UrlParser.Segment segment : segments) {
             if (segment.isUrl()) {
                 TextComponent url = new TextComponent(segment.getContent());
-                url.setClickEvent(new ClickEvent(ClickEvent.Action.OPEN_URL, segment.getContent()));
+                url.setClickEvent(new ClickEvent(ClickEvent.Action.OPEN_URL, segment.getURL()));
                 url.setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new ComponentBuilder("Click to open link").create()));
                 builder.append(url);
             } else builder.append(new TextComponent(segment.getContent()));

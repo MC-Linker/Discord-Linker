@@ -12,7 +12,7 @@ import me.lianecx.discordlinker.common.util.MinecraftChatColor;
 import static me.lianecx.discordlinker.common.DiscordLinkerCommon.getConfig;
 import static me.lianecx.discordlinker.common.DiscordLinkerCommon.getServer;
 import static me.lianecx.discordlinker.common.util.MarkdownUtil.*;
-import static me.lianecx.discordlinker.common.util.UrlParser.URL_REGEX;
+import static me.lianecx.discordlinker.common.util.UrlParser.*;
 
 public class ChatDiscordEvent implements LinkerSyncDiscordEvent<ChatPayload> {
 
@@ -54,7 +54,7 @@ public class ChatDiscordEvent implements LinkerSyncDiscordEvent<ChatPayload> {
 
             String reducedReplyMsg = replyMsg.length() > 30 ? replyMsg.substring(0, 30) + "..." : replyMsg;
             //if reply message is a url, don't reduce it
-            if(replyMsg.matches(URL_REGEX) || replyMsg.matches(MD_URL_REGEX)) reducedReplyMsg = replyMsg;
+            if(replyMsg.matches(URL_OR_MD_URL_REGEX)) reducedReplyMsg = replyMsg;
             chatMessage = chatMessage.replaceAll("%reply_message_reduced%", markdownToColorCodes(reducedReplyMsg));
         }
 

@@ -9,7 +9,6 @@ import net.minecraft.network.chat.Component;
 //? if <1.19
 //import net.minecraft.network.chat.TextComponent;
 
-import java.awt.*;
 
 public class URLComponent {
 
@@ -28,24 +27,26 @@ public class URLComponent {
 
                         //? if <1.21 {
                         .withStyle(style -> style
-                                .withClickEvent(new ClickEvent(ClickEvent.Action.OPEN_URL, segment.getContent()))
-                                .withHoverEvent(new HoverEvent(
-                                        HoverEvent.Action.SHOW_TEXT,
-                                        //? if <1.19 {
-                                        /*new TextComponent("Click to open link")
-                                         *///? } else
-                                        Component.literal("Click to open link")
-                                ))
+                            .withClickEvent(new ClickEvent(ClickEvent.Action.OPEN_URL, segment.getURL()))
+                            .withHoverEvent(new HoverEvent(
+                                HoverEvent.Action.SHOW_TEXT,
+                                //? if <1.19 {
+                                /*new TextComponent("Click to open link")
+                                 *///? } else
+                                Component.literal("Click to open link")
+                            ))
+                            .withUnderlined(true)
                         )
                         //? } else {
                         /*.withStyle(style -> style
-                                .withClickEvent(new ClickEvent.OpenUrl(URI.create(segment.getContent())))
-                                .withHoverEvent(new HoverEvent.ShowText(
+                            .withClickEvent(new ClickEvent.OpenUrl(URI.create(segment.getURL())))
+                            .withHoverEvent(new HoverEvent.ShowText(
                                 //? if <1.19 {
                                 /^new TextComponent("Click to open link")
                                 ^///? } else
                                 Component.literal("Click to open link")
-                                ))
+                            ))
+                            .withUnderlined(true)
                         )
                         *///? }
                 );

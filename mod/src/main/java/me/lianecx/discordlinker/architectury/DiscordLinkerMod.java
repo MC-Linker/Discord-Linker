@@ -22,7 +22,7 @@ public class DiscordLinkerMod {
             ModServer server = new ModServer(instance);
             ModConfig config = new ModConfig(server.getDataFolder());
 
-            DiscordLinkerCommon.init(new ModLogger(config.isTestVersion()), config, server, new ModScheduler(), new ModTeamsBridge());
+            DiscordLinkerCommon.init(new ModLogger(config.isTestVersion()), config, server, new ModScheduler(instance), new ModTeamsBridge());
         });
 
         LifecycleEvent.SERVER_STOPPING.register(instance -> getInstance().shutdown());

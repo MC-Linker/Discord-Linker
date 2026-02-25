@@ -46,6 +46,7 @@ public class DiscordLinkerCommon {
         this.connJson = ConnJson.load(server, logger);
 
         String token = connJson != null ? connJson.getToken() : null;
+        //If snapshot version, request test-bot at port 81 otherwise request main-bot at port 80/config-port
         int botPort = config.isTestVersion() ? 81 : config.getBotPort();
         this.clientManager = token != null ? new ClientManager(token, botPort, server, discordEventBus) : new ClientManager(discordEventBus, botPort);
     }
@@ -54,6 +55,7 @@ public class DiscordLinkerCommon {
         if(discordLinker != null) throw new IllegalStateException("DiscordLinkerCommon already initialized!");
         // Initialize instance with fields
         discordLinker = new DiscordLinkerCommon(logger, config, server, scheduler, new TeamsAndGroupsBridge(server, teamsBridge));
+        logger.debug(discordLinker.teamsAndGroupsBridge.isLuckPermsEnabled() ? "Detected LuckPerms." : "LuckPerms not detected.");
 
         // Init logic
         ClientManager.checkVersion();
@@ -115,6 +117,9 @@ public class DiscordLinkerCommon {
     public void shutdown() {
         minecraftEventBus.emit(new ServerStopEventData());
         clientManager.disconnect();
+        scheduler.shutdown();
+
+        if(getConnJson() != null) getConnJson().write();
 
         logger.info(MinecraftChatColor.RED + "Discord-Linker disabled.");
         discordLinker = null;

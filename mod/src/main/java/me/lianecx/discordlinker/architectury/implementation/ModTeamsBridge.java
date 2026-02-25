@@ -1,7 +1,6 @@
 package me.lianecx.discordlinker.architectury.implementation;
 
 import dev.architectury.utils.GameInstance;
-import me.lianecx.discordlinker.common.abstraction.LinkerServer;
 import me.lianecx.discordlinker.common.abstraction.TeamsBridge;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.scores.PlayerTeam;
@@ -10,7 +9,6 @@ import net.minecraft.world.scores.Team;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
 
 public final class ModTeamsBridge implements TeamsBridge {
 
@@ -21,10 +19,10 @@ public final class ModTeamsBridge implements TeamsBridge {
     }
 
     @Override
-    public CompletableFuture<List<String>> getPlayersInTeam(String teamName) {
+    public List<String> getPlayersInTeam(String teamName) {
         Team team = getTeam(teamName);
-        if(team == null) return CompletableFuture.completedFuture(null);
-        return CompletableFuture.completedFuture(new ArrayList<>(team.getPlayers()));
+        if(team == null) return null;
+        return new ArrayList<>(team.getPlayers());
     }
 
     @Override
@@ -34,7 +32,12 @@ public final class ModTeamsBridge implements TeamsBridge {
 
     @Override
     public void removeFromTeam(String teamName, String name) {
-        server.getScoreboard().removePlayerFromTeam(name, getTeam(teamName));
+        try {
+            server.getScoreboard().removePlayerFromTeam(name, getTeam(teamName));
+        }
+        catch(IllegalStateException ignored) {
+            // Ignore, happens when the player isn't in the team
+        }
     }
 
     @Override

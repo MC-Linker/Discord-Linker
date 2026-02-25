@@ -172,6 +172,19 @@ java {
     }
 }
 
+// Add JBR for advanced hotreloading
+val jbrLauncher = javaToolchains.launcherFor {
+    languageVersion.set(JavaLanguageVersion.of(env.javaVer))
+    vendor.set(JvmVendorSpec.JETBRAINS)
+}
+
+tasks.withType<JavaExec>().configureEach {
+    if (name == "runServer") {
+        javaLauncher.set(jbrLauncher)
+        jvmArgs("-XX:+AllowEnhancedClassRedefinition")
+    }
+}
+
 tasks.processResources {
     val (fabricDeps, forgeDeps) = dependencyJsonOrToml(deps)
 

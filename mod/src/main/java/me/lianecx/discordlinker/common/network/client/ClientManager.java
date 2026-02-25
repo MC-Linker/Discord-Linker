@@ -37,7 +37,6 @@ public final class ClientManager {
 
     public static int DEFAULT_BOT_PORT = 80;
 
-    //If snapshot version, request test-bot at port 81 otherwise request main-bot at port 80/config-port
     public static int BOT_PORT;
     public static URI BOT_URI;
 
@@ -98,7 +97,6 @@ public final class ClientManager {
         return client.connect().thenApply(connected -> {
             if(connected) {
                 client.onAny(discordEventBus::emit);
-                reconcileSyncedRoles();
                 updateStatsChannel(ConnJson.StatsChannel.StatsChannelEvent.MEMBERS);
             }
             return connected;
@@ -232,6 +230,7 @@ public final class ClientManager {
 
             send("remove-synced-role", role);
             getConnJson().getSyncedRoles().remove(role);
+            getConnJson().write();
 
             if(!getConnJson().hasTeamSyncedRole()) getTeamsAndGroupsBridge().stopTeamCheck();
         });
@@ -275,6 +274,14 @@ public final class ClientManager {
 
                         send("sync-synced-role-members", payload, response -> {
                             if(response == null || !response.isSuccess()) {
+                                if(response != null && ProtocolError.NOT_FOUND == response.getError()) {
+                                    // Role was deleted on Discord while offline
+                                    getLogger().warn(MinecraftChatColor.YELLOW + "Synced role '" + role.getName() + "' no longer exists on Discord. Removing synced role.");
+                                    getConnJson().getSyncedRoles().remove(role);
+                                    getConnJson().write();
+                                    return;
+                                }
+
                                 getLogger().warn(MinecraftChatColor.YELLOW + "Failed to reconcile synced role '" + role.getName() + "'.");
                                 // Still update stored players to current state
                                 role.setPlayers(currentPlayers);
@@ -287,25 +294,30 @@ public final class ClientManager {
                                 JsonArray added = data.has("added") ? data.getAsJsonArray("added") : new JsonArray();
                                 JsonArray removed = data.has("removed") ? data.getAsJsonArray("removed") : new JsonArray();
 
+                                List<CompletableFuture<Void>> futures = new ArrayList<>();
                                 // Apply Discord→MC changes only if direction allows it
                                 if(role.syncsToMinecraft()) {
                                     // Add players that have the Discord role but are missing from MC
                                     for(JsonElement uuid : added) {
-                                        getTeamsAndGroupsBridge().addPlayerToGroupOrTeam(role.getName(), role.isGroup(), uuid.getAsString());
+                                        futures.add(getTeamsAndGroupsBridge().addPlayerToGroupOrTeam(role.getName(), role.isGroup(), uuid.getAsString()));
                                     }
 
                                     // Remove players from MC that don't have the Discord role
                                     for(JsonElement uuid : removed) {
-                                        getTeamsAndGroupsBridge().removePlayerFromGroupOrTeam(role.getName(), role.isGroup(), uuid.getAsString());
+                                        futures.add(getTeamsAndGroupsBridge().removePlayerFromGroupOrTeam(role.getName(), role.isGroup(), uuid.getAsString()));
                                     }
                                 }
 
-                                // Refresh the player list after reconciliation
-                                getTeamsAndGroupsBridge().getPlayersInGroupOrTeam(role.getName(), role.isGroup())
-                                        .thenAccept(reconciledPlayers -> {
-                                            if(reconciledPlayers != null) role.setPlayers(reconciledPlayers);
-                                            conn.write();
-                                        });
+                                // Wait for all changes to be applied before refreshing the player list
+                                CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]))
+                                    .thenAccept(v -> {
+                                        // Refresh the player list after reconciliation
+                                        getTeamsAndGroupsBridge().getPlayersInGroupOrTeam(role.getName(), role.isGroup())
+                                            .thenAccept(reconciledPlayers -> {
+                                                if(reconciledPlayers != null) role.setPlayers(reconciledPlayers);
+                                                conn.write();
+                                            });
+                                    });
                             }
                             catch(Exception e) {
                                 getLogger().error(MinecraftChatColor.RED + "Error reconciling synced role '" + role.getName() + "': " + e.getMessage());

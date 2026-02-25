@@ -1,87 +1,142 @@
 package me.lianecx.discordlinker.architectury.implementation;
 
-//? if <=1.16.5 {
-
-/*import dev.architectury.event.events.TickEvent;
-*///? } else
-import dev.architectury.event.events.common.TickEvent;
 import me.lianecx.discordlinker.common.abstraction.core.LinkerScheduler;
 import net.minecraft.server.MinecraftServer;
 
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.*;
+
+import static me.lianecx.discordlinker.common.DiscordLinkerCommon.getLogger;
 
 public class ModScheduler implements LinkerScheduler {
 
-    private static final ExecutorService ASYNC_EXECUTOR = Executors.newCachedThreadPool(r -> {
-        Thread t = new Thread(r, "DiscordLinker-Async");
+    /**
+     * The number of milliseconds per Minecraft tick. Minecraft runs at 20 ticks per second, so each tick is 50ms.
+     * TPS variance (lag) is not accounted for in this scheduler.
+     */
+    private static final long MS_PER_TICK = 50L;
+
+    private final MinecraftServer server;
+
+    private final ScheduledExecutorService executor = Executors.newScheduledThreadPool(2, r -> {
+        Thread t = new Thread(r, "DiscordLinker-Scheduler");
         t.setDaemon(true);
         return t;
     });
 
-    private final List<LinkerSchedulerTask> tasks = new ArrayList<>();
-
-    public ModScheduler() {
-        TickEvent.SERVER_POST.register(this::tick);
+    public ModScheduler(MinecraftServer server) {
+        this.server = server;
     }
 
     @Override
     public LinkerSchedulerTask runDelayedSync(Runnable task, int delay) {
         LinkerSchedulerTask wrapper = new LinkerSchedulerTask(task, false, delay);
-        tasks.add(wrapper);
-        return wrapper;
+        ScheduledFuture<?> future = executor.schedule(
+                () -> executeOnServer(wrapper),
+                delay * MS_PER_TICK, TimeUnit.MILLISECONDS
+        );
+        ModSchedulerTask modTask = new ModSchedulerTask(wrapper, future);
+        getLogger().debug("Scheduled delayed sync task: " + task + " (delay: " + delay + " ticks)");
+        return modTask;
     }
 
     @Override
-    public LinkerSchedulerRepeatingTask runRepeatingSync(Runnable task, int initialDelay, int period, int delay) {
-        LinkerSchedulerRepeatingTask wrapper = new LinkerSchedulerRepeatingTask(task, false, initialDelay, period);
-        tasks.add(wrapper);
-        return wrapper;
+    public LinkerSchedulerRepeatingTask runRepeatingSync(Runnable task, int delay, int period) {
+        LinkerSchedulerRepeatingTask wrapper = new LinkerSchedulerRepeatingTask(task, false, delay, period);
+        ScheduledFuture<?> future = executor.scheduleAtFixedRate(
+                () -> executeOnServer(wrapper),
+                delay * MS_PER_TICK, period * MS_PER_TICK, TimeUnit.MILLISECONDS
+        );
+        ModSchedulerRepeatingTask modTask = new ModSchedulerRepeatingTask(wrapper, future);
+        getLogger().debug("Scheduled repeating sync task: " + task + " (initial delay: " + delay + " ticks, period: " + period + " ticks)");
+        return modTask;
     }
 
     @Override
-    public void runAsync(Runnable task) {
-        ASYNC_EXECUTOR.execute(task);
+    public void runSync(Runnable task) {
+        getLogger().debug("Scheduled sync task immediately: " + task);
+        server.execute(task);
     }
 
     @Override
     public LinkerSchedulerTask runDelayedAsync(Runnable task, int delay) {
         LinkerSchedulerTask wrapper = new LinkerSchedulerTask(task, true, delay);
-        tasks.add(wrapper);
-        return wrapper;
+        ScheduledFuture<?> future = executor.schedule(
+                wrapper::run,
+                delay * MS_PER_TICK, TimeUnit.MILLISECONDS
+        );
+        ModSchedulerTask modTask = new ModSchedulerTask(wrapper, future);
+        getLogger().debug("Scheduled delayed async task: " + task + " (delay: " + delay + " ticks)");
+        return modTask;
     }
 
     @Override
-    public LinkerSchedulerRepeatingTask runRepeatingAsync(Runnable task, int initialDelay, int period, int delay) {
-        LinkerSchedulerRepeatingTask wrapper = new LinkerSchedulerRepeatingTask(task, true, initialDelay, period);
-        tasks.add(wrapper);
-        return wrapper;
+    public LinkerSchedulerRepeatingTask runRepeatingAsync(Runnable task, int delay, int period) {
+        LinkerSchedulerRepeatingTask wrapper = new LinkerSchedulerRepeatingTask(task, true, delay, period);
+        ScheduledFuture<?> future = executor.scheduleAtFixedRate(
+                wrapper::run,
+                delay * MS_PER_TICK, period * MS_PER_TICK, TimeUnit.MILLISECONDS
+        );
+        ModSchedulerRepeatingTask modTask = new ModSchedulerRepeatingTask(wrapper, future);
+        getLogger().debug("Scheduled repeating async task: " + task + " (initial delay: " + delay + " ticks, period: " + period + " ticks)");
+        return modTask;
+    }
+
+    @Override
+    public void runAsync(Runnable task) {
+        executor.execute(task);
+        getLogger().debug("Scheduled async task immediately: " + task);
+    }
+
+    @Override
+    public void shutdown() {
+        executor.shutdownNow();
+        getLogger().debug("Scheduler shut down.");
+    }
+
+    private void executeOnServer(LinkerSchedulerTask wrapper) {
+        if(wrapper.isCancelled()) return;
+        server.execute(wrapper::run);
+    }
+
+    // -------------------------
+    // Platform-specific task wrappers
+    // -------------------------
+
+    /**
+     * Wraps a {@link LinkerSchedulerTask} with a {@link ScheduledFuture} so that
+     * cancellation also cancels the pending scheduled execution.
+     */
+    private static class ModSchedulerTask extends LinkerSchedulerTask {
+        private final ScheduledFuture<?> future;
+
+        ModSchedulerTask(LinkerSchedulerTask delegate, ScheduledFuture<?> future) {
+            super(delegate.getTask(), delegate.isAsync(), 0);
+            this.future = future;
+        }
+
+        @Override
+        public void cancel() {
+            super.cancel();
+            future.cancel(false);
+        }
     }
 
     /**
-     * Ticks all scheduled tasks, runs ready tasks on the server thread
+     * Wraps a {@link LinkerSchedulerRepeatingTask} with a {@link ScheduledFuture} so that
+     * cancellation also cancels the periodic scheduled execution.
      */
-    private void tick(MinecraftServer server) {
-        Iterator<LinkerSchedulerTask> it = tasks.iterator();
-        while(it.hasNext()) {
-            LinkerSchedulerTask task = it.next();
+    private static class ModSchedulerRepeatingTask extends LinkerSchedulerRepeatingTask {
+        private final ScheduledFuture<?> future;
 
-            if(task.isCancelled()) {
-                it.remove();
-                continue;
-            }
+        ModSchedulerRepeatingTask(LinkerSchedulerRepeatingTask delegate, ScheduledFuture<?> future) {
+            super(delegate.getTask(), delegate.isAsync(), 0, delegate.getPeriod());
+            this.future = future;
+        }
 
-            if(!task.tick()) continue;
-
-            if(task.isAsync()) ASYNC_EXECUTOR.execute(task::run);
-            else server.execute(task::run);
-
-            if(task instanceof LinkerSchedulerRepeatingTask)
-                task.reset(((LinkerSchedulerRepeatingTask) task).getPeriod());
-            else it.remove();
+        @Override
+        public void cancel() {
+            super.cancel();
+            future.cancel(false);
         }
     }
 }

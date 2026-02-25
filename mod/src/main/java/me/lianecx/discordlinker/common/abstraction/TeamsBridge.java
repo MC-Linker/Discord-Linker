@@ -1,7 +1,8 @@
 package me.lianecx.discordlinker.common.abstraction;
 
+import org.jetbrains.annotations.Nullable;
+
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
 
 public interface TeamsBridge {
 
@@ -9,9 +10,9 @@ public interface TeamsBridge {
      * Gets the players in the specified team.
      * Returns <b>player names</b>, not UUIDs.
      *
-     * @return A CompletableFuture of player names, or a future of {@code null} if the team does not exist.
+     * @return A list of player names in the team, or null if the team does not exist.
      */
-    CompletableFuture<List<String>> getPlayersInTeam(String teamName);
+    @Nullable List<String> getPlayersInTeam(String teamName);
 
     /**
      * Adds a player to the specified team by their <b>player name</b>.

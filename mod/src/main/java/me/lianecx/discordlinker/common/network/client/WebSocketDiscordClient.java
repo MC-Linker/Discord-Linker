@@ -14,10 +14,7 @@ import okhttp3.Dispatcher;
 import okhttp3.OkHttpClient;
 import java.util.Arrays;
 import java.util.Map;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
@@ -78,6 +75,7 @@ public final class WebSocketDiscordClient implements DiscordClient {
         socket.on(Socket.EVENT_CONNECT, args -> {
             getLogger().debug("[Socket.io] Connected with args: " + Arrays.toString(args));
             getLogger().info(MinecraftChatColor.GREEN + "Connected to the Discord Bot!");
+            getClientManager().reconcileSyncedRoles(); // Reconcile synced roles on every new connection to ensure consistency after bot restarts or disconnects
         });
 
         socket.on(Socket.EVENT_DISCONNECT, args -> {
@@ -155,7 +153,6 @@ public final class WebSocketDiscordClient implements DiscordClient {
     @Override
     public void onAny(BiFunction<String, Object[], CompletableFuture<DiscordEventResponse>> handler) {
         socket.onAnyIncoming(args -> {
-            getLogger().debug("[Socket.io] Received raw event: " + Arrays.toString(args));
             if(args == null || args.length < 1) return;
             if(!(args[0] instanceof String)) return;
 
@@ -213,7 +210,6 @@ public final class WebSocketDiscordClient implements DiscordClient {
         ack.call(response.getData());
     }
 
-
     @Override
     public void send(String event, Object[] payload) {
         if(isRateLimited(event)) {
@@ -237,7 +233,6 @@ public final class WebSocketDiscordClient implements DiscordClient {
         socket.emit(event, payload, new AckWithTimeout(5000) {
             @Override
             public void onSuccess(Object... args) {
-                getLogger().debug("[Socket.io] Received raw Ack response: " + Arrays.toString(args));
                 // Assume the response is JSON
                 if(args.length == 0) {
                     callback.accept(null);

@@ -17,14 +17,19 @@ public class VerifyCommand implements LinkerMinecraftCommand {
     public static void addPlayerToVerificationQueue(String uuid, String code) {
         playersAwaitingVerification.put(uuid, code);
 
+        // Send info message if he's online
+        LinkerPlayer player = getServer().getPlayer(UUID.fromString(uuid));
+        if(player != null)
+            player.sendMessage(MinecraftChatColor.YELLOW + "You have been added to the verification queue. Please execute \"/verify <code>\" in-game within 3 minutes to verify your account.");
+
         // Remove the player from the queue after 3 minutes
         getScheduler().runDelayedSync(() -> {
             if (playersAwaitingVerification.containsKey(uuid)) {
                 playersAwaitingVerification.remove(uuid);
 
-                LinkerPlayer player = getServer().getPlayer(UUID.fromString(uuid));
-                if(player != null)
-                    player.sendMessage(MinecraftChatColor.YELLOW + "You have been removed from the verification queue because you took too long to verify.");
+                LinkerPlayer player1 = getServer().getPlayer(UUID.fromString(uuid));
+                if(player1 != null)
+                    player1.sendMessage(MinecraftChatColor.YELLOW + "You have been removed from the verification queue because you took too long to verify.");
             }
         }, 20 * 180);
     }

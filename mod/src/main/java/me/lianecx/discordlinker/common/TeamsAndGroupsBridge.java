@@ -26,7 +26,7 @@ public final class TeamsAndGroupsBridge {
 
     public TeamsAndGroupsBridge(LinkerServer server, TeamsBridge teamsBridge) {
         this.server = server;
-        this.luckPerms = server.isPluginOrModEnabled("LuckPerms") ? new LuckPermsBridge() : null;
+        this.luckPerms = LuckPermsBridge.getSafely();
         this.teams = teamsBridge;
     }
 
@@ -48,18 +48,20 @@ public final class TeamsAndGroupsBridge {
     public static CompletableFuture<DiscordEventResponse> getRoleResponseFromPayload(SyncedRoleMemberPayload payload) {
         if(getConnJson() == null) return CompletableFuture.completedFuture(DiscordEventResponse.CONN_JSON_MISSING);
 
-        return getTeamsAndGroupsBridge().getPlayersInGroupOrTeam(payload.role.getName(), payload.role.isGroup()).thenApply(players -> {
-            if(players == null) return DiscordEventResponse.NOT_FOUND;
+        return getTeamsAndGroupsBridge().getPlayersInGroupOrTeam(payload.role.getName(), payload.role.isGroup())
+                .thenApply(players -> {
+                    System.out.println(MinecraftChatColor.YELLOW + "Updating synced role '" + payload.role.getName() + "' with players: " + players);
+                    if(players == null) return DiscordEventResponse.NOT_FOUND;
 
-            ConnJson.SyncedRole role = getConnJson().getSyncedRole(payload.role.getName(), payload.role.isGroup());
-            if(role == null) {
-                getConnJson().getSyncedRoles().add(payload.role);
-                role = payload.role;
-            }
-            role.setPlayers(players);
-            getConnJson().write();
-            return DiscordEventResponse.toJson(players);
-        });
+                    ConnJson.SyncedRole role = getConnJson().getSyncedRole(payload.role.getName(), payload.role.isGroup());
+                    if(role == null) {
+                        getConnJson().getSyncedRoles().add(payload.role);
+                        role = payload.role;
+                    }
+                    role.setPlayers(players);
+                    getConnJson().write();
+                    return DiscordEventResponse.toJson(players);
+                });
     }
 
     /**
@@ -72,7 +74,7 @@ public final class TeamsAndGroupsBridge {
 
         int intervalSeconds = getConfig().getTeamCheckIntervalSeconds();
         int intervalTicks = intervalSeconds * 20;
-        teamCheckTask = getScheduler().runRepeatingAsync(this::runTeamCheck, intervalTicks, intervalTicks, 0);
+        teamCheckTask = getScheduler().runRepeatingAsync(this::runTeamCheck, intervalTicks, intervalTicks);
     }
 
     /**
@@ -135,13 +137,13 @@ public final class TeamsAndGroupsBridge {
 
                 for(String uuid : currentPlayers) {
                     if(!storedSet.contains(uuid)) {
-                        teams.removeFromTeam(role.getName(), resolveUUIDToName(uuid));
+                        getScheduler().runSync(() -> teams.removeFromTeam(role.getName(), resolveUUIDToName(uuid)));
                     }
                 }
 
                 for(String uuid : storedPlayers) {
                     if(!currentSet.contains(uuid)) {
-                        teams.addToTeam(role.getName(), resolveUUIDToName(uuid));
+                        getScheduler().runSync(() -> teams.addToTeam(role.getName(), resolveUUIDToName(uuid)));
                     }
                 }
             }
@@ -159,13 +161,14 @@ public final class TeamsAndGroupsBridge {
      */
     public CompletableFuture<List<String>> getPlayersInGroupOrTeam(String name, boolean isGroup) {
         if(isGroup && luckPerms != null) return luckPerms.getPlayersInGroup(name);
-        else if(!isGroup) return teams.getPlayersInTeam(name).thenApply(playerNames -> {
-            if(playerNames == null) return null;
-            return playerNames.stream()
+        else if(!isGroup) {
+            List<String> players = teams.getPlayersInTeam(name);
+            if(players == null) return CompletableFuture.completedFuture(null);
+            return players.stream()
                     .map(this::resolveNameToUUID)
                     .filter(Objects::nonNull)
-                    .collect(Collectors.toList());
-        });
+                    .collect(Collectors.collectingAndThen(Collectors.toList(), CompletableFuture::completedFuture));
+        }
         else return CompletableFuture.completedFuture(new ArrayList<>());
     }
 
@@ -174,12 +177,22 @@ public final class TeamsAndGroupsBridge {
      * For LuckPerms groups, the UUID is passed directly.
      * For teams, the UUID is resolved to a player name first.
      */
-    public void addPlayerToGroupOrTeam(String name, boolean isGroup, String uuid) {
-        if(isGroup && luckPerms != null) luckPerms.addToGroup(name, uuid);
-        else {
+    public CompletableFuture<Void> addPlayerToGroupOrTeam(String name, boolean isGroup, String uuid) {
+        getLogger().debug(MinecraftChatColor.GREEN + "Adding player with UUID '" + uuid + "' to " + (isGroup ? "group" : "team") + " '" + name + "'");
+
+        if(isGroup && luckPerms != null) return luckPerms.addToGroup(name, uuid);
+        else if(!isGroup) {
             String playerName = resolveUUIDToName(uuid);
-            if(playerName != null) teams.addToTeam(name, playerName);
+            if(playerName != null) {
+                CompletableFuture<Void> future = new CompletableFuture<>();
+                getScheduler().runSync(() -> {
+                    teams.addToTeam(name, playerName);
+                    future.complete(null);
+                });
+                return future;
+            }
         }
+        return CompletableFuture.completedFuture(null);
     }
 
     /**
@@ -187,12 +200,22 @@ public final class TeamsAndGroupsBridge {
      * For LuckPerms groups, the UUID is passed directly.
      * For teams, the UUID is resolved to a player name first.
      */
-    public void removePlayerFromGroupOrTeam(String name, boolean isGroup, String uuid) {
-        if(isGroup && luckPerms != null) luckPerms.removeFromGroup(name, uuid);
-        else {
+    public CompletableFuture<Void> removePlayerFromGroupOrTeam(String name, boolean isGroup, String uuid) {
+        getLogger().debug(MinecraftChatColor.RED + "Removing player with UUID '" + uuid + "' from " + (isGroup ? "group" : "team") + " '" + name + "'");
+
+        if(isGroup && luckPerms != null) return luckPerms.removeFromGroup(name, uuid);
+        else if(!isGroup) {
             String playerName = resolveUUIDToName(uuid);
-            if(playerName != null) teams.removeFromTeam(name, playerName);
+            if(playerName != null) {
+                CompletableFuture<Void> future = new CompletableFuture<>();
+                getScheduler().runSync(() -> {
+                    teams.removeFromTeam(name, playerName);
+                    future.complete(null);
+                });
+                return future;
+            }
         }
+        return CompletableFuture.completedFuture(null);
     }
 
     /**

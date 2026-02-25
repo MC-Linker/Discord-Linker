@@ -11,6 +11,7 @@ import net.luckperms.api.model.group.Group;
 import net.luckperms.api.model.user.User;
 import net.luckperms.api.node.Node;
 import net.luckperms.api.node.matcher.NodeMatcher;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
@@ -22,11 +23,21 @@ public final class LuckPermsBridge {
 
     private static final String GROUP_NODE_PREFIX = "group.";
 
-    private final LuckPerms api = LuckPermsProvider.get();
+    private static LuckPerms api;
 
-    public LuckPermsBridge() {
-        api.getEventBus().subscribe(this, NodeMutateEvent.class, this::onNodeMutate);
-        api.getEventBus().subscribe(this, GroupDeleteEvent.class, this::onGroupDelete);
+    private LuckPermsBridge() {
+        api.getEventBus().subscribe(NodeMutateEvent.class, this::onNodeMutate);
+        api.getEventBus().subscribe(GroupDeleteEvent.class, this::onGroupDelete);
+    }
+
+    public static @Nullable LuckPermsBridge getSafely() {
+        try {
+            api = LuckPermsProvider.get();
+            return new LuckPermsBridge();
+        }
+        catch (IllegalStateException e) {
+            return null;
+        }
     }
 
     public boolean hasPermission(LinkerOfflinePlayer player, String permission) {
@@ -48,14 +59,16 @@ public final class LuckPermsBridge {
         });
     }
 
-    public void addToGroup(String group, String uuid) {
-        api.getUserManager().modifyUser(UUID.fromString(uuid), user -> {
+    public CompletableFuture<Void> addToGroup(String group, String uuid) {
+        return api.getUserManager().modifyUser(UUID.fromString(uuid), user -> {
+            getLogger().info("Adding user " + uuid + " to LuckPerms group " + group);
             user.data().add(Node.builder(GROUP_NODE_PREFIX + group).build());
         });
     }
 
-    public void removeFromGroup(String group, String uuid) {
-        api.getUserManager().modifyUser(UUID.fromString(uuid), user -> {
+    public CompletableFuture<Void> removeFromGroup(String group, String uuid) {
+        return api.getUserManager().modifyUser(UUID.fromString(uuid), user -> {
+            getLogger().info("Removing user " + uuid + " from LuckPerms group " + group);
             user.data().remove(Node.builder(GROUP_NODE_PREFIX + group).build());
         });
     }
@@ -73,43 +86,55 @@ public final class LuckPermsBridge {
 
         User user = (User) event.getTarget();
         UUID uuid = user.getUniqueId();
+        String uuidString = uuid.toString();
 
         Set<String> groupsBefore = extractGroupNames(event.getDataBefore());
         Set<String> groupsAfter = extractGroupNames(event.getDataAfter());
 
         boolean changed = false;
 
-        for(ConnJson.SyncedRole role : conn.getSyncedRoles()) {
+        // snapshot to avoid concurrent modification
+        List<ConnJson.SyncedRole> syncedRolesSnapshot = new ArrayList<>(conn.getSyncedRoles());
+        for(ConnJson.SyncedRole role : syncedRolesSnapshot) {
             if(!role.isGroup()) continue;
 
             String groupName = role.getName();
             boolean wasMember = groupsBefore.contains(groupName);
             boolean isMember = groupsAfter.contains(groupName);
+            boolean storedHasMember = role.getPlayers().contains(uuidString);
 
             if(!wasMember && isMember) {
                 // Player was added to the group
                 if(role.syncsToDiscord()) {
                     getClientManager().addSyncedRoleMember(groupName, true, uuid);
-                    if(!role.getPlayers().contains(uuid.toString())) {
-                        role.getPlayers().add(uuid.toString());
+                    if(!role.getPlayers().contains(uuidString)) {
+                        role.getPlayers().add(uuidString);
                         changed = true;
                     }
                 }
                 else {
-                    // Re-remove group if discord is authoritative
-                    event.getTarget().data().remove(Node.builder(GROUP_NODE_PREFIX + groupName).build());
+                    // Only revert when LP state differs from stored role players to prevent feedback loops.
+                    // If a role got added but he's not in stored players, revert
+                    if(!storedHasMember) {
+                        // Re-remove group if discord is authoritative
+                        event.getTarget().data().remove(Node.builder(GROUP_NODE_PREFIX + groupName).build());
+                    }
                 }
             }
             else if(wasMember && !isMember) {
                 // Player was removed from the group
                 if(role.syncsToDiscord()) {
                     getClientManager().removeSyncedRoleMember(groupName, true, uuid);
-                    role.getPlayers().remove(uuid.toString());
+                    role.getPlayers().remove(uuidString);
                     changed = true;
                 }
                 else {
-                    // Re-add group if discord is authoritative
-                    event.getTarget().data().add(Node.builder(GROUP_NODE_PREFIX + groupName).build());
+                    // Only revert when LP state differs from stored role players to prevent feedback loops.
+                    // If a role got removed but he's in stored players, revert
+                    if(storedHasMember) {
+                        // Re-add group if discord is authoritative
+                        event.getTarget().data().add(Node.builder(GROUP_NODE_PREFIX + groupName).build());
+                    }
                 }
             }
         }

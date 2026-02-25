@@ -98,7 +98,7 @@ public class DiscordEventResponse {
     }
 
     /**
-     * Returns the error code string if this is an error response, or {@code null} otherwise.
+     * Returns the {@link ProtocolError} if this is an error response, or {@code null} otherwise.
      */
     public ProtocolError getError() {
         if(data.has("error")) {

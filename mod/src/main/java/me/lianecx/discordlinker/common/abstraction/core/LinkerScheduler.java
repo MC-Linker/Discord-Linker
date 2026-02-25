@@ -1,22 +1,32 @@
 package me.lianecx.discordlinker.common.abstraction.core;
 
+import static me.lianecx.discordlinker.common.DiscordLinkerCommon.getLogger;
+
 public interface LinkerScheduler {
 
     LinkerSchedulerTask runDelayedSync(Runnable task, int delay);
 
-    LinkerSchedulerRepeatingTask runRepeatingSync(Runnable task, int initialDelay, int period, int delay);
+    LinkerSchedulerRepeatingTask runRepeatingSync(Runnable task, int delay, int period);
     
-    void runAsync(Runnable task);
+    void runSync(Runnable task);
 
     LinkerSchedulerTask runDelayedAsync(Runnable task, int delay);
 
-    LinkerSchedulerRepeatingTask runRepeatingAsync(Runnable task, int initialDelay, int period, int delay);
+    LinkerSchedulerRepeatingTask runRepeatingAsync(Runnable task, int delay, int period);
+
+    void runAsync(Runnable task);
+
+    /**
+     * Shuts down the scheduler and releases resources.
+     * Called when the server is stopping.
+     */
+    default void shutdown() {}
 
     class LinkerSchedulerTask {
         private final Runnable task;
-        private boolean async;
+        private final boolean async;
         private int ticks;
-        private boolean cancelled;
+        private volatile boolean cancelled;
 
         public LinkerSchedulerTask(Runnable task, boolean async, int delay) {
             this.task = task;
@@ -37,6 +47,7 @@ public interface LinkerScheduler {
         }
 
         public void cancel() {
+            getLogger().debug("Cancelling task: " + task + " (async: " + async + ")");
             cancelled = true;
         }
 
@@ -46,6 +57,7 @@ public interface LinkerScheduler {
          * @return true if the task is ready to run
          */
         public boolean tick() {
+//            getLogger().debug("Ticking task: " + task + " (ticks remaining: " + ticks + ")");
             if(cancelled) return false;
             return --ticks <= 0;
         }
@@ -60,6 +72,7 @@ public interface LinkerScheduler {
         }
 
         public void run() {
+            getLogger().debug("Running task: " + task + " (async: " + async + ")");
             if(!cancelled) task.run();
         }
     }

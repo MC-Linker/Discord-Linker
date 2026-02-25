@@ -86,7 +86,7 @@ public class ConnJson {
         return false;
     }
 
-    public SyncedRole getSyncedRole(String name, boolean isGroup) {
+    public @Nullable SyncedRole getSyncedRole(String name, boolean isGroup) {
         for(SyncedRole role : syncedRoles) {
             if(role.getName().equalsIgnoreCase(name) && role.isGroup() == isGroup)
                 return role;

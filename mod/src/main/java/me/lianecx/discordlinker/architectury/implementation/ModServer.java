@@ -22,13 +22,15 @@ import net.minecraft.server.players.NameAndId;
 import net.minecraft.world.level.storage.LevelResource;
 import net.minecraft.world.phys.Vec2;
 import net.minecraft.world.phys.Vec3;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.yaml.snakeyaml.nodes.MappingNode;
+
+import net.minecraft.ChatFormatting;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
@@ -69,7 +71,7 @@ public final class ModServer implements LinkerServer {
 
     @Override
     public String getDataFolder() {
-        return Platform.getConfigFolder().resolve("discord-linker").toString();
+        return Platform.getConfigFolder().resolve("discordlinker").toString();
     }
 
     @Override
@@ -224,13 +226,13 @@ public final class ModServer implements LinkerServer {
                     //? if >=1.19 {
                     @Override
                     public void sendSystemMessage(Component component) {
-                        output.append(component.getString()).append('\n');
+                        output.append(componentToFormattedString(component)).append('\n');
                     }
 
                     //? } else {
                     /*@Override
                     public void sendMessage(@NotNull Component component, @NotNull UUID senderUUID) {
-                        output.append(component.getString()).append('\n');
+                        output.append(componentToFormattedString(component)).append('\n');
                     }
                     *///? }
 
@@ -277,6 +279,53 @@ public final class ModServer implements LinkerServer {
             future.complete("Error executing command: " + e.getMessage());
         }
 
+        // If the command was invalid (e.g. unknown command), the ResultConsumer callback
+        // is never invoked by Brigadier, so the future would never complete. Complete it
+        // here with whatever output was captured (the error message from acceptsFailure).
+        if(!future.isDone()) {
+            String outStr = output.toString().trim();
+            if(outStr.isEmpty()) outStr = COMMAND_NO_OUTPUT_FAIL;
+            future.complete(outStr);
+        }
+
         return future;
+    }
+
+    /**
+     * Converts a Minecraft {@link Component} to a legacy-formatted string
+     * with § color/formatting codes, so that colors are preserved for Discord output.
+     */
+    private static String componentToFormattedString(Component component) {
+        StringBuilder sb = new StringBuilder();
+        component.visit((style, text) -> {
+            TextColor color = style.getColor();
+
+            if(color != null) {
+                ChatFormatting legacyColor = chatFormattingFromColor(color);
+                if(legacyColor != null) sb.append(legacyColor);
+            }
+            if(style.isBold()) sb.append(ChatFormatting.BOLD);
+            if(style.isItalic()) sb.append(ChatFormatting.ITALIC);
+            if(style.isUnderlined()) sb.append(ChatFormatting.UNDERLINE);
+            if(style.isStrikethrough()) sb.append(ChatFormatting.STRIKETHROUGH);
+            if(style.isObfuscated()) sb.append(ChatFormatting.OBFUSCATED);
+
+            sb.append(text);
+            return Optional.empty();
+        }, Style.EMPTY);
+        return sb.toString();
+    }
+
+    /**
+     * Maps a {@link TextColor} back to the closest legacy {@link ChatFormatting} color code.
+     * Returns null if no legacy color matches (e.g. for custom RGB colors).
+     */
+    private static @Nullable ChatFormatting chatFormattingFromColor(TextColor color) {
+        for(ChatFormatting fmt : ChatFormatting.values()) {
+            if(fmt.isColor() && fmt.getColor() != null && fmt.getColor() == color.getValue()) {
+                return fmt;
+            }
+        }
+        return null;
     }
 }

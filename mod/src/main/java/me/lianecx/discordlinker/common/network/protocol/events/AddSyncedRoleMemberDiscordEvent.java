@@ -25,8 +25,16 @@ public class AddSyncedRoleMemberDiscordEvent implements LinkerDiscordEvent<Synce
             return CompletableFuture.completedFuture(DiscordEventResponse.LUCKPERMS_NOT_LOADED);
         }
 
-        if(payload.role.syncsToMinecraft())
-            getTeamsAndGroupsBridge().addPlayerToGroupOrTeam(payload.role.getName(), payload.role.isGroup(), payload.uuid);
+        if(payload.role.syncsToMinecraft()) {
+            ConnJson.SyncedRole role = getConnJson().getSyncedRole(payload.role.getName(), payload.role.isGroup());
+            if(role == null) return CompletableFuture.completedFuture(DiscordEventResponse.NOT_FOUND);
+
+            // Has to been done before, otherwise NodeMutateEvent will cancel this operation
+            role.getPlayers().add(payload.uuid);
+
+            return getTeamsAndGroupsBridge().addPlayerToGroupOrTeam(payload.role.getName(), payload.role.isGroup(), payload.uuid)
+                    .thenCompose(v -> TeamsAndGroupsBridge.getRoleResponseFromPayload(payload));
+        }
         return TeamsAndGroupsBridge.getRoleResponseFromPayload(payload);
     }
 }

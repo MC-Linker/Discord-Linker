@@ -20,14 +20,14 @@ public class SpigotScheduler implements LinkerScheduler {
     }
 
     @Override
-    public LinkerSchedulerRepeatingTask runRepeatingSync(Runnable task, int initialDelay, int period, int delay) {
-        BukkitTask bukkitTask = Bukkit.getScheduler().runTaskTimer(plugin, task, initialDelay, period);
+    public LinkerSchedulerRepeatingTask runRepeatingSync(Runnable task, int delay, int period) {
+        BukkitTask bukkitTask = Bukkit.getScheduler().runTaskTimer(plugin, task, delay, period);
         return wrapRepeatingTask(task, false, delay, period, bukkitTask);
     }
 
     @Override
-    public void runAsync(Runnable task) {
-        Bukkit.getScheduler().runTaskAsynchronously(plugin, task);
+    public void runSync(Runnable task) {
+        Bukkit.getScheduler().runTask(plugin, task);
     }
 
     @Override
@@ -37,13 +37,18 @@ public class SpigotScheduler implements LinkerScheduler {
     }
 
     @Override
-    public LinkerSchedulerRepeatingTask runRepeatingAsync(Runnable task, int initialDelay, int period, int delay) {
-        BukkitTask bukkitTask = Bukkit.getScheduler().runTaskTimerAsynchronously(plugin, task, initialDelay, period);
+    public LinkerSchedulerRepeatingTask runRepeatingAsync(Runnable task, int delay, int period) {
+        BukkitTask bukkitTask = Bukkit.getScheduler().runTaskTimerAsynchronously(plugin, task, delay, period);
         return wrapRepeatingTask(task, true, delay, period, bukkitTask);
     }
 
+    @Override
+    public void runAsync(Runnable task) {
+        Bukkit.getScheduler().runTaskAsynchronously(plugin, task);
+    }
+
     // -------------------------
-    // Internal helpers
+    // Platform-specific task wrappers
     // -------------------------
 
     private LinkerSchedulerTask wrapTask(Runnable runnable, boolean async, int delay, BukkitTask bukkitTask) {

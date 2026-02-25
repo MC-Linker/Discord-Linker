@@ -17,10 +17,10 @@ public final class SpigotTeamsBridge implements TeamsBridge {
     }
 
     @Override
-    public CompletableFuture<List<String>> getPlayersInTeam(String teamName) {
+    public List<String> getPlayersInTeam(String teamName) {
         Team team = scoreboard().getTeam(teamName);
-        if(team == null) return CompletableFuture.completedFuture(null);
-        return CompletableFuture.completedFuture(new ArrayList<>(team.getEntries()));
+        if(team == null) return null;
+        return new ArrayList<>(team.getEntries());
     }
 
     @Override
