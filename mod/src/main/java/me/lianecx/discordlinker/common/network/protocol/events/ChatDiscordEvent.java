@@ -9,6 +9,8 @@ import me.lianecx.discordlinker.common.network.protocol.responses.DiscordEventRe
 import me.lianecx.discordlinker.common.util.JsonUtil;
 import me.lianecx.discordlinker.common.util.MinecraftChatColor;
 
+import java.util.regex.Matcher;
+
 import static me.lianecx.discordlinker.common.DiscordLinkerCommon.getConfig;
 import static me.lianecx.discordlinker.common.DiscordLinkerCommon.getServer;
 import static me.lianecx.discordlinker.common.util.MarkdownUtil.*;
@@ -52,9 +54,7 @@ public class ChatDiscordEvent implements LinkerSyncDiscordEvent<ChatPayload> {
             chatMessage = chatMessage.replaceAll("%reply_message%", markdownToColorCodes(replyMsg));
             chatMessage = chatMessage.replaceAll("%reply_username%", replyUsername);
 
-            String reducedReplyMsg = replyMsg.length() > 30 ? replyMsg.substring(0, 30) + "..." : replyMsg;
-            //if reply message is a url, don't reduce it
-            if(replyMsg.matches(URL_OR_MD_URL_REGEX)) reducedReplyMsg = replyMsg;
+            String reducedReplyMsg = reduceMessage(replyMsg, 30);
             chatMessage = chatMessage.replaceAll("%reply_message_reduced%", markdownToColorCodes(reducedReplyMsg));
         }
 
@@ -75,5 +75,24 @@ public class ChatDiscordEvent implements LinkerSyncDiscordEvent<ChatPayload> {
         }
 
         return DiscordEventResponse.SUCCESS;
+    }
+
+    public static String reduceMessage(String replyMsg, int limit) {
+        if (replyMsg.length() <= limit) return replyMsg;
+
+        Matcher matcher = URL_PATTERN.matcher(replyMsg);
+        if (matcher.find()) {
+            int urlStart = matcher.start();
+            int urlEnd = matcher.end();
+
+            // If URL starts at 0 OR overlaps the first 30 chars
+            if (urlStart == 0 || urlStart < limit) {
+                int cutIndex = Math.max(limit, urlEnd);
+                return replyMsg.substring(0, cutIndex) + "...";
+            }
+        }
+
+        // Normal cut
+        return replyMsg.substring(0, limit) + "...";
     }
 }

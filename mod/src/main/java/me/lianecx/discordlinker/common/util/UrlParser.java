@@ -8,16 +8,17 @@ import java.util.regex.Pattern;
 public final class UrlParser {
 
     private static final String URL_BODY =
-        "https?://[\\w\\-._~:/?#\\[\\]@!$&'()*+,;=%]+";
+        "\\bhttps?://[\\w\\-._~:/?#\\[\\]@!$&'()*+,;=%]+";
 
     public static final String URL_REGEX =
         "(" + URL_BODY + ")";
 
-    public static final String MD_URL_REGEX =
-        "(?i)\\[([^]]+)]\\((" + URL_BODY + ")\\)";
+    public static final Pattern URL_PATTERN = Pattern.compile(URL_REGEX, Pattern.CASE_INSENSITIVE);
 
-    public static final String URL_OR_MD_URL_REGEX =
-        "\\[([^]]+)]\\((" + URL_BODY + ")\\)|(" + URL_BODY + ")";
+    public static final String MD_URL_REGEX =
+            "\\[([^]]+)\\]\\(" + URL_REGEX + "\\)";
+
+    public static final String URL_OR_MD_URL_REGEX = MD_URL_REGEX + "|" + URL_REGEX;
 
     public static final Pattern URL_OR_MD_URL_PATTERN = Pattern.compile(URL_OR_MD_URL_REGEX, Pattern.CASE_INSENSITIVE);
 

@@ -65,17 +65,11 @@ public class ChatsMinecraftEvent {
 
     public static void sendChatAsync(String message, ConnJson.ChatChannel.ChatChannelType type, String sender) {
         if(getConnJson() == null || getConnJson().getChatChannels().isEmpty()) return;
-        getScheduler().runAsync(() -> {
-            getLogger().debug("Sending chat message to bot: " + message + " (type: " + type + ", sender: " + sender + ")");
-            getClientManager().chat(message, type, sender);
-        });
+        getScheduler().runAsync(() -> getClientManager().chat(message, type, sender));
     }
 
     public static void sendStatsAsync(ConnJson.StatsChannel.StatsChannelEvent type) {
         if(getConnJson() == null || getConnJson().getStatsChannels().isEmpty()) return;
-        getScheduler().runAsync(() -> {
-            getLogger().debug("Updating stats channel: " + type);
-            getClientManager().updateStatsChannel(type);
-        });
+        getScheduler().runAsync(() -> getClientManager().updateStatsChannel(type));
     }
 }

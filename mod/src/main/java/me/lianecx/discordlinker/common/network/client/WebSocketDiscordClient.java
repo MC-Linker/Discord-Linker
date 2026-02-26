@@ -230,7 +230,7 @@ public final class WebSocketDiscordClient implements DiscordClient {
         }
 
         getLogger().debug("[Socket.io] Emitting event with callback: " + event + ", payload: " + Arrays.toString(payload));
-        socket.emit(event, payload, new AckWithTimeout(5000) {
+        socket.emit(event, payload, new AckWithTimeout(10_000) {
             @Override
             public void onSuccess(Object... args) {
                 // Assume the response is JSON
