@@ -175,13 +175,18 @@ public final class ClientManager {
     }
 
     public void chat(String message, ConnJson.ChatChannel.ChatChannelType type, String player) {
-        if(getConnJson() == null || getConnJson().getChatChannels().isEmpty()) return;
+        chatAwaitAck(message, type, player);
+    }
+
+    public CompletableFuture<Void> chatAwaitAck(String message, ConnJson.ChatChannel.ChatChannelType type, String player) {
+        if(getConnJson() == null || getConnJson().getChatChannels().isEmpty()) return completedFuture(null);
 
         JsonObject payload = new JsonObject();
         payload.addProperty("message", message);
         payload.addProperty("type", type.toString());
         payload.addProperty("player", player);
-        send("chat", payload);
+
+        return sendAwaitAck("chat", payload).thenApply(response -> null);
     }
 
     public void updateStatsChannel(ConnJson.StatsChannel.StatsChannelEvent event) {
@@ -189,13 +194,24 @@ public final class ClientManager {
     }
 
     public void updateStatsChannel(ConnJson.StatsChannel.StatsChannelEvent event, int members) {
-        if(getConnJson() == null || getConnJson().getStatsChannels().isEmpty()) return;
+        updateStatsChannelAwaitAck(event, members);
+    }
+
+    public CompletableFuture<Void> updateStatsChannelAwaitAck(ConnJson.StatsChannel.StatsChannelEvent event, int members) {
+        if(getConnJson() == null || getConnJson().getStatsChannels().isEmpty()) return completedFuture(null);
 
         JsonObject payload = new JsonObject();
         payload.addProperty("event", event.toString());
         if(event == ConnJson.StatsChannel.StatsChannelEvent.MEMBERS) payload.addProperty("members", members);
 
-        send("update-stats-channels", payload);
+        return sendAwaitAck("update-stats-channels", payload).thenApply(response -> null);
+    }
+
+    private CompletableFuture<DiscordEventResponse> sendAwaitAck(String eventName, JsonObject data) {
+        if(client == null) return completedFuture(null);
+        CompletableFuture<DiscordEventResponse> future = new CompletableFuture<>();
+        send(eventName, data, future::complete);
+        return future;
     }
 
     public void addSyncedRoleMember(String name, boolean isGroup, UUID uuid) {

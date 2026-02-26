@@ -229,7 +229,7 @@ public final class WebSocketDiscordClient implements DiscordClient {
         if(isRateLimited(event)) {
             getLogger().warn("[Socket.io] Dropping event '" + event + "' due to rate limit.");
 //            callback.accept(DiscordEventResponse.RATE_LIMITED);
-//            return; TODO don't drop for now
+//            return; // TODO don't drop for now
         }
 
         getLogger().debug("[Socket.io] Emitting event with callback: " + event + ", payload: " + Arrays.toString(payload));

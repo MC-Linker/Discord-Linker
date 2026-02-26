@@ -4,6 +4,9 @@ import me.lianecx.discordlinker.common.ConnJson;
 import me.lianecx.discordlinker.common.events.data.*;
 import me.lianecx.discordlinker.common.util.MinecraftChatColor;
 
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
+
 import static me.lianecx.discordlinker.common.DiscordLinkerCommon.*;
 
 public class ChatsMinecraftEvent {
@@ -17,10 +20,15 @@ public class ChatsMinecraftEvent {
     }
 
     public static void handleServerStop(ServerStopEventData event) {
-        // Sending sync because the server is stopping and async tasks might not run
-        getClientManager().chat(ConnJson.ChatChannel.ChatChannelType.CLOSE);
-        getClientManager().updateStatsChannel(ConnJson.StatsChannel.StatsChannelEvent.OFFLINE);
-        getClientManager().updateStatsChannel(ConnJson.StatsChannel.StatsChannelEvent.MEMBERS, 0);
+        // Wait briefly wait for acks so stop packets are not dropped before disconnect
+        CompletableFuture<Void> closeChat = getClientManager().chatAwaitAck("", ConnJson.ChatChannel.ChatChannelType.CLOSE, null);
+        CompletableFuture<Void> statsOffline = getClientManager().updateStatsChannelAwaitAck(ConnJson.StatsChannel.StatsChannelEvent.OFFLINE, 0);
+        CompletableFuture<Void> statsMembers = getClientManager().updateStatsChannelAwaitAck(ConnJson.StatsChannel.StatsChannelEvent.MEMBERS, 0);
+
+        try {
+            CompletableFuture.allOf(closeChat, statsOffline, statsMembers).get(3, TimeUnit.SECONDS);
+        }
+        catch(Exception ignored) {}
     }
 
     public static void handleChat(ChatEventData event) {
