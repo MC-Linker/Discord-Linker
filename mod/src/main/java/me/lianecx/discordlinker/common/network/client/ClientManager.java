@@ -95,10 +95,7 @@ public final class ClientManager {
     public CompletableFuture<Boolean> reconnect() {
         if(client == null) return completedFuture(false);
         return client.connect().thenApply(connected -> {
-            if(connected) {
-                client.onAny(discordEventBus::emit);
-                updateStatsChannel(ConnJson.StatsChannel.StatsChannelEvent.MEMBERS);
-            }
+            if(connected) client.onAny(discordEventBus::emit);
             return connected;
         });
     }

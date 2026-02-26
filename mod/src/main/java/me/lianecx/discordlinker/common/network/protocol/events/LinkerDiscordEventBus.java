@@ -20,6 +20,7 @@ public class LinkerDiscordEventBus {
         listeners.put("list-file", new ListFileDiscordEvent());
         listeners.put("verify-user", new VerifyUserDiscordEvent());
         listeners.put("command", new CommandDiscordEvent());
+        listeners.put("command-completions", new CommandCompletionsDiscordEvent());
         listeners.put("get-player-nbt", new GetPlayerNBTDiscordEvent());
         listeners.put("chat", new ChatDiscordEvent());
         listeners.put("disconnect", new DisconnectDiscordEvent());

@@ -7,6 +7,7 @@ import io.socket.client.AckWithTimeout;
 import io.socket.client.IO;
 import io.socket.client.Socket;
 import io.socket.emitter.Emitter;
+import me.lianecx.discordlinker.common.ConnJson;
 import me.lianecx.discordlinker.common.util.JsonUtil;
 import me.lianecx.discordlinker.common.util.MinecraftChatColor;
 import me.lianecx.discordlinker.common.network.protocol.responses.DiscordEventResponse;
@@ -75,7 +76,9 @@ public final class WebSocketDiscordClient implements DiscordClient {
         socket.on(Socket.EVENT_CONNECT, args -> {
             getLogger().debug("[Socket.io] Connected with args: " + Arrays.toString(args));
             getLogger().info(MinecraftChatColor.GREEN + "Connected to the Discord Bot!");
-            getClientManager().reconcileSyncedRoles(); // Reconcile synced roles on every new connection to ensure consistency after bot restarts or disconnects
+            // Reconcile synced roles and update member count on connect to ensure consistency after bot restarts or disconnects
+            getClientManager().reconcileSyncedRoles();
+            getClientManager().updateStatsChannel(ConnJson.StatsChannel.StatsChannelEvent.MEMBERS);
         });
 
         socket.on(Socket.EVENT_DISCONNECT, args -> {

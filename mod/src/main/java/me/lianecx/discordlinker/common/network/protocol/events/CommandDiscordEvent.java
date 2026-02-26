@@ -26,16 +26,14 @@ public class CommandDiscordEvent implements LinkerDiscordEvent<CommandPayload> {
     @Override
     public CompletableFuture<DiscordEventResponse> handleAsync(CommandPayload payload) {
         CompletableFuture<DiscordEventResponse> future = new CompletableFuture<>();
-        getScheduler().runSync(() -> {
-            getLogger().info(MinecraftChatColor.AQUA + "Command from Discord: /" + payload.command);
-            getServer().executeCommand(payload.command)
-                    .thenAccept(response -> {
-                        // Replace all color codes with & to properly display in Discord
-                        JsonObject jsonResponse = new JsonObject();
-                        jsonResponse.addProperty("message", MinecraftChatColor.replaceColorKey(response, '&'));
-                        future.complete(new DiscordEventResponse(jsonResponse));
-                    });
-        });
+        getLogger().info(MinecraftChatColor.AQUA + "Command from Discord: /" + payload.command);
+        getServer().executeCommand(payload.command)
+            .thenAccept(response -> {
+                // Replace all color codes with & to properly display in Discord
+                JsonObject jsonResponse = new JsonObject();
+                jsonResponse.addProperty("message", MinecraftChatColor.replaceColorKey(response, '&'));
+                future.complete(new DiscordEventResponse(jsonResponse));
+            });
 
         return future;
     }

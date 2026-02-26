@@ -1,6 +1,7 @@
 package me.lianecx.discordlinker.spigot.implementation;
 
 import me.lianecx.discordlinker.common.abstraction.*;
+import me.lianecx.discordlinker.spigot.util.SpigotCommandCompletionUtil;
 import net.md_5.bungee.api.chat.BaseComponent;
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
@@ -26,6 +27,7 @@ import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
+import static me.lianecx.discordlinker.common.DiscordLinkerCommon.getScheduler;
 import static me.lianecx.discordlinker.spigot.util.URLComponent.buildURLComponent;
 
 public class SpigotServer implements LinkerServer {
@@ -152,7 +154,32 @@ public class SpigotServer implements LinkerServer {
         CompletableFuture<String> future = new CompletableFuture<>();
 
         StringBuilder output = new StringBuilder();
-        CommandSender sender = new CommandSender() {
+        CommandSender sender = getCommandSenderWithOutput(output);
+
+        getScheduler().runSync(() -> {
+            try {
+                boolean success = Bukkit.dispatchCommand(sender, command);
+
+                String out = output.toString().trim();
+                if(out.isEmpty()) out = success ? COMMAND_NO_OUTPUT_SUCCESS : COMMAND_NO_OUTPUT_FAIL;
+
+                future.complete(out);
+            }
+            catch(CommandException e) {
+                future.complete("Error executing command: " + e.getMessage());
+            }
+        });
+
+        return future;
+    }
+
+    @Override
+    public CompletableFuture<List<String>> getCommandCompletions(String partialCommand) {
+        return SpigotCommandCompletionUtil.getCommandCompletions(partialCommand);
+    }
+
+    private CommandSender getCommandSenderWithOutput(StringBuilder output) {
+        return new CommandSender() {
 
             @Override
             public void sendMessage(@NotNull String message) {
@@ -239,19 +266,5 @@ public class SpigotServer implements LinkerServer {
                 return Bukkit.getConsoleSender().spigot();
             }
         };
-
-        try {
-            boolean success = Bukkit.dispatchCommand(sender, command);
-
-            String out = output.toString().trim();
-            if(out.isEmpty()) out = success ? COMMAND_NO_OUTPUT_SUCCESS : COMMAND_NO_OUTPUT_FAIL;
-
-            future.complete(out);
-        }
-        catch(CommandException e) {
-            future.complete("Error executing command: " + e.getMessage());
-        }
-
-        return future;
     }
 }

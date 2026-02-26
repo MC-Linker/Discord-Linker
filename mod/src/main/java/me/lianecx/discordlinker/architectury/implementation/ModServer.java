@@ -1,6 +1,9 @@
 package me.lianecx.discordlinker.architectury.implementation;
 
 import com.mojang.authlib.GameProfile;
+import com.mojang.brigadier.CommandDispatcher;
+import com.mojang.brigadier.ParseResults;
+import com.mojang.brigadier.suggestion.Suggestion;
 import dev.architectury.platform.Platform;
 import me.lianecx.discordlinker.common.abstraction.LinkerOfflinePlayer;
 import me.lianecx.discordlinker.common.abstraction.LinkerPlayer;
@@ -31,6 +34,7 @@ import net.minecraft.ChatFormatting;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -39,6 +43,7 @@ import java.util.stream.Collectors;
 
 import static me.lianecx.discordlinker.architectury.util.URLComponent.buildURLComponent;
 import static me.lianecx.discordlinker.common.DiscordLinkerCommon.getLogger;
+import static me.lianecx.discordlinker.common.DiscordLinkerCommon.getScheduler;
 
 public final class ModServer implements LinkerServer {
 
@@ -221,38 +226,119 @@ public final class ModServer implements LinkerServer {
         CompletableFuture<String> future = new CompletableFuture<>();
         StringBuilder output = new StringBuilder();
 
+        CommandSourceStack source = getCommandSourceStack(new CommandSource() {
+            @Override
+            //? if >=1.19 {
+            public void sendSystemMessage(Component component) {
+            //? } else
+             //public void sendMessage(@NotNull Component component, @NotNull UUID senderUUID) {
+                output.append(componentToFormattedString(component)).append('\n');
+            }
+
+            @Override
+            public boolean acceptsSuccess() {
+                return true;
+            }
+
+            @Override
+            public boolean acceptsFailure() {
+                return true;
+            }
+
+            @Override
+            public boolean shouldInformAdmins() {
+                return false;
+            }
+        }).withCallback((context, success/*? if <1.21 {*/, result /*? }*/) -> {
+            String outStr = output.toString().trim();
+            if(outStr.isEmpty())
+                outStr = success /*? if >=1.21 {*/ /*> 0 *//*? }*/ ? COMMAND_NO_OUTPUT_SUCCESS : COMMAND_NO_OUTPUT_FAIL;
+            if(!future.isDone()) future.complete(outStr);
+        });
+
+        getScheduler().runSync(() -> {
+            try {
+                //? if >=1.19 {
+                server.getCommands().performPrefixedCommand(source, command);
+                 //? } else
+                //server.getCommands().performCommand(source, command);
+            }
+            catch(Exception e) {
+                if(!future.isDone()) future.complete("Error executing command: " + e.getMessage());
+            }
+
+            // If the command was invalid (e.g. unknown command), the ResultConsumer callback
+            // is never invoked by Brigadier, so the future would never complete. Complete it
+            // here with whatever output was captured (the error message from acceptsFailure).
+            if(!future.isDone()) {
+                String outStr = output.toString().trim();
+                if(outStr.isEmpty()) outStr = COMMAND_NO_OUTPUT_FAIL;
+                future.complete(outStr);
+            }
+        });
+
+        return future;
+    }
+
+    @Override
+    public CompletableFuture<List<String>> getCommandCompletions(String partialCommand) {
+        if (partialCommand.startsWith("/")) partialCommand = partialCommand.substring(1);
+
+        CommandDispatcher<CommandSourceStack> dispatcher = server.getCommands().getDispatcher();
+
+        CommandSourceStack source = getCommandSourceStack(new CommandSource() {
+            @Override
+            //? if >=1.19 {
+            public void sendSystemMessage(Component component) {}
+            //? } else
+            //public void sendMessage(@NotNull Component component, @NotNull UUID senderUUID) {}
+
+            @Override
+            public boolean acceptsSuccess() {
+                return false;
+            }
+
+            @Override
+            public boolean acceptsFailure() {
+                return false;
+            }
+
+            @Override
+            public boolean shouldInformAdmins() {
+                return false;
+            }
+        });
+
+        CompletableFuture<List<String>> future = new CompletableFuture<>();
+        final String finalPartialCommand = partialCommand;
+        getScheduler().runSync(() -> {
+            try {
+                ParseResults<CommandSourceStack> parse = dispatcher.parse(finalPartialCommand, source);
+
+                dispatcher.getCompletionSuggestions(parse)
+                    .thenApply(suggestions -> suggestions.getList().stream()
+                        .map(Suggestion::getText)
+                        .collect(Collectors.toList())
+                    )
+                    .thenAccept(future::complete)
+                    .exceptionally(ex -> {
+                        getLogger().debug("Error getting command completions: " + ex.getMessage());
+                        future.complete(new ArrayList<>());
+                        return null;
+                    });
+            } catch (Throwable t) {
+                getLogger().debug("Error getting command completions: " + t.getMessage());
+                future.complete(new ArrayList<>());
+            }
+        });
+
+        return future;
+    }
+
+    private CommandSourceStack getCommandSourceStack(CommandSource source) {
         ServerLevel serverLevel = server.overworld();
-        CommandSourceStack source = new CommandSourceStack(
-                new CommandSource() {
-
-                    //? if >=1.19 {
-                    @Override
-                    public void sendSystemMessage(Component component) {
-                        output.append(componentToFormattedString(component)).append('\n');
-                    }
-
-                    //? } else {
-                    /*@Override
-                    public void sendMessage(@NotNull Component component, @NotNull UUID senderUUID) {
-                        output.append(componentToFormattedString(component)).append('\n');
-                    }
-                    *///? }
-
-                    @Override
-                    public boolean acceptsSuccess() {
-                        return true;
-                    }
-
-                    @Override
-                    public boolean acceptsFailure() {
-                        return true;
-                    }
-
-                    @Override
-                    public boolean shouldInformAdmins() {
-                        return false;
-                    }
-                },
+        return new CommandSourceStack(
+                source,
                 serverLevel == null ? Vec3.ZERO : Vec3.atLowerCornerOf(/*? if <1.21 {*/serverLevel.getSharedSpawnPos() /*? } else { *//*serverLevel.getRespawnData().pos()*//*? }*/),
                 Vec2.ZERO,
                 serverLevel,
@@ -260,37 +346,11 @@ public final class ModServer implements LinkerServer {
                 "Discord",
                 //? if <1.19 {
                 /*new TextComponent("Discord"),
-                *///? } else
+                 *///? } else
                 Component.literal("Discord"),
                 server,
                 null
-        ).withCallback((context, success/*? if <1.21 {*/, result /*? }*/) -> {
-            String outStr = output.toString().trim();
-            if(outStr.isEmpty())
-                outStr = success /*? if >=1.21 {*/ /*> 0 *//*? }*/ ? COMMAND_NO_OUTPUT_SUCCESS : COMMAND_NO_OUTPUT_FAIL;
-            future.complete(outStr);
-        });
-
-        try {
-            //? if >=1.19 {
-            server.getCommands().performPrefixedCommand(source, command);
-             //? } else
-            //server.getCommands().performCommand(source, command);
-        }
-        catch(Exception e) {
-            future.complete("Error executing command: " + e.getMessage());
-        }
-
-        // If the command was invalid (e.g. unknown command), the ResultConsumer callback
-        // is never invoked by Brigadier, so the future would never complete. Complete it
-        // here with whatever output was captured (the error message from acceptsFailure).
-        if(!future.isDone()) {
-            String outStr = output.toString().trim();
-            if(outStr.isEmpty()) outStr = COMMAND_NO_OUTPUT_FAIL;
-            future.complete(outStr);
-        }
-
-        return future;
+        );
     }
 
     /**
@@ -323,11 +383,9 @@ public final class ModServer implements LinkerServer {
      * Returns null if no legacy color matches (e.g. for custom RGB colors).
      */
     private static @Nullable ChatFormatting chatFormattingFromColor(TextColor color) {
-        for(ChatFormatting fmt : ChatFormatting.values()) {
-            if(fmt.isColor() && fmt.getColor() != null && fmt.getColor() == color.getValue()) {
+        for(ChatFormatting fmt : ChatFormatting.values())
+            if(fmt.isColor() && fmt.getColor() != null && fmt.getColor() == color.getValue())
                 return fmt;
-            }
-        }
         return null;
     }
 }

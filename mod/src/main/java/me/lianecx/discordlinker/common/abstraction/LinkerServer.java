@@ -81,4 +81,6 @@ public interface LinkerServer {
      * If there is no output, the output depends on the success: COMMAND_NO_OUTPUT_SUCCESS or COMMAND_NO_OUTPUT_FAIL.
      */
     CompletableFuture<String> executeCommand(String command);
+
+    CompletableFuture<List<String>> getCommandCompletions(String partialCommand);
 }
