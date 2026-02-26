@@ -1,5 +1,6 @@
 package me.lianecx.discordlinker.spigot.util;
 
+import me.lianecx.discordlinker.common.abstraction.CommandCompletion;
 import org.bukkit.Bukkit;
 
 import java.lang.reflect.Method;
@@ -30,6 +31,9 @@ public final class SpigotCommandCompletionUtil {
     private static Method SUGGEST_METHOD;
     private static Method GET_LIST_METHOD;
     private static Method GET_TEXT_METHOD;
+    private static Method GET_RANGE_METHOD;
+    private static Method RANGE_GET_START_METHOD;
+    private static Method RANGE_GET_END_METHOD;
 
     private SpigotCommandCompletionUtil() {}
 
@@ -60,6 +64,11 @@ public final class SpigotCommandCompletionUtil {
 
                 Class<?> suggestionClass = Class.forName("com.mojang.brigadier.suggestion.Suggestion");
                 GET_TEXT_METHOD = suggestionClass.getMethod("getText");
+                GET_RANGE_METHOD = suggestionClass.getMethod("getRange");
+
+                Class<?> stringRangeClass = Class.forName("com.mojang.brigadier.context.StringRange");
+                RANGE_GET_START_METHOD = stringRangeClass.getMethod("getStart");
+                RANGE_GET_END_METHOD = stringRangeClass.getMethod("getEnd");
 
             } else {
                 Object commandHandler = MINECRAFT_SERVER.getClass().getMethod("getCommandHandler").invoke(MINECRAFT_SERVER);
@@ -70,8 +79,8 @@ public final class SpigotCommandCompletionUtil {
         }
     }
 
-    public static CompletableFuture<List<String>> getCommandCompletions(String partialCommand, int limit) {
-        CompletableFuture<List<String>> future = new CompletableFuture<>();
+    public static CompletableFuture<List<CommandCompletion>> getCommandCompletions(String partialCommand, int limit) {
+        CompletableFuture<List<CommandCompletion>> future = new CompletableFuture<>();
 
         getScheduler().runSync(() -> {
             try {
@@ -98,19 +107,25 @@ public final class SpigotCommandCompletionUtil {
     /* ===================== 1.12 ======================= */
 
     @SuppressWarnings("unchecked")
-    private static List<String> getLegacyCompletions(String input, int limit) throws Exception {
+    private static List<CommandCompletion> getLegacyCompletions(String input, int limit) throws Exception {
+        String normalizedInput = input.startsWith("/") ? input.substring(1) : input;
+        int rangeStart = getFallbackRangeStart(normalizedInput);
+        int rangeEnd = normalizedInput.length();
+
         if (!input.startsWith("/")) input = "/" + input;
 
-        return (List<String>) LEGACY_TAB_COMPLETE
-            .invoke(MINECRAFT_SERVER, Bukkit.getServer().getConsoleSender(), input, null)
+        return ((List<?>) LEGACY_TAB_COMPLETE
+            .invoke(MINECRAFT_SERVER, Bukkit.getServer().getConsoleSender(), input, null))
             .stream()
             .limit(limit)
+            .map(String::valueOf)
+            .map(text -> new CommandCompletion(text, rangeStart, rangeEnd))
             .collect(Collectors.toList());
     }
 
     /* ===================== 1.13+ =================== */
 
-    private static CompletableFuture<List<String>> getBrigadierCompletions(String input, int limit) throws Exception {
+    private static CompletableFuture<List<CommandCompletion>> getBrigadierCompletions(String input, int limit) throws Exception {
         if (input.startsWith("/")) input = input.substring(1);
 
         Object parseResults = PARSE_METHOD.invoke(DISPATCHER, input, COMMAND_SOURCE);
@@ -123,13 +138,7 @@ public final class SpigotCommandCompletionUtil {
 
                 return suggestionList.stream()
                     .limit(limit)
-                    .map(s -> {
-                        try {
-                            return (String) GET_TEXT_METHOD.invoke(s);
-                        } catch (Exception e) {
-                            return null;
-                        }
-                    })
+                    .map(SpigotCommandCompletionUtil::toCommandCompletion)
                     .filter(Objects::nonNull)
                     .collect(Collectors.toList());
 
@@ -138,6 +147,25 @@ public final class SpigotCommandCompletionUtil {
                 return Collections.emptyList();
             }
         });
+    }
+
+    private static CommandCompletion toCommandCompletion(Object suggestion) {
+        try {
+            String text = (String) GET_TEXT_METHOD.invoke(suggestion);
+            Object range = GET_RANGE_METHOD.invoke(suggestion);
+            int start = (int) RANGE_GET_START_METHOD.invoke(range);
+            int end = (int) RANGE_GET_END_METHOD.invoke(range);
+            return new CommandCompletion(text, start, end);
+        }
+        catch(Exception e) {
+            return null;
+        }
+    }
+
+    private static int getFallbackRangeStart(String input) {
+        if(input.isEmpty()) return 0;
+        int lastSpace = input.lastIndexOf(' ');
+        return lastSpace == -1 ? 0 : lastSpace + 1;
     }
 
     private static Class<?> getNmsClass(String name) throws ClassNotFoundException {

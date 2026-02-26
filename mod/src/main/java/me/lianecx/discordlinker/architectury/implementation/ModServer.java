@@ -3,8 +3,8 @@ package me.lianecx.discordlinker.architectury.implementation;
 import com.mojang.authlib.GameProfile;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.ParseResults;
-import com.mojang.brigadier.suggestion.Suggestion;
 import dev.architectury.platform.Platform;
+import me.lianecx.discordlinker.common.abstraction.CommandCompletion;
 import me.lianecx.discordlinker.common.abstraction.LinkerOfflinePlayer;
 import me.lianecx.discordlinker.common.abstraction.LinkerPlayer;
 import me.lianecx.discordlinker.common.abstraction.LinkerServer;
@@ -281,7 +281,7 @@ public final class ModServer implements LinkerServer {
     }
 
     @Override
-    public CompletableFuture<List<String>> getCommandCompletions(String partialCommand, int limit) {
+    public CompletableFuture<List<CommandCompletion>> getCommandCompletions(String partialCommand, int limit) {
         if (partialCommand.startsWith("/")) partialCommand = partialCommand.substring(1);
 
         CommandDispatcher<CommandSourceStack> dispatcher = server.getCommands().getDispatcher();
@@ -309,7 +309,7 @@ public final class ModServer implements LinkerServer {
             }
         });
 
-        CompletableFuture<List<String>> future = new CompletableFuture<>();
+        CompletableFuture<List<CommandCompletion>> future = new CompletableFuture<>();
         final String finalPartialCommand = partialCommand;
         getScheduler().runSync(() -> {
             try {
@@ -318,7 +318,10 @@ public final class ModServer implements LinkerServer {
                 dispatcher.getCompletionSuggestions(parse)
                     .thenApply(suggestions -> suggestions.getList().stream()
                         .limit(limit)
-                        .map(Suggestion::getText)
+                        .map(suggestion -> new CommandCompletion(
+                                suggestion.getText(),
+                                suggestion.getRange().getStart(),
+                                suggestion.getRange().getEnd()))
                         .collect(Collectors.toList())
                     )
                     .thenAccept(future::complete)
