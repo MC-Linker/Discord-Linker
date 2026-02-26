@@ -20,7 +20,7 @@ public class ChatsMinecraftEvent {
         // Sending sync because the server is stopping and async tasks might not run
         getClientManager().chat(ConnJson.ChatChannel.ChatChannelType.CLOSE);
         getClientManager().updateStatsChannel(ConnJson.StatsChannel.StatsChannelEvent.OFFLINE);
-        getClientManager().updateStatsChannel(ConnJson.StatsChannel.StatsChannelEvent.MEMBERS);
+        getClientManager().updateStatsChannel(ConnJson.StatsChannel.StatsChannelEvent.MEMBERS, 0);
     }
 
     public static void handleChat(ChatEventData event) {

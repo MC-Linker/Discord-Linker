@@ -185,12 +185,15 @@ public final class ClientManager {
     }
 
     public void updateStatsChannel(ConnJson.StatsChannel.StatsChannelEvent event) {
+        updateStatsChannel(event, getServer().getOnlinePlayersCount());
+    }
+
+    public void updateStatsChannel(ConnJson.StatsChannel.StatsChannelEvent event, int members) {
         if(getConnJson() == null || getConnJson().getStatsChannels().isEmpty()) return;
 
         JsonObject payload = new JsonObject();
         payload.addProperty("event", event.toString());
-        if(event == ConnJson.StatsChannel.StatsChannelEvent.MEMBERS)
-            payload.addProperty("members", getServer().getOnlinePlayers().size());
+        if(event == ConnJson.StatsChannel.StatsChannelEvent.MEMBERS) payload.addProperty("members", members);
 
         send("update-stats-channels", payload);
     }
