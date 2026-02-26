@@ -281,7 +281,7 @@ public final class ModServer implements LinkerServer {
     }
 
     @Override
-    public CompletableFuture<List<String>> getCommandCompletions(String partialCommand) {
+    public CompletableFuture<List<String>> getCommandCompletions(String partialCommand, int limit) {
         if (partialCommand.startsWith("/")) partialCommand = partialCommand.substring(1);
 
         CommandDispatcher<CommandSourceStack> dispatcher = server.getCommands().getDispatcher();
@@ -317,6 +317,7 @@ public final class ModServer implements LinkerServer {
 
                 dispatcher.getCompletionSuggestions(parse)
                     .thenApply(suggestions -> suggestions.getList().stream()
+                        .limit(limit)
                         .map(Suggestion::getText)
                         .collect(Collectors.toList())
                     )

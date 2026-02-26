@@ -174,8 +174,8 @@ public class SpigotServer implements LinkerServer {
     }
 
     @Override
-    public CompletableFuture<List<String>> getCommandCompletions(String partialCommand) {
-        return SpigotCommandCompletionUtil.getCommandCompletions(partialCommand);
+    public CompletableFuture<List<String>> getCommandCompletions(String partialCommand, int limit) {
+        return SpigotCommandCompletionUtil.getCommandCompletions(partialCommand, limit);
     }
 
     private CommandSender getCommandSenderWithOutput(StringBuilder output) {

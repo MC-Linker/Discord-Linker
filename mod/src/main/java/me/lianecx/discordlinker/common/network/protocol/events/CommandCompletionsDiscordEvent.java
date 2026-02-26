@@ -24,7 +24,7 @@ public class CommandCompletionsDiscordEvent implements LinkerDiscordEvent<Comman
 
     @Override
     public CompletableFuture<DiscordEventResponse> handleAsync(CommandPayload payload) {
-        return getServer().getCommandCompletions(payload.command)
+        return getServer().getCommandCompletions(payload.command, 25)
                 .thenApply(DiscordEventResponse::toJson)
                 .exceptionally(ignored -> DiscordEventResponse.UNKNOWN);
     }

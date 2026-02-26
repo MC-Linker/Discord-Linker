@@ -70,13 +70,13 @@ public final class SpigotCommandCompletionUtil {
         }
     }
 
-    public static CompletableFuture<List<String>> getCommandCompletions(String partialCommand) {
+    public static CompletableFuture<List<String>> getCommandCompletions(String partialCommand, int limit) {
         CompletableFuture<List<String>> future = new CompletableFuture<>();
 
         getScheduler().runSync(() -> {
             try {
                 if (IS_BRIGADIER) {
-                    getBrigadierCompletions(partialCommand)
+                    getBrigadierCompletions(partialCommand, limit)
                         .thenAccept(future::complete)
                         .exceptionally(ex -> {
                             getLogger().debug("Brigadier completion failed: " + ex.getMessage());
@@ -84,7 +84,7 @@ public final class SpigotCommandCompletionUtil {
                             return null;
                         });
                 } else {
-                    future.complete(getLegacyCompletions(partialCommand));
+                    future.complete(getLegacyCompletions(partialCommand, limit));
                 }
             } catch (Throwable t) {
                 getLogger().debug("Completion failed for input '" + partialCommand + "': " + t.getMessage());
@@ -98,15 +98,19 @@ public final class SpigotCommandCompletionUtil {
     /* ===================== 1.12 ======================= */
 
     @SuppressWarnings("unchecked")
-    private static List<String> getLegacyCompletions(String input) throws Exception {
+    private static List<String> getLegacyCompletions(String input, int limit) throws Exception {
         if (!input.startsWith("/")) input = "/" + input;
 
-        return (List<String>) LEGACY_TAB_COMPLETE.invoke(MINECRAFT_SERVER, Bukkit.getServer().getConsoleSender(), input, null);
+        return (List<String>) LEGACY_TAB_COMPLETE
+            .invoke(MINECRAFT_SERVER, Bukkit.getServer().getConsoleSender(), input, null)
+            .stream()
+            .limit(limit)
+            .collect(Collectors.toList());
     }
 
     /* ===================== 1.13+ =================== */
 
-    private static CompletableFuture<List<String>> getBrigadierCompletions(String input) throws Exception {
+    private static CompletableFuture<List<String>> getBrigadierCompletions(String input, int limit) throws Exception {
         if (input.startsWith("/")) input = input.substring(1);
 
         Object parseResults = PARSE_METHOD.invoke(DISPATCHER, input, COMMAND_SOURCE);
@@ -118,6 +122,7 @@ public final class SpigotCommandCompletionUtil {
                 List<?> suggestionList = (List<?>) GET_LIST_METHOD.invoke(suggestions);
 
                 return suggestionList.stream()
+                    .limit(limit)
                     .map(s -> {
                         try {
                             return (String) GET_TEXT_METHOD.invoke(s);

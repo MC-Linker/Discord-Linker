@@ -82,5 +82,5 @@ public interface LinkerServer {
      */
     CompletableFuture<String> executeCommand(String command);
 
-    CompletableFuture<List<String>> getCommandCompletions(String partialCommand);
+    CompletableFuture<List<String>> getCommandCompletions(String partialCommand, int limit);
 }
