@@ -70,6 +70,7 @@ public class ChatsMinecraftEvent {
 
     public static void sendStatsAsync(ConnJson.StatsChannel.StatsChannelEvent type) {
         if(getConnJson() == null || getConnJson().getStatsChannels().isEmpty()) return;
-        getScheduler().runAsync(() -> getClientManager().updateStatsChannel(type));
+        // Wait a tick to update online players count after join/quit events
+        getScheduler().runDelayedAsync(() -> getClientManager().updateStatsChannel(type), 1);
     }
 }
