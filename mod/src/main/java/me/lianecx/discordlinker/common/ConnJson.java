@@ -86,6 +86,14 @@ public class ConnJson {
         return false;
     }
 
+    public boolean hasChatChannelType(ChatChannel.ChatChannelType type) {
+        for(ChatChannel channel : getChatChannels()) {
+            List<ChatChannel.ChatChannelType> types = channel.getTypes();
+            if(types != null && types.contains(type)) return true;
+        }
+        return false;
+    }
+
     public @Nullable SyncedRole getSyncedRole(String name, boolean isGroup) {
         for(SyncedRole role : syncedRoles) {
             if(role.getName().equalsIgnoreCase(name) && role.isGroup() == isGroup)
@@ -213,6 +221,8 @@ public class ConnJson {
         public enum ChatChannelType {
             @SerializedName("chat")
             CHAT,
+            @SerializedName("console")
+            CONSOLE,
             @SerializedName("join")
             JOIN,
             @SerializedName("quit")

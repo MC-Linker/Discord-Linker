@@ -141,6 +141,16 @@ public class ModConfig implements LinkerConfig {
     }
 
     @Override
+    public int getChatConsoleFlushSeconds() {
+        return getIntOrDefault("chatconsole_flush_seconds");
+    }
+
+    @Override
+    public int getChatConsoleMaxChars() {
+        return getIntOrDefault("chatconsole_max_chars");
+    }
+
+    @Override
     public void reload() {
         load();
     }

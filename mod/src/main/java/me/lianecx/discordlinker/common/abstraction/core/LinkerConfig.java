@@ -18,5 +18,9 @@ public interface LinkerConfig {
 
     int getTeamCheckIntervalSeconds();
 
+    int getChatConsoleFlushSeconds();
+
+    int getChatConsoleMaxChars();
+
     void reload();
 }

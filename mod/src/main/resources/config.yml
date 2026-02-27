@@ -13,3 +13,9 @@ reply_message: "&l&7(replying to %reply_username%) &8->&r %reply_message_reduced
 
 # The interval in seconds for checking team membership changes (used for synced roles with vanilla teams)
 team_check_interval: 30
+
+# Console forwarding buffer settings
+# Flushes logs to discord either after chatconsole_flush_seconds or when the message buffer reaches chatconsole_max_chars
+chatconsole_flush_seconds: 3
+# Min: 100, Max: 2000
+chatconsole_max_chars: 2000

@@ -96,6 +96,9 @@ public final class WebSocketDiscordClient implements DiscordClient {
                     return;
                 }
                 getConnJson().delete();
+
+                syncChatConsoleForwarding();
+                getTeamsAndGroupsBridge().stopTeamCheck();
             }
         });
 

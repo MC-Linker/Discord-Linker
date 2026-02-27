@@ -57,6 +57,16 @@ public class SpigotConfig implements LinkerConfig {
     }
 
     @Override
+    public int getChatConsoleFlushSeconds() {
+        return config.getInt("chatconsole_flush_seconds");
+    }
+
+    @Override
+    public int getChatConsoleMaxChars() {
+        return config.getInt("chatconsole_max_chars");
+    }
+
+    @Override
     public void reload() {
         plugin.reloadConfig();
     }

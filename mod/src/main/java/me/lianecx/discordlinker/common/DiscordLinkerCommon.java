@@ -7,10 +7,12 @@ import me.lianecx.discordlinker.common.abstraction.core.LinkerLogger;
 import me.lianecx.discordlinker.common.abstraction.core.LinkerScheduler;
 import me.lianecx.discordlinker.common.commands.LinkerMinecraftCommandBus;
 import me.lianecx.discordlinker.common.events.LinkerMinecraftEventBus;
+import me.lianecx.discordlinker.common.events.ChatsMinecraftEvent;
 import me.lianecx.discordlinker.common.events.data.ServerStartEventData;
 import me.lianecx.discordlinker.common.events.data.ServerStopEventData;
 import me.lianecx.discordlinker.common.network.client.ClientManager;
 import me.lianecx.discordlinker.common.network.protocol.events.LinkerDiscordEventBus;
+import me.lianecx.discordlinker.common.util.ConsoleStreamCapture;
 import me.lianecx.discordlinker.common.util.MinecraftChatColor;
 import org.jetbrains.annotations.Nullable;
 
@@ -115,6 +117,8 @@ public class DiscordLinkerCommon {
     }
 
     public void shutdown() {
+        ConsoleStreamCapture.uninstall();
+
         minecraftEventBus.emit(new ServerStopEventData());
         clientManager.disconnect();
         scheduler.shutdown();
@@ -132,12 +136,27 @@ public class DiscordLinkerCommon {
         else if(protocol == ConnJson.ConnProtocol.WEBSOCKET) {
             clientManager.reconnect().thenAccept(connected -> {
                 if(!connected) return;
+                syncChatConsoleForwarding();
                 minecraftEventBus.emit(new ServerStartEventData());
             });
         }
         else {
             logger.warn(MinecraftChatColor.GOLD + "**Your server is using the deprecated backup connection method and will be disconnected. Please reconnect in Discord using `/connect`.**");
             clientManager.disconnectForce();
+        }
+    }
+
+    public static void syncChatConsoleForwarding() {
+        ConnJson conn = getConnJson();
+        boolean hasConsoleChannel = conn != null && conn.hasChatChannelType(ConnJson.ChatChannel.ChatChannelType.CONSOLE);
+
+        if(hasConsoleChannel) {
+            ChatsMinecraftEvent.startChatConsoleForwarding();
+            ConsoleStreamCapture.install(ChatsMinecraftEvent::handleChatConsoleLine);
+        }
+        else {
+            ConsoleStreamCapture.uninstall();
+            ChatsMinecraftEvent.stopChatConsoleForwarding();
         }
     }
 }

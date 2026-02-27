@@ -5,6 +5,7 @@ import me.lianecx.discordlinker.common.network.protocol.payloads.InvalidPayloadE
 import me.lianecx.discordlinker.common.network.protocol.responses.DiscordEventResponse;
 
 import static me.lianecx.discordlinker.common.DiscordLinkerCommon.getConnJson;
+import static me.lianecx.discordlinker.common.DiscordLinkerCommon.syncChatConsoleForwarding;
 
 public class RemoveChatChannelDiscordEvent implements LinkerSyncDiscordEvent<ChatChannelPayload> {
 
@@ -18,6 +19,7 @@ public class RemoveChatChannelDiscordEvent implements LinkerSyncDiscordEvent<Cha
         if(getConnJson() == null) return DiscordEventResponse.CONN_JSON_MISSING;
         getConnJson().getChatChannels().removeIf(channel -> channel.getId().equals(payload.channel.getId()));
         getConnJson().write();
+        syncChatConsoleForwarding();
 
         return DiscordEventResponse.toJson(getConnJson().getChatChannels());
     }

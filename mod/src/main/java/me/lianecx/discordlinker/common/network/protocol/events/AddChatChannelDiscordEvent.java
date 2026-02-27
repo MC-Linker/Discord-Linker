@@ -5,6 +5,7 @@ import me.lianecx.discordlinker.common.network.protocol.payloads.InvalidPayloadE
 import me.lianecx.discordlinker.common.network.protocol.responses.DiscordEventResponse;
 
 import static me.lianecx.discordlinker.common.DiscordLinkerCommon.getConnJson;
+import static me.lianecx.discordlinker.common.DiscordLinkerCommon.syncChatConsoleForwarding;
 
 public class AddChatChannelDiscordEvent implements LinkerSyncDiscordEvent<ChatChannelPayload> {
 
@@ -22,6 +23,7 @@ public class AddChatChannelDiscordEvent implements LinkerSyncDiscordEvent<ChatCh
         // Add the new channel
         getConnJson().getChatChannels().add(payload.channel);
         getConnJson().write();
+        syncChatConsoleForwarding();
 
         return DiscordEventResponse.toJson(getConnJson().getChatChannels());
     }
