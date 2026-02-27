@@ -108,6 +108,7 @@ public class ChatsMinecraftEvent {
 
         List<String> chunksToSend = null;
         synchronized(CHAT_CONSOLE_LOCK) {
+            if(chatConsoleFlushTask == null) return;
             if(chatConsoleBuffer.length() > 0) chatConsoleBuffer.append('\n');
             chatConsoleBuffer.append(line);
             if(chatConsoleBuffer.length() >= chatConsoleMaxChars)

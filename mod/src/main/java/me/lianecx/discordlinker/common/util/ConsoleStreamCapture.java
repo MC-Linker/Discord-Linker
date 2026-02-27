@@ -1,35 +1,30 @@
 package me.lianecx.discordlinker.common.util;
 
-import org.jetbrains.annotations.NotNull;
-
-import java.io.IOException;
-import java.io.OutputStream;
-import java.io.PrintStream;
-import java.nio.charset.Charset;
+import java.lang.reflect.Method;
 import java.util.function.Consumer;
+import java.util.logging.*;
 
 public final class ConsoleStreamCapture {
 
     private static final Object LOCK = new Object();
 
-    private static PrintStream originalOut;
-    private static PrintStream originalErr;
     private static boolean installed;
+    private static UninstallBackend uninstallBackend;
 
     private ConsoleStreamCapture() {}
 
     public static void install(Consumer<String> lineConsumer) {
         synchronized(LOCK) {
             if(installed) return;
-            originalOut = System.out;
-            originalErr = System.err;
 
-            Charset charset = Charset.defaultCharset();
-            PrintStream out = new PrintStream(new TeeOutputStream(originalOut, new LineCaptureOutputStream(lineConsumer, charset)), true);
-            PrintStream err = new PrintStream(new TeeOutputStream(originalErr, new LineCaptureOutputStream(lineConsumer, charset)), true);
+            UninstallBackend log4jUninstall = installLog4jIfPresent(lineConsumer);
+            if(log4jUninstall != null) {
+                uninstallBackend = log4jUninstall;
+                installed = true;
+                return;
+            }
 
-            System.setOut(out);
-            System.setErr(err);
+            uninstallBackend = installJul(lineConsumer);
             installed = true;
         }
     }
@@ -37,87 +32,93 @@ public final class ConsoleStreamCapture {
     public static void uninstall() {
         synchronized(LOCK) {
             if(!installed) return;
-            System.setOut(originalOut);
-            System.setErr(originalErr);
+
+            if(uninstallBackend != null) {
+                uninstallBackend.uninstall();
+                uninstallBackend = null;
+            }
             installed = false;
         }
     }
 
-    private static class TeeOutputStream extends OutputStream {
-        private final OutputStream left;
-        private final OutputStream right;
+    private static UninstallBackend installLog4jIfPresent(Consumer<String> lineConsumer) {
+        try {
+            // Reflection incase for some reason log4j isn't present
+            Class<?> captureClass = Class.forName("me.lianecx.discordlinker.architectury.util.Log4jConsoleCapture");
+            Method installMethod = captureClass.getMethod("install", Consumer.class);
+            Method uninstallMethod = captureClass.getMethod("uninstall");
 
-        TeeOutputStream(OutputStream left, OutputStream right) {
-            this.left = left;
-            this.right = right;
+            installMethod.invoke(null, lineConsumer);
+            return () -> {
+                try {
+                    uninstallMethod.invoke(null);
+                }
+                catch(Exception ignored) {}
+            };
         }
-
-        @Override
-        public void write(int b) throws IOException {
-            left.write(b);
-            right.write(b);
-        }
-
-        @Override
-        public void write(byte @NotNull[] b, int off, int len) throws IOException {
-            left.write(b, off, len);
-            right.write(b, off, len);
-        }
-
-        @Override
-        public void flush() throws IOException {
-            left.flush();
-            right.flush();
-        }
-
-        @Override
-        public void close() throws IOException {
-            flush();
+        catch(Exception ignored) {
+            return null;
         }
     }
 
-    private static class LineCaptureOutputStream extends OutputStream {
-        private final Consumer<String> lineConsumer;
-        private final Charset charset;
-        private final StringBuilder lineBuffer = new StringBuilder();
+    private static UninstallBackend installJul(Consumer<String> lineConsumer) {
+        Logger rootLogger = LogManager.getLogManager().getLogger("");
+        Formatter formatter = resolveFormatter(rootLogger);
 
-        LineCaptureOutputStream(Consumer<String> lineConsumer, Charset charset) {
-            this.lineConsumer = lineConsumer;
-            this.charset = charset;
-        }
+        Handler captureHandler = new Handler() {
+            @Override
+            public void publish(LogRecord record) {
+                if(!isLoggable(record)) return;
 
-        @Override
-        public void write(int b) {
-            byte[] single = new byte[] {(byte) b};
-            append(new String(single, charset));
-        }
-
-        @Override
-        public void write(byte @NotNull[] b, int off, int len) {
-            if(len <= 0) return;
-            append(new String(b, off, len, charset));
-        }
-
-        @Override
-        public void flush() {
-            emitBufferedLine();
-        }
-
-        private void append(String content) {
-            for(int i = 0; i < content.length(); i++) {
-                char ch = content.charAt(i);
-                if(ch == '\n') {
-                    emitBufferedLine();
-                    continue;
+                String formatted;
+                try {
+                    formatted = formatter.format(record);
                 }
-                if(ch != '\r') lineBuffer.append(ch);
+                catch(Exception e) {
+                    formatted = record.getMessage();
+                }
+
+                emitLines(formatted, lineConsumer);
             }
+
+            @Override
+            public void flush() {}
+
+            @Override
+            public void close() {}
+        };
+
+        captureHandler.setLevel(Level.ALL);
+        rootLogger.addHandler(captureHandler);
+
+        return () -> rootLogger.removeHandler(captureHandler);
+    }
+
+    private static Formatter resolveFormatter(Logger rootLogger) {
+        Formatter fallback = new SimpleFormatter();
+
+        for(Handler handler : rootLogger.getHandlers()) {
+            if(handler == null) continue;
+            Formatter formatter = handler.getFormatter();
+            if(formatter == null) continue;
+
+            if(handler.getClass().getName().toLowerCase().contains("console")) return formatter;
+            fallback = formatter;
         }
 
-        private void emitBufferedLine() {
-            if(lineBuffer.length() == 0) return;
-            lineConsumer.accept(lineBuffer.toString());
-            lineBuffer.setLength(0);
+        return fallback;
+    }
+
+    private static void emitLines(String content, Consumer<String> lineConsumer) {
+        if(content == null || content.isEmpty()) return;
+        String[] split = content.split("\\r?\\n");
+        for(String line : split) {
+            if(line.isEmpty()) continue;
+            lineConsumer.accept(line);
         }
+    }
+
+    private interface UninstallBackend {
+        void uninstall();
     }
 }
