@@ -104,18 +104,19 @@ public class ChatsMinecraftEvent {
     }
 
     public static void handleChatConsoleLine(String line) {
+        System.out.print("Line: " + line);
         if(line == null) return;
 
         List<String> chunksToSend = null;
         synchronized(CHAT_CONSOLE_LOCK) {
             if(chatConsoleFlushTask == null) return;
-            if(chatConsoleBuffer.length() > 0) chatConsoleBuffer.append('\n');
+            chatConsoleBuffer.append('\n');
             chatConsoleBuffer.append(line);
             if(chatConsoleBuffer.length() >= chatConsoleMaxChars)
                 chunksToSend = drainChunks(chatConsoleBuffer, chatConsoleMaxChars);
         }
 
-        // If exceeds max sizze, send immediately, otherwise wait for flush task to send
+        // If exceeds max size, send immediately, otherwise wait for flush task to send
         sendChatConsoleChunks(chunksToSend);
     }
 

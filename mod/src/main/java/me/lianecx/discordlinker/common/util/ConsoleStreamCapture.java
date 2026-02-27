@@ -4,9 +4,13 @@ import java.lang.reflect.Method;
 import java.util.function.Consumer;
 import java.util.logging.*;
 
+import static me.lianecx.discordlinker.common.DiscordLinkerCommon.getLogger;
+
 public final class ConsoleStreamCapture {
 
-    private static final Object LOCK = new Object();
+    public static final String DISCORD_LINKER_LOGGER_TOKEN = "discordlinker";
+
+    private static final Object INSTALL_LOCK = new Object();
 
     private static boolean installed;
     private static UninstallBackend uninstallBackend;
@@ -14,7 +18,7 @@ public final class ConsoleStreamCapture {
     private ConsoleStreamCapture() {}
 
     public static void install(Consumer<String> lineConsumer) {
-        synchronized(LOCK) {
+        synchronized(INSTALL_LOCK) {
             if(installed) return;
 
             UninstallBackend log4jUninstall = installLog4jIfPresent(lineConsumer);
@@ -30,7 +34,7 @@ public final class ConsoleStreamCapture {
     }
 
     public static void uninstall() {
-        synchronized(LOCK) {
+        synchronized(INSTALL_LOCK) {
             if(!installed) return;
 
             if(uninstallBackend != null) {
@@ -43,7 +47,7 @@ public final class ConsoleStreamCapture {
 
     private static UninstallBackend installLog4jIfPresent(Consumer<String> lineConsumer) {
         try {
-            // Reflection incase for some reason log4j isn't present
+            // Reflection incase on spigot
             Class<?> captureClass = Class.forName("me.lianecx.discordlinker.architectury.util.Log4jConsoleCapture");
             Method installMethod = captureClass.getMethod("install", Consumer.class);
             Method uninstallMethod = captureClass.getMethod("uninstall");
@@ -68,7 +72,9 @@ public final class ConsoleStreamCapture {
         Handler captureHandler = new Handler() {
             @Override
             public void publish(LogRecord record) {
-                if(!isLoggable(record)) return;
+                // Only capture INFO and above to avoid excessive debug spam (probably disabled anyway)
+                if(!isLoggable(record) || record.getLevel().intValue() < Level.INFO.intValue()) return;
+                if(shouldSkipDebugDiscordLinkerRecord(record)) return;
 
                 String formatted;
                 try {
@@ -113,9 +119,16 @@ public final class ConsoleStreamCapture {
         if(content == null || content.isEmpty()) return;
         String[] split = content.split("\\r?\\n");
         for(String line : split) {
-            if(line.isEmpty()) continue;
+            if(line.trim().isEmpty()) continue;
             lineConsumer.accept(line);
         }
+    }
+
+    private static boolean shouldSkipDebugDiscordLinkerRecord(LogRecord record) {
+        // Avoids feedback loops
+        String loggerName = record.getLoggerName();
+        if(loggerName == null || !loggerName.toLowerCase().contains(DISCORD_LINKER_LOGGER_TOKEN)) return false;
+        return getLogger().isDebug(); // If debug enabled, skip all (debugs are emitted as info currently)
     }
 
     private interface UninstallBackend {

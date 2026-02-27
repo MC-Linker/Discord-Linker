@@ -1,5 +1,6 @@
 package me.lianecx.discordlinker.architectury.util;
 
+import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.core.Appender;
 import org.apache.logging.log4j.core.Layout;
@@ -9,12 +10,14 @@ import org.apache.logging.log4j.core.appender.AbstractAppender;
 import org.apache.logging.log4j.core.appender.ConsoleAppender;
 import org.apache.logging.log4j.core.config.Configuration;
 import org.apache.logging.log4j.core.config.LoggerConfig;
-import org.apache.logging.log4j.core.config.Property;
 import org.apache.logging.log4j.core.layout.PatternLayout;
 
 import java.io.Serializable;
 import java.nio.charset.StandardCharsets;
 import java.util.function.Consumer;
+
+import static me.lianecx.discordlinker.common.DiscordLinkerCommon.getLogger;
+import static me.lianecx.discordlinker.common.util.ConsoleStreamCapture.DISCORD_LINKER_LOGGER_TOKEN;
 
 public final class Log4jConsoleCapture {
 
@@ -84,19 +87,29 @@ public final class Log4jConsoleCapture {
         private final Consumer<String> lineConsumer;
 
         protected DiscordLinkerConsoleAppender(String name, Layout<? extends Serializable> layout, Consumer<String> lineConsumer) {
-            super(name, null, layout, false, Property.EMPTY_ARRAY);
+            super(name, null, layout, false);
             this.lineConsumer = lineConsumer;
         }
 
         @Override
         public void append(LogEvent event) {
             LogEvent immutable = event.toImmutable();
+            // Only capture INFO and above to avoid excessive debug spam (probably disabled anyway)
+            if(event.getLevel().intLevel() > Level.INFO.intLevel()) return;
+            if(shouldSkipDebugDiscordLinkerEvent(immutable)) return;
+
             String formattedLine = new String(getLayout().toByteArray(immutable), StandardCharsets.UTF_8);
             String[] split = formattedLine.split("\\r?\\n");
             for(String line : split) {
-                if(line.isEmpty()) continue;
+                if(line.trim().isEmpty()) continue;
                 lineConsumer.accept(line);
             }
+        }
+
+        private boolean shouldSkipDebugDiscordLinkerEvent(LogEvent event) {
+            String loggerName = event.getLoggerName();
+            if(loggerName == null || !loggerName.toLowerCase().contains(DISCORD_LINKER_LOGGER_TOKEN)) return false;
+            return getLogger().isDebug(); // If debug enabled, skip all (debugs are emitted as info currently)
         }
     }
 }

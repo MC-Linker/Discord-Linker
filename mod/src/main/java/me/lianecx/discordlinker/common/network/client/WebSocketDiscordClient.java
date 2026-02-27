@@ -220,7 +220,7 @@ public final class WebSocketDiscordClient implements DiscordClient {
     public void send(String event, Object[] payload) {
         if(isRateLimited(event)) {
             getLogger().warn("[Socket.io] Dropping event '" + event + "' due to rate limit.");
-//            return; TODO don't drop for now
+            return;
         }
 
         getLogger().debug("[Socket.io] Emitting event: " + event + ", payload: " + Arrays.toString(payload));
@@ -231,8 +231,8 @@ public final class WebSocketDiscordClient implements DiscordClient {
     public void send(String event, Object[] payload, Consumer<DiscordEventResponse> callback) {
         if(isRateLimited(event)) {
             getLogger().warn("[Socket.io] Dropping event '" + event + "' due to rate limit.");
-//            callback.accept(DiscordEventResponse.RATE_LIMITED);
-//            return; // TODO don't drop for now
+            callback.accept(DiscordEventResponse.RATE_LIMITED);
+            return;
         }
 
         getLogger().debug("[Socket.io] Emitting event with callback: " + event + ", payload: " + Arrays.toString(payload));

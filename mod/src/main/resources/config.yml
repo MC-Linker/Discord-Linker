@@ -16,6 +16,6 @@ team_check_interval: 30
 
 # Console forwarding buffer settings
 # Flushes logs to discord either after chatconsole_flush_seconds or when the message buffer reaches chatconsole_max_chars
-chatconsole_flush_seconds: 3
+chatconsole_flush_seconds: 5
 # Min: 100, Max: 2000
-chatconsole_max_chars: 2000
+chatconsole_max_chars: 1000

@@ -118,6 +118,7 @@ public class DiscordLinkerCommon {
 
     public void shutdown() {
         ConsoleStreamCapture.uninstall();
+        ChatsMinecraftEvent.stopChatConsoleForwarding();
 
         minecraftEventBus.emit(new ServerStopEventData());
         clientManager.disconnect();
