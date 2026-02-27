@@ -137,8 +137,17 @@ public class ChatsMinecraftEvent {
         List<String> chunks = new ArrayList<>();
         while(source.length() > 0) {
             int end = Math.min(source.length(), chunkSize);
+            String chunk = source.substring(0, end);
+
+            // Try to split by newlines if possible
+            int lastNewline = chunk.lastIndexOf("\n");
+            if(lastNewline != -1) {
+                end = lastNewline + 1; // Include newline in chunk
+                chunk = source.substring(0, end);
+            }
+
             if(allowPartialLastChunk && end != chunkSize) return chunks; // Last chunk is less than chunkSize, keep it in buffer until next flush
-            chunks.add(source.substring(0, end));
+            chunks.add(chunk);
             source.delete(0, end);
         }
         return chunks;
