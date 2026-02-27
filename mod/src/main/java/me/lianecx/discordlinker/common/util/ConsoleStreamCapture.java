@@ -84,7 +84,7 @@ public final class ConsoleStreamCapture {
                     formatted = record.getMessage();
                 }
 
-                emitLines(formatted, lineConsumer);
+                lineConsumer.accept(formatted);
             }
 
             @Override
@@ -113,15 +113,6 @@ public final class ConsoleStreamCapture {
         }
 
         return fallback;
-    }
-
-    private static void emitLines(String content, Consumer<String> lineConsumer) {
-        if(content == null || content.isEmpty()) return;
-        String[] split = content.split("\\r?\\n");
-        for(String line : split) {
-            if(line.trim().isEmpty()) continue;
-            lineConsumer.accept(line);
-        }
     }
 
     private static boolean shouldSkipDebugDiscordLinkerRecord(LogRecord record) {

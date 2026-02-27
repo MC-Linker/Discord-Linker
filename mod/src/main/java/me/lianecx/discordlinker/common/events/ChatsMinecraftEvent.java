@@ -100,20 +100,19 @@ public class ChatsMinecraftEvent {
                 chatConsoleFlushTask = null;
             }
         }
+
         flushChatConsoleBuffer();
     }
 
     public static void handleChatConsoleLine(String line) {
-        System.out.print("Line: " + line);
-        if(line == null) return;
+        if(line == null || line.isEmpty()) return;
 
         List<String> chunksToSend = null;
         synchronized(CHAT_CONSOLE_LOCK) {
             if(chatConsoleFlushTask == null) return;
-            chatConsoleBuffer.append('\n');
             chatConsoleBuffer.append(line);
             if(chatConsoleBuffer.length() >= chatConsoleMaxChars)
-                chunksToSend = drainChunks(chatConsoleBuffer, chatConsoleMaxChars);
+                chunksToSend = drainChunks(chatConsoleBuffer, chatConsoleMaxChars, true);
         }
 
         // If exceeds max size, send immediately, otherwise wait for flush task to send
@@ -124,19 +123,21 @@ public class ChatsMinecraftEvent {
         List<String> chunksToSend;
         synchronized(CHAT_CONSOLE_LOCK) {
             if(chatConsoleBuffer.length() == 0) return;
-            chunksToSend = drainChunks(chatConsoleBuffer, chatConsoleMaxChars);
+            chunksToSend = drainChunks(chatConsoleBuffer, chatConsoleMaxChars, false);
         }
 
         sendChatConsoleChunks(chunksToSend);
     }
 
     /**
-     * Drains the source StringBuilder into a list of chunks of at most chunkSize characters clearing the source buffer.
+     * Drains the source StringBuilder into a list of chunks of at most chunkSize characters.
+     * @param allowPartialLastChunk If true, if the last chunk is less than chunkSize, it will not be drained.
      */
-    private static List<String> drainChunks(StringBuilder source, int chunkSize) {
+    private static List<String> drainChunks(StringBuilder source, int chunkSize, boolean allowPartialLastChunk) {
         List<String> chunks = new ArrayList<>();
         while(source.length() > 0) {
             int end = Math.min(source.length(), chunkSize);
+            if(allowPartialLastChunk && end != chunkSize) return chunks; // Last chunk is less than chunkSize, keep it in buffer until next flush
             chunks.add(source.substring(0, end));
             source.delete(0, end);
         }

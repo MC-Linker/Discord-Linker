@@ -99,11 +99,7 @@ public final class Log4jConsoleCapture {
             if(shouldSkipDebugDiscordLinkerEvent(immutable)) return;
 
             String formattedLine = new String(getLayout().toByteArray(immutable), StandardCharsets.UTF_8);
-            String[] split = formattedLine.split("\\r?\\n");
-            for(String line : split) {
-                if(line.trim().isEmpty()) continue;
-                lineConsumer.accept(line);
-            }
+            lineConsumer.accept(formattedLine);
         }
 
         private boolean shouldSkipDebugDiscordLinkerEvent(LogEvent event) {
