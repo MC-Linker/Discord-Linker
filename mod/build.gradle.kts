@@ -138,8 +138,6 @@ tasks {
     shadowJar {
         configurations = listOf(shadowLib)
 
-//        archiveClassifier.set("")
-
         relocate("org.yaml.snakeyaml", "me.lianecx.snakeyaml")
         relocate("io.socket", "me.lianecx.iosocket")
         relocate("okio", "me.lianecx.okio")

@@ -15,6 +15,10 @@ repositories {
     maven("https://repo.codemc.org/repository/maven-public/")
 }
 
+base {
+    archivesName.set(property("archives_base_name").toString())
+}
+
 val properties = mapOf(
     "name" to property("mod.display_name").toString(),
     "description" to property("mod.description").toString(),
