@@ -1,4 +1,4 @@
-awname: ${name}
+name: ${name}
 main: ${main}
 version: ${version}
 author: ${author}
