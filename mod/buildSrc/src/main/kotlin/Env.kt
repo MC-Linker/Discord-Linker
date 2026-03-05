@@ -1,7 +1,5 @@
 import org.gradle.api.Project
 
-enum class EnvType { FABRIC, FORGE, NEOFORGE }
-
 class Env(project: Project, val compare: (String, String) -> Int) {
     val archivesBaseName = project.property("archives_base_name").toString()
     val mcVersion = project.versionProperty("deps.core.mc.version_range")
