@@ -20,13 +20,13 @@ base {
 }
 
 val properties = mapOf(
-    "name" to property("mod.display_name").toString(),
-    "description" to property("mod.description").toString(),
-    "author" to property("mod.authors").toString(),
-    "website" to property("mod.general_website").toString(),
-    "version" to property("version").toString(),
-    "main" to property("mod.spigot.main").toString(),
-    "spigot_version_range" to property("deps.core.spigot.version_range").toString()
+    "name" to property("mod.display_name"),
+    "description" to property("mod.description"),
+    "author" to property("mod.authors"),
+    "website" to property("mod.general_website"),
+    "version" to property("version"),
+    "main" to "${property("group")}.${property("archives_base_name")}.spigot.${property("mod.spigot.main")}",
+    "spigot_version_range" to property("deps.core.spigot.version_range")
 )
 
 dependencies {

@@ -33,7 +33,7 @@ class Env(project: Project, val compare: (String, String) -> Int) {
     val group = project.property("group").toString()
 
     val fabricServerEntry =
-        if (isFabric) "${group}.${archivesBaseName}.fabric.${project.property("mod.fabric.entry.server").toString()}"
+        if (isFabric) "${group}.${archivesBaseName}.fabric.${project.property("mod.fabric.entry.server")}"
         else ""
 
     fun atLeast(version: String) = compare(mcVersion.min, version) >= 0
