@@ -1,6 +1,7 @@
 plugins {
     kotlin("jvm")
     id("xyz.jpenilla.run-paper") version "2.3.1"
+    id("com.gradleup.shadow") version "9.3.1"
 }
 
 java {
@@ -29,13 +30,39 @@ val properties = mapOf(
     "spigot_version_range" to property("deps.core.spigot.version_range")
 )
 
+val shadowLib by configurations.creating
+
+configurations.implementation {
+    extendsFrom(shadowLib)
+}
+
 dependencies {
     compileOnly("org.spigotmc:spigot-api:${properties["spigot_version_range"]}-R0.1-SNAPSHOT")
 
-    implementation("io.socket:socket.io-client:2.1.2")
-    implementation("org.bstats:bstats-bukkit:3.0.0")
-    implementation("org.yaml:snakeyaml:2.5")
+    shadowLib("io.socket:socket.io-client:2.1.2")
+    shadowLib("org.bstats:bstats-bukkit:3.0.0")
+    shadowLib("org.yaml:snakeyaml:2.5")
     compileOnly("net.luckperms:api:5.4")
+}
+
+// Relocation and Shadowing
+tasks {
+    shadowJar {
+        configurations = listOf(shadowLib)
+
+        archiveClassifier.set("")
+
+        relocate("org.yaml.snakeyaml", "me.lianecx.snakeyaml")
+        relocate("org.bstats", "me.lianecx.bstats")
+        relocate("io.socket", "me.lianecx.iosocket")
+        relocate("okio", "me.lianecx.okio")
+        relocate("okhttp3", "me.lianecx.okhttp3")
+        relocate("org.json", "me.lianecx.json")
+    }
+
+    jar {
+        enabled = false
+    }
 }
 
 tasks.processResources {

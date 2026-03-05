@@ -134,6 +134,7 @@ configurations.all {
     }
 }
 
+// Relocation and Shadowing
 tasks {
     shadowJar {
         configurations = listOf(shadowLib)
