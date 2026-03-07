@@ -147,8 +147,15 @@ public class ConnJson {
     }
 
     public boolean write() {
-        try(FileWriter writer = new FileWriter(new File(getServer().getDataFolder(), CONNJSON_FILENAME))) {
+        try {
             Files.createDirectories(Paths.get(getServer().getDataFolder()));
+        }
+        catch(IOException e) {
+            getLogger().error(MinecraftChatColor.RED + "Failed to create data folder for connection data!");
+            e.printStackTrace();
+            return false;
+        }
+        try(FileWriter writer = new FileWriter(new File(getServer().getDataFolder(), CONNJSON_FILENAME))) {
             writer.write(JsonUtil.toJsonString(this));
             return true;
         }

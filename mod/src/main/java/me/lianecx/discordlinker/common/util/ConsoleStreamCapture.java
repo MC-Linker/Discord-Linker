@@ -8,7 +8,7 @@ import static me.lianecx.discordlinker.common.DiscordLinkerCommon.getLogger;
 
 public final class ConsoleStreamCapture {
 
-    public static final String DISCORD_LINKER_LOGGER_TOKEN = "discordlinker";
+    public static final String[] DISCORD_LINKER_LOGGER_TOKENS = { "discordlinker", "Discord-Linker" };
 
     private static final Object INSTALL_LOCK = new Object();
 
@@ -74,7 +74,7 @@ public final class ConsoleStreamCapture {
             public void publish(LogRecord record) {
                 // Only capture INFO and above to avoid excessive debug spam (probably disabled anyway)
                 if(!isLoggable(record) || record.getLevel().intValue() < Level.INFO.intValue()) return;
-                if(shouldSkipDebugDiscordLinkerRecord(record)) return;
+                if(shouldSkipDebugLog(record.getLoggerName())) return;
 
                 String formatted;
                 try {
@@ -115,11 +115,22 @@ public final class ConsoleStreamCapture {
         return fallback;
     }
 
-    private static boolean shouldSkipDebugDiscordLinkerRecord(LogRecord record) {
-        // Avoids feedback loops
-        String loggerName = record.getLoggerName();
-        if(loggerName == null || !loggerName.toLowerCase().contains(DISCORD_LINKER_LOGGER_TOKEN)) return false;
+    /**
+     * @return true if debug mode is enabled and the record is from a DiscordLinker logger, to avoid feedback loops.
+     */
+    public static boolean shouldSkipDebugLog(String loggerName) {
+        if(!isDiscordLinkerLogger(loggerName)) return false;
         return getLogger().isDebug(); // If debug enabled, skip all (debugs are emitted as info currently)
+    }
+
+    private static boolean isDiscordLinkerLogger(String name) {
+        if(name == null) return false;
+
+        String lower = name.toLowerCase();
+        for(String token : DISCORD_LINKER_LOGGER_TOKENS) {
+            if(lower.contains(token.toLowerCase())) return true;
+        }
+        return false;
     }
 
     private interface UninstallBackend {

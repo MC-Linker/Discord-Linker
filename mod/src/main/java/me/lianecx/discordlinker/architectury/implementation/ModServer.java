@@ -1,5 +1,6 @@
 package me.lianecx.discordlinker.architectury.implementation;
 
+//? if <1.21
 import com.mojang.authlib.GameProfile;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.ParseResults;

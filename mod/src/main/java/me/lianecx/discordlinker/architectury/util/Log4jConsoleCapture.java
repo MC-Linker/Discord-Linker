@@ -16,8 +16,7 @@ import java.io.Serializable;
 import java.nio.charset.StandardCharsets;
 import java.util.function.Consumer;
 
-import static me.lianecx.discordlinker.common.DiscordLinkerCommon.getLogger;
-import static me.lianecx.discordlinker.common.util.ConsoleStreamCapture.DISCORD_LINKER_LOGGER_TOKEN;
+import static me.lianecx.discordlinker.common.util.ConsoleStreamCapture.shouldSkipDebugLog;
 
 public final class Log4jConsoleCapture {
 
@@ -96,16 +95,10 @@ public final class Log4jConsoleCapture {
             LogEvent immutable = event.toImmutable();
             // Only capture INFO and above to avoid excessive debug spam (probably disabled anyway)
             if(event.getLevel().intLevel() > Level.INFO.intLevel()) return;
-            if(shouldSkipDebugDiscordLinkerEvent(immutable)) return;
+            if(shouldSkipDebugLog(immutable.getLoggerName())) return;
 
             String formattedLine = new String(getLayout().toByteArray(immutable), StandardCharsets.UTF_8);
             lineConsumer.accept(formattedLine);
-        }
-
-        private boolean shouldSkipDebugDiscordLinkerEvent(LogEvent event) {
-            String loggerName = event.getLoggerName();
-            if(loggerName == null || !loggerName.toLowerCase().contains(DISCORD_LINKER_LOGGER_TOKEN)) return false;
-            return getLogger().isDebug(); // If debug enabled, skip all (debugs are emitted as info currently)
         }
     }
 }
