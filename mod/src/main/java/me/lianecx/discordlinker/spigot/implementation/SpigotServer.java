@@ -2,7 +2,7 @@ package me.lianecx.discordlinker.spigot.implementation;
 
 import me.lianecx.discordlinker.common.abstraction.*;
 import me.lianecx.discordlinker.spigot.util.SpigotCommandCompletionUtil;
-import me.lianecx.discordlinker.spigot.util.SpigotCommandExecutor;
+import me.lianecx.discordlinker.common.util.Log4jCapture;
 import net.md_5.bungee.api.chat.BaseComponent;
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
@@ -17,6 +17,7 @@ import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
+import static me.lianecx.discordlinker.common.DiscordLinkerCommon.getScheduler;
 import static me.lianecx.discordlinker.spigot.util.URLComponent.buildURLComponent;
 
 public class SpigotServer implements LinkerServer {
@@ -140,7 +141,19 @@ public class SpigotServer implements LinkerServer {
 
     @Override
     public CompletableFuture<String> executeCommand(String command) {
-        return SpigotCommandExecutor.execute(command);
+        CompletableFuture<String> future = new CompletableFuture<>();
+        getScheduler().runSync(() -> {
+            boolean[] success = { false };
+            String output;
+            try {
+                output = Log4jCapture.captureCommandOutput(() -> success[0] = Bukkit.dispatchCommand(Bukkit.getConsoleSender(), command));
+            } catch(Exception e) {
+                output = "";
+            }
+            if(output.isEmpty()) output = success[0] ? COMMAND_NO_OUTPUT_SUCCESS : COMMAND_NO_OUTPUT_FAIL;
+            future.complete(output);
+        });
+        return future;
     }
 
     @Override

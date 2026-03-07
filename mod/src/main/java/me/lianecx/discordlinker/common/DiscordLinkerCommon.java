@@ -12,7 +12,7 @@ import me.lianecx.discordlinker.common.events.data.ServerStartEventData;
 import me.lianecx.discordlinker.common.events.data.ServerStopEventData;
 import me.lianecx.discordlinker.common.network.client.ClientManager;
 import me.lianecx.discordlinker.common.network.protocol.events.LinkerDiscordEventBus;
-import me.lianecx.discordlinker.common.util.ConsoleStreamCapture;
+import me.lianecx.discordlinker.common.util.Log4jCapture;
 import me.lianecx.discordlinker.common.util.MinecraftChatColor;
 import org.jetbrains.annotations.Nullable;
 
@@ -117,7 +117,7 @@ public class DiscordLinkerCommon {
     }
 
     public void shutdown() {
-        ConsoleStreamCapture.uninstall();
+        Log4jCapture.uninstall();
         ChatsMinecraftEvent.stopChatConsoleForwarding();
 
         minecraftEventBus.emit(new ServerStopEventData());
@@ -153,10 +153,10 @@ public class DiscordLinkerCommon {
 
         if(hasConsoleChannel) {
             ChatsMinecraftEvent.startChatConsoleForwarding();
-            ConsoleStreamCapture.install(ChatsMinecraftEvent::handleChatConsoleLine);
+            Log4jCapture.install(ChatsMinecraftEvent::handleChatConsoleLine);
         }
         else {
-            ConsoleStreamCapture.uninstall();
+            Log4jCapture.uninstall();
             ChatsMinecraftEvent.stopChatConsoleForwarding();
         }
     }

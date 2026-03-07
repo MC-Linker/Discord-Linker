@@ -39,6 +39,7 @@ configurations.implementation {
 
 dependencies {
     compileOnly("org.spigotmc:spigot-api:${properties["spigot_version_range"]}-R0.1-SNAPSHOT")
+    compileOnly("org.apache.logging.log4j:log4j-core:2.17.1")
 
     shadowLib("io.socket:socket.io-client:2.1.2")
     shadowLib("org.bstats:bstats-bukkit:3.0.0")
