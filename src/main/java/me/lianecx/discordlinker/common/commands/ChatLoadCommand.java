@@ -4,23 +4,37 @@ import me.lianecx.discordlinker.common.ConnJson;
 import me.lianecx.discordlinker.common.abstraction.LinkerCommandSender;
 import me.lianecx.discordlinker.common.abstraction.LinkerPlayer;
 import me.lianecx.discordlinker.common.abstraction.core.LinkerScheduler;
+import me.lianecx.discordlinker.common.events.ChatsMinecraftEvent;
 import me.lianecx.discordlinker.common.events.data.ChatEventData;
 import me.lianecx.discordlinker.common.util.MinecraftChatColor;
 
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static me.lianecx.discordlinker.common.DiscordLinkerCommon.*;
 
-public class ChatLoadCommand implements LinkerMinecraftCommand {
+public class ChatLoadCommand implements LinkerMinecraftCompletableCommand {
 
     public static boolean ENABLED = true;
 
     private static final Object LOCK = new Object();
     private static final int TICKS_PER_SECOND = 20;
     private static final String CHATLOAD_PERMISSION = "discordlinker.chatload";
+    private static final List<String> MESSAGE_SUGGESTIONS = Arrays.asList("50", "100", "250", "500", "1000");
+    private static final List<String> DURATION_SUGGESTIONS = Arrays.asList("5", "10", "30", "60", "120");
+    private static final List<String> TYPE_SUGGESTIONS = Stream.of(ConnJson.ChatChannel.ChatChannelType.values())
+            .map(type -> type.name().toLowerCase(Locale.ROOT))
+            .collect(Collectors.toList());
+    private static final String AVAILABLE_TYPES = Stream.of(ConnJson.ChatChannel.ChatChannelType.values())
+            .map(type -> type.name().toLowerCase(Locale.ROOT))
+            .collect(Collectors.joining(", "));
 
     private static final String[] FAKE_PLAYER_NAMES = {
             "AlexBuilder", "MinerMax", "SkyCrafter", "RedstoneRex",
@@ -74,8 +88,8 @@ public class ChatLoadCommand implements LinkerMinecraftCommand {
             return;
         }
 
-        if(args.length != 2) {
-            sender.sendMessage(MinecraftChatColor.RED + "Usage: /chatload <messages> <duration>");
+        if(args.length != 2 && args.length != 3) {
+            sender.sendMessage(MinecraftChatColor.RED + "Usage: /chatload <messages> <duration> [type]");
             return;
         }
 
@@ -86,7 +100,13 @@ public class ChatLoadCommand implements LinkerMinecraftCommand {
             durationSeconds = Integer.parseInt(args[1]);
         }
         catch(NumberFormatException ex) {
-            sender.sendMessage(MinecraftChatColor.RED + "Please provide valid integers. Usage: /chatload <messages> <duration>");
+            sender.sendMessage(MinecraftChatColor.RED + "Please provide valid integers. Usage: /chatload <messages> <duration> [type]");
+            return;
+        }
+
+        ConnJson.ChatChannel.ChatChannelType chatType = parseType(args.length == 3 ? args[2] : null);
+        if(chatType == null) {
+            sender.sendMessage(MinecraftChatColor.RED + "Unknown type. Available: " + AVAILABLE_TYPES);
             return;
         }
 
@@ -100,8 +120,8 @@ public class ChatLoadCommand implements LinkerMinecraftCommand {
             return;
         }
 
-        if(!isChatBridgeReady()) {
-            sender.sendMessage(MinecraftChatColor.RED + "Chat bridge is not active. Connect the plugin and configure a chat channel first.");
+        if(!isChatBridgeReady(chatType)) {
+            sender.sendMessage(MinecraftChatColor.RED + "Chat bridge is not active for type '" + chatType.name().toLowerCase(Locale.ROOT) + "'.");
             return;
         }
 
@@ -111,20 +131,30 @@ public class ChatLoadCommand implements LinkerMinecraftCommand {
                 return;
             }
 
-            ActiveRun run = new ActiveRun(messages, durationSeconds);
+            ActiveRun run = new ActiveRun(messages, durationSeconds, chatType);
             activeRun = run;
             run.task = getScheduler().runRepeatingSync(() -> tick(run), 0, 1);
         }
 
-        sender.sendMessage(MinecraftChatColor.GREEN + "Started chat load test: " + messages + " messages over " + durationSeconds + " seconds.");
+        sender.sendMessage(MinecraftChatColor.GREEN + "Started chat load test: " + messages + " messages over " + durationSeconds + " seconds as type " + chatType.name().toLowerCase(Locale.ROOT) + ".");
         getLogger().info(String.format(Locale.ROOT,
-                "[ChatLoad] Started: %d messages over %ds (target %.2f msg/s).",
-                messages, durationSeconds, (double) messages / durationSeconds
+                "[ChatLoad] Started: %d messages over %ds as type '%s' (target %.2f msg/s).",
+                messages, durationSeconds, chatType.name().toLowerCase(Locale.ROOT), (double) messages / durationSeconds
         ));
     }
 
     public static void shutdown() {
         stopActiveRun("shutdown");
+    }
+
+    @Override
+    public List<String> complete(LinkerCommandSender sender, String[] args) {
+        if(!sender.hasPermission(4, CHATLOAD_PERMISSION)) return new ArrayList<>();
+        if(args.length == 0) return MESSAGE_SUGGESTIONS;
+        if(args.length == 1) return filterByPrefix(MESSAGE_SUGGESTIONS, args[0]);
+        if(args.length == 2) return filterByPrefix(DURATION_SUGGESTIONS, args[1]);
+        if(args.length == 3) return filterByPrefix(TYPE_SUGGESTIONS, args[2].toLowerCase(Locale.ROOT));
+        return new ArrayList<>();
     }
 
     private static void stopActiveRun(String reason) {
@@ -196,11 +226,43 @@ public class ChatLoadCommand implements LinkerMinecraftCommand {
 
     private static void emitFakeChatMessage(ActiveRun run) {
         int playerIndex = run.sent % run.players.length;
-        String message = generateRandomMessage();
-        getMinecraftEventBus().emit(new ChatEventData(message, run.players[playerIndex]));
+        LinkerPlayer player = run.players[playerIndex];
+        String sender = senderForType(run.chatType, player.getName());
+        String message = generateRandomMessage(run.chatType, player.getName());
+
+        if(run.chatType == ConnJson.ChatChannel.ChatChannelType.CHAT)
+            getMinecraftEventBus().emit(new ChatEventData(message, player));
+        else
+            ChatsMinecraftEvent.sendChatAsync(message, run.chatType, sender);
     }
 
-    private static String generateRandomMessage() {
+    private static String generateRandomMessage(ConnJson.ChatChannel.ChatChannelType type, String playerName) {
+        switch(type) {
+            case START:
+            case CLOSE:
+                return "";
+            case JOIN:
+                return playerName + " joined the game";
+            case QUIT:
+                return playerName + " left the game";
+            case DEATH:
+                return playerName + " fell from a high place";
+            case ADVANCEMENT:
+                return "minecraft:story/mine_diamond";
+            case PLAYER_COMMAND:
+                return "/home";
+            case CONSOLE_COMMAND:
+            case BLOCK_COMMAND:
+                return "say chatload test command";
+            case CONSOLE:
+                return "[Server thread/INFO]: synthetic log line from /chatload\n";
+            case CHAT:
+            default:
+                return generateRandomChatSentence();
+        }
+    }
+
+    private static String generateRandomChatSentence() {
         ThreadLocalRandom random = ThreadLocalRandom.current();
         int variant = random.nextInt(4);
         switch(variant) {
@@ -218,11 +280,44 @@ public class ChatLoadCommand implements LinkerMinecraftCommand {
         }
     }
 
-    private static boolean isChatBridgeReady() {
+    private static String senderForType(ConnJson.ChatChannel.ChatChannelType type, String playerName) {
+        switch(type) {
+            case CONSOLE:
+            case CONSOLE_COMMAND:
+                return "Server";
+            case BLOCK_COMMAND:
+                return "CommandBlock";
+            case START:
+            case CLOSE:
+                return null;
+            default:
+                return playerName;
+        }
+    }
+
+    private static ConnJson.ChatChannel.ChatChannelType parseType(String raw) {
+        if(raw == null || raw.isEmpty()) return ConnJson.ChatChannel.ChatChannelType.CHAT;
+        String normalized = raw.trim().toUpperCase(Locale.ROOT).replace('-', '_');
+        try {
+            return ConnJson.ChatChannel.ChatChannelType.valueOf(normalized);
+        }
+        catch(IllegalArgumentException ex) {
+            return null;
+        }
+    }
+
+    private static boolean isChatBridgeReady(ConnJson.ChatChannel.ChatChannelType type) {
         ConnJson conn = getConnJson();
         return getClientManager().isConnected() &&
                 conn != null &&
-                conn.hasChatChannelType(ConnJson.ChatChannel.ChatChannelType.CHAT);
+                conn.hasChatChannelType(type);
+    }
+
+    private static List<String> filterByPrefix(List<String> source, String prefix) {
+        String normalized = prefix == null ? "" : prefix.toLowerCase(Locale.ROOT);
+        return source.stream()
+                .filter(value -> value.startsWith(normalized))
+                .collect(Collectors.toList());
     }
 
     private static final class ActiveRun {
@@ -230,15 +325,17 @@ public class ChatLoadCommand implements LinkerMinecraftCommand {
         private final int totalTicks;
         private final long startedAtNanos;
         private final LinkerPlayer[] players;
+        private final ConnJson.ChatChannel.ChatChannelType chatType;
 
         private LinkerScheduler.LinkerSchedulerRepeatingTask task;
         private int tick;
         private int sent;
 
-        private ActiveRun(int totalMessages, int durationSeconds) {
+        private ActiveRun(int totalMessages, int durationSeconds, ConnJson.ChatChannel.ChatChannelType chatType) {
             this.totalMessages = totalMessages;
             this.totalTicks = durationSeconds * TICKS_PER_SECOND;
             this.startedAtNanos = System.nanoTime();
+            this.chatType = chatType;
             this.players = new LinkerPlayer[FAKE_PLAYER_NAMES.length];
             for(int i = 0; i < FAKE_PLAYER_NAMES.length; i++)
                 this.players[i] = new SyntheticPlayer(FAKE_PLAYER_NAMES[i]);
