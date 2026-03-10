@@ -26,7 +26,7 @@ public class SpigotEvents implements Listener {
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onPlayerQuit(PlayerQuitEvent event) {
-        getMinecraftEventBus().emit(new PlayerJoinEventData(new SpigotPlayer(event.getPlayer()), event.getQuitMessage()));
+        getMinecraftEventBus().emit(new PlayerQuitEventData(new SpigotPlayer(event.getPlayer()), event.getQuitMessage()));
     }
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)

@@ -2,8 +2,8 @@ package me.lianecx.discordlinker.architectury.util;
 
 //? if >=1.21
 //import java.net.URI;
-
 import me.lianecx.discordlinker.common.util.UrlParser;
+import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.*;
 import net.minecraft.network.chat.Component;
 //? if <1.19
@@ -24,31 +24,27 @@ public class URLComponent {
                 /*root.append(new TextComponent(segment.getContent())
                  *///? } else
                 root.append(Component.literal(segment.getContent())
-
-                        //? if <1.21 {
-                        .withStyle(style -> style
-                            .withClickEvent(new ClickEvent(ClickEvent.Action.OPEN_URL, segment.getURL()))
-                            .withHoverEvent(new HoverEvent(
-                                HoverEvent.Action.SHOW_TEXT,
-                                //? if <1.19 {
-                                /*new TextComponent("Click to open link")
-                                 *///? } else
-                                Component.literal("Click to open link")
-                            ))
-                            .withUnderlined(true)
-                        )
-                        //? } else {
-                        /*.withStyle(style -> style
-                            .withClickEvent(new ClickEvent.OpenUrl(URI.create(segment.getURL())))
-                            .withHoverEvent(new HoverEvent.ShowText(
-                                //? if <1.19 {
-                                /^new TextComponent("Click to open link")
-                                ^///? } else
-                                Component.literal("Click to open link")
-                            ))
-                            .withUnderlined(true)
-                        )
-                        *///? }
+                    //? if <1.21 {
+                    .withStyle(style -> style
+                        .withClickEvent(new ClickEvent(ClickEvent.Action.OPEN_URL, segment.getURL()))
+                        .withHoverEvent(new HoverEvent(
+                            HoverEvent.Action.SHOW_TEXT,
+                            //? if <1.19 {
+                            /*new TextComponent("Click to open link")
+                             *///? } else
+                            Component.literal("Click to open link")
+                        ))
+                        .withUnderlined(true)
+                        .withColor(ChatFormatting.BLUE)
+                    )
+                    //? } else {
+                    /*.withStyle(style -> style
+                        .withClickEvent(new ClickEvent.OpenUrl(URI.create(segment.getURL())))
+                        .withHoverEvent(new HoverEvent.ShowText(Component.literal("Click to open link")))
+                        .withUnderlined(true)
+                        .withColor(ChatFormatting.BLUE)
+                    )
+                    *///? }
                 );
             }
             //? if <1.19 {

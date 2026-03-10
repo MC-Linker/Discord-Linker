@@ -9,6 +9,8 @@ import me.lianecx.discordlinker.common.network.protocol.responses.DiscordEventRe
 import me.lianecx.discordlinker.common.util.JsonUtil;
 import me.lianecx.discordlinker.common.util.MinecraftChatColor;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.regex.Matcher;
 
 import static me.lianecx.discordlinker.common.DiscordLinkerCommon.getConfig;
@@ -48,22 +50,22 @@ public class ChatDiscordEvent implements LinkerSyncDiscordEvent<ChatPayload> {
         else if(payload.replyMessage != null) chatMessage = getConfig().getTemplateReplyMessage();
         else chatMessage = getConfig().getTemplateChatMessage();
 
-        chatMessage = chatMessage.replaceAll("%message%", markdownToColorCodes(msg));
+        Map<String, String> placeholders = new HashMap<>();
+        placeholders.put("%message%", markdownToColorCodes(msg));
+        placeholders.put("%username%", username != null ? username : "");
+        placeholders.put("%reply_message%", replyMsg != null ? markdownToColorCodes(replyMsg) : "");
+        placeholders.put("%reply_username%", replyUsername != null ? replyUsername : "");
 
         if(replyMsg != null) {
-            chatMessage = chatMessage.replaceAll("%reply_message%", markdownToColorCodes(replyMsg));
-            chatMessage = chatMessage.replaceAll("%reply_username%", replyUsername);
-
             String reducedReplyMsg = reduceMessage(replyMsg, 30);
-            chatMessage = chatMessage.replaceAll("%reply_message_reduced%", markdownToColorCodes(reducedReplyMsg));
+            placeholders.put("%reply_message_reduced%", markdownToColorCodes(reducedReplyMsg));
         }
+        else placeholders.put("%reply_message_reduced%", "");
+
+        chatMessage = applyTemplate(chatMessage, placeholders);
 
         //Translate color codes
         chatMessage = MinecraftChatColor.translateAlternateColorCodes(chatMessage, '&');
-
-        //Insert username
-        chatMessage = chatMessage.replaceAll("%username%", username);
-
 
         if(privateMsg) {
             LinkerOfflinePlayer player = getServer().getOfflinePlayer(targetUsername);
@@ -94,5 +96,36 @@ public class ChatDiscordEvent implements LinkerSyncDiscordEvent<ChatPayload> {
 
         // Normal cut
         return replyMsg.substring(0, limit) + "...";
+    }
+
+    private static String applyTemplate(String template, Map<String, String> placeholders) {
+        if(template == null || template.isEmpty()) return "";
+
+        StringBuilder rendered = new StringBuilder(template.length() + 32);
+        int index = 0;
+
+        while(index < template.length()) {
+            int start = template.indexOf('%', index);
+            if(start == -1) {
+                rendered.append(template, index, template.length());
+                break;
+            }
+
+            int end = template.indexOf('%', start + 1);
+            if(end == -1) {
+                rendered.append(template, index, template.length());
+                break;
+            }
+
+            rendered.append(template, index, start);
+            String token = template.substring(start, end + 1);
+            String replacement = placeholders.get(token);
+            if(replacement != null) rendered.append(replacement);
+            else rendered.append(token);
+
+            index = end + 1;
+        }
+
+        return rendered.toString();
     }
 }
