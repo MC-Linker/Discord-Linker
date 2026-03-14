@@ -88,8 +88,7 @@ public class ConnJson {
 
     public boolean hasChatChannelType(ChatChannel.ChatChannelType type) {
         for(ChatChannel channel : getChatChannels()) {
-            List<ChatChannel.ChatChannelType> types = channel.getTypes();
-            if(types != null && types.contains(type)) return true;
+            if(channel.getTypes().contains(type)) return true;
         }
         return false;
     }
@@ -207,7 +206,7 @@ public class ConnJson {
         private String id;
         private List<ChatChannelType> types;
         private boolean allowDiscordToMinecraft;
-        private String webhook;
+        private String[] webhooks = new String[] {};
 
         public String getId() {
             return id;
@@ -221,8 +220,9 @@ public class ConnJson {
             return allowDiscordToMinecraft;
         }
 
-        public String getWebhook() {
-            return webhook;
+        public @NotNull String[] getWebhooks() {
+            if(webhooks == null) webhooks = new String[] {};
+            return webhooks;
         }
 
         public enum ChatChannelType {
