@@ -5,7 +5,6 @@ import me.lianecx.discordlinker.common.abstraction.TeamsBridge;
 import me.lianecx.discordlinker.common.abstraction.core.LinkerConfig;
 import me.lianecx.discordlinker.common.abstraction.core.LinkerLogger;
 import me.lianecx.discordlinker.common.abstraction.core.LinkerScheduler;
-import me.lianecx.discordlinker.common.commands.ChatLoadCommand;
 import me.lianecx.discordlinker.common.commands.LinkerMinecraftCommandBus;
 import me.lianecx.discordlinker.common.events.LinkerMinecraftEventBus;
 import me.lianecx.discordlinker.common.events.ChatsMinecraftEvent;
@@ -121,8 +120,6 @@ public class DiscordLinkerCommon {
     public void shutdown() {
         Log4jCapture.uninstall();
         ChatsMinecraftEvent.stopChatConsoleForwarding();
-        ChatLoadCommand.shutdown();
-
         minecraftEventBus.emit(new ServerStopEventData());
         clientManager.disconnect();
         scheduler.shutdown();

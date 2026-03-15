@@ -24,7 +24,6 @@ public class DiscordLinkerSpigot extends JavaPlugin {
         getCommand("linker").setTabCompleter(new SpigotCommands());
         getCommand("discord").setExecutor(new SpigotCommands());
         getCommand("verify").setExecutor(new SpigotCommands());
-        getCommand("chatload").setExecutor(new SpigotCommands());
     }
 
     @Override

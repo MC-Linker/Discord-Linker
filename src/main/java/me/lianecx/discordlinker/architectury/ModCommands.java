@@ -1,15 +1,12 @@
 package me.lianecx.discordlinker.architectury;
 
 import com.mojang.brigadier.context.CommandContext;
-import com.mojang.brigadier.suggestion.Suggestions;
-import com.mojang.brigadier.suggestion.SuggestionsBuilder;
 //? if <=1.16.5 {
 /*import dev.architectury.event.events.CommandRegistrationEvent;
 *///? } else
 import dev.architectury.event.events.common.CommandRegistrationEvent;
 import me.lianecx.discordlinker.architectury.implementation.ModCommandSender;
 import me.lianecx.discordlinker.architectury.implementation.ModPlayer;
-import me.lianecx.discordlinker.common.ConnJson;
 import me.lianecx.discordlinker.common.abstraction.LinkerCommandSender;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.server.level.ServerPlayer;
@@ -19,8 +16,6 @@ import net.minecraft.server.permissions.PermissionLevel;
 *///? }
 
 import java.util.Arrays;
-import java.util.Locale;
-import java.util.concurrent.CompletableFuture;
 
 import static com.mojang.brigadier.arguments.IntegerArgumentType.integer;
 import static com.mojang.brigadier.arguments.StringArgumentType.greedyString;
@@ -67,25 +62,6 @@ public final class ModCommands {
                     .executes(ModCommands::forward)
             );
 
-            // /chatload <messages> <duration> [type] [delayRandomization]
-            dispatcher.register(literal("chatload")
-                    .requires(src -> new ModCommandSender(src).hasPermission(4, "discordlinker.chatload"))
-                    .then(argument("messages", integer(1))
-                            .then(argument("duration", integer(1))
-                                    .executes(ModCommands::forward)
-                                    .then(argument("delayRandomization", integer(0, 100))
-                                            .executes(ModCommands::forward)
-                                    )
-                                    .then(argument("type", word())
-                                            .suggests(ModCommands::suggestChatLoadTypes)
-                                            .executes(ModCommands::forward)
-                                            .then(argument("delayRandomization", integer(0, 100))
-                                                    .executes(ModCommands::forward)
-                                            )
-                                    )
-                            )
-                    )
-            );
         });
     }
 
@@ -119,13 +95,4 @@ public final class ModCommands {
         return 1;
     }
 
-    private static CompletableFuture<Suggestions> suggestChatLoadTypes(CommandContext<CommandSourceStack> context, SuggestionsBuilder builder) {
-        String remaining = builder.getRemaining().toLowerCase(Locale.ROOT);
-        for(ConnJson.ChatChannel.ChatChannelType type : ConnJson.ChatChannel.ChatChannelType.values()) {
-            String value = type.name().toLowerCase(Locale.ROOT);
-            if(value.startsWith(remaining))
-                builder.suggest(value);
-        }
-        return builder.buildFuture();
-    }
 }

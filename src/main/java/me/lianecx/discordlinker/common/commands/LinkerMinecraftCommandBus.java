@@ -16,8 +16,6 @@ public class LinkerMinecraftCommandBus {
         listeners.put("linker", new LinkerCommand());
         listeners.put("discord", new DiscordCommand());
         listeners.put("verify", new VerifyCommand());
-        //TODO remove
-        listeners.put("chatload", new ChatLoadCommand());
     }
 
     /**
