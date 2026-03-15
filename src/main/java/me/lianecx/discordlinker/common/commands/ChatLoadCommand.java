@@ -26,9 +26,11 @@ public class ChatLoadCommand implements LinkerMinecraftCompletableCommand {
 
     private static final Object LOCK = new Object();
     private static final int TICKS_PER_SECOND = 20;
+    private static final int DEFAULT_DELAY_RANDOMIZATION_PERCENT = 20;
     private static final String CHATLOAD_PERMISSION = "discordlinker.chatload";
     private static final List<String> MESSAGE_SUGGESTIONS = Arrays.asList("50", "100", "250", "500", "1000");
     private static final List<String> DURATION_SUGGESTIONS = Arrays.asList("5", "10", "30", "60", "120");
+    private static final List<String> RANDOMIZATION_SUGGESTIONS = Arrays.asList("0", "10", "20", "35", "50");
     private static final List<String> TYPE_SUGGESTIONS = Stream.of(ConnJson.ChatChannel.ChatChannelType.values())
             .map(type -> type.name().toLowerCase(Locale.ROOT))
             .collect(Collectors.toList());
@@ -88,8 +90,8 @@ public class ChatLoadCommand implements LinkerMinecraftCompletableCommand {
             return;
         }
 
-        if(args.length != 2 && args.length != 3) {
-            sender.sendMessage(MinecraftChatColor.RED + "Usage: /chatload <messages> <duration> [type]");
+        if(args.length < 2 || args.length > 4) {
+            sender.sendMessage(MinecraftChatColor.RED + "Usage: /chatload <messages> <duration> [type] [delay_randomization_percent]");
             return;
         }
 
@@ -100,11 +102,38 @@ public class ChatLoadCommand implements LinkerMinecraftCompletableCommand {
             durationSeconds = Integer.parseInt(args[1]);
         }
         catch(NumberFormatException ex) {
-            sender.sendMessage(MinecraftChatColor.RED + "Please provide valid integers. Usage: /chatload <messages> <duration> [type]");
+            sender.sendMessage(MinecraftChatColor.RED + "Please provide valid integers. Usage: /chatload <messages> <duration> [type] [delay_randomization_percent]");
             return;
         }
 
-        ConnJson.ChatChannel.ChatChannelType chatType = parseType(args.length == 3 ? args[2] : null);
+        ConnJson.ChatChannel.ChatChannelType chatType = ConnJson.ChatChannel.ChatChannelType.CHAT;
+        int delayRandomizationPercent = DEFAULT_DELAY_RANDOMIZATION_PERCENT;
+        if(args.length == 3) {
+            ParseResult parse = parseTypeOrRandomization(args[2]);
+            if(parse.chatType != null)
+                chatType = parse.chatType;
+            else if(parse.randomizationPercent != null)
+                delayRandomizationPercent = parse.randomizationPercent;
+            else {
+                sender.sendMessage(MinecraftChatColor.RED + "Unknown type/randomization. Available types: " + AVAILABLE_TYPES + ". Randomization must be 0-100.");
+                return;
+            }
+        }
+        else if(args.length == 4) {
+            chatType = parseType(args[2]);
+            if(chatType == null) {
+                sender.sendMessage(MinecraftChatColor.RED + "Unknown type. Available: " + AVAILABLE_TYPES);
+                return;
+            }
+
+            Integer parsedRandomization = parseRandomizationPercent(args[3]);
+            if(parsedRandomization == null) {
+                sender.sendMessage(MinecraftChatColor.RED + "Randomization must be an integer from 0 to 100.");
+                return;
+            }
+            delayRandomizationPercent = parsedRandomization;
+        }
+
         if(chatType == null) {
             sender.sendMessage(MinecraftChatColor.RED + "Unknown type. Available: " + AVAILABLE_TYPES);
             return;
@@ -131,15 +160,15 @@ public class ChatLoadCommand implements LinkerMinecraftCompletableCommand {
                 return;
             }
 
-            ActiveRun run = new ActiveRun(messages, durationSeconds, chatType);
+            ActiveRun run = new ActiveRun(messages, durationSeconds, chatType, delayRandomizationPercent);
             activeRun = run;
             run.task = getScheduler().runRepeatingSync(() -> tick(run), 0, 1);
         }
 
-        sender.sendMessage(MinecraftChatColor.GREEN + "Started chat load test: " + messages + " messages over " + durationSeconds + " seconds as type " + chatType.name().toLowerCase(Locale.ROOT) + ".");
+        sender.sendMessage(MinecraftChatColor.GREEN + "Started chat load test: " + messages + " messages over " + durationSeconds + " seconds as type " + chatType.name().toLowerCase(Locale.ROOT) + " with " + delayRandomizationPercent + "% delay randomization.");
         getLogger().info(String.format(Locale.ROOT,
-                "[ChatLoad] Started: %d messages over %ds as type '%s' (target %.2f msg/s).",
-                messages, durationSeconds, chatType.name().toLowerCase(Locale.ROOT), (double) messages / durationSeconds
+                "[ChatLoad] Started: %d messages over %ds as type '%s' with %d%% delay randomization (target %.2f msg/s).",
+                messages, durationSeconds, chatType.name().toLowerCase(Locale.ROOT), delayRandomizationPercent, (double) messages / durationSeconds
         ));
     }
 
@@ -153,7 +182,12 @@ public class ChatLoadCommand implements LinkerMinecraftCompletableCommand {
         if(args.length == 0) return MESSAGE_SUGGESTIONS;
         if(args.length == 1) return filterByPrefix(MESSAGE_SUGGESTIONS, args[0]);
         if(args.length == 2) return filterByPrefix(DURATION_SUGGESTIONS, args[1]);
-        if(args.length == 3) return filterByPrefix(TYPE_SUGGESTIONS, args[2].toLowerCase(Locale.ROOT));
+        if(args.length == 3) {
+            List<String> suggestions = new ArrayList<>(filterByPrefix(TYPE_SUGGESTIONS, args[2].toLowerCase(Locale.ROOT)));
+            suggestions.addAll(filterByPrefix(RANDOMIZATION_SUGGESTIONS, args[2]));
+            return suggestions;
+        }
+        if(args.length == 4) return filterByPrefix(RANDOMIZATION_SUGGESTIONS, args[3]);
         return new ArrayList<>();
     }
 
@@ -182,8 +216,11 @@ public class ChatLoadCommand implements LinkerMinecraftCompletableCommand {
 
             try {
                 run.tick++;
-                int targetSent = (int) (((long) run.totalMessages * run.tick) / run.totalTicks);
-                int toSend = targetSent - run.sent;
+                int toSend = 0;
+                while(run.nextScheduledIndex < run.scheduleTicks.length && run.scheduleTicks[run.nextScheduledIndex] <= run.tick) {
+                    toSend++;
+                    run.nextScheduledIndex++;
+                }
 
                 for(int i = 0; i < toSend; i++) {
                     emitFakeChatMessage(run);
@@ -306,6 +343,24 @@ public class ChatLoadCommand implements LinkerMinecraftCompletableCommand {
         }
     }
 
+    private static ParseResult parseTypeOrRandomization(String raw) {
+        ConnJson.ChatChannel.ChatChannelType type = parseType(raw);
+        if(type != null) return new ParseResult(type, null);
+        return new ParseResult(null, parseRandomizationPercent(raw));
+    }
+
+    private static Integer parseRandomizationPercent(String raw) {
+        if(raw == null || raw.isEmpty()) return null;
+        try {
+            int value = Integer.parseInt(raw);
+            if(value < 0 || value > 100) return null;
+            return value;
+        }
+        catch(NumberFormatException ex) {
+            return null;
+        }
+    }
+
     private static boolean isChatBridgeReady(ConnJson.ChatChannel.ChatChannelType type) {
         ConnJson conn = getConnJson();
         return getClientManager().isConnected() &&
@@ -326,19 +381,62 @@ public class ChatLoadCommand implements LinkerMinecraftCompletableCommand {
         private final long startedAtNanos;
         private final LinkerPlayer[] players;
         private final ConnJson.ChatChannel.ChatChannelType chatType;
+        private final int[] scheduleTicks;
 
         private LinkerScheduler.LinkerSchedulerRepeatingTask task;
         private int tick;
         private int sent;
+        private int nextScheduledIndex;
 
-        private ActiveRun(int totalMessages, int durationSeconds, ConnJson.ChatChannel.ChatChannelType chatType) {
+        private ActiveRun(int totalMessages, int durationSeconds, ConnJson.ChatChannel.ChatChannelType chatType, int delayRandomizationPercent) {
             this.totalMessages = totalMessages;
             this.totalTicks = durationSeconds * TICKS_PER_SECOND;
             this.startedAtNanos = System.nanoTime();
             this.chatType = chatType;
+            this.scheduleTicks = buildScheduleTicks(totalMessages, this.totalTicks, delayRandomizationPercent);
             this.players = new LinkerPlayer[FAKE_PLAYER_NAMES.length];
             for(int i = 0; i < FAKE_PLAYER_NAMES.length; i++)
                 this.players[i] = new SyntheticPlayer(FAKE_PLAYER_NAMES[i]);
+        }
+
+        private static int[] buildScheduleTicks(int totalMessages, int totalTicks, int delayRandomizationPercent) {
+            int[] result = new int[totalMessages];
+            double randomization = Math.max(0d, Math.min(delayRandomizationPercent / 100d, 1d));
+            double baseDelay = (double) totalTicks / totalMessages;
+            double[] cumulative = new double[totalMessages];
+            double time = 0d;
+            ThreadLocalRandom random = ThreadLocalRandom.current();
+
+            for(int i = 0; i < totalMessages; i++) {
+                double jitter = randomization == 0d
+                        ? 1d
+                        : random.nextDouble(Math.max(0.01d, 1d - randomization), 1d + randomization);
+                time += baseDelay * jitter;
+                cumulative[i] = time;
+            }
+
+            double scale = cumulative[totalMessages - 1] <= 0d ? 1d : totalTicks / cumulative[totalMessages - 1];
+            int previousTick = 0;
+            for(int i = 0; i < totalMessages; i++) {
+                int scheduledTick = (int) Math.round(cumulative[i] * scale);
+                if(scheduledTick < 1) scheduledTick = 1;
+                if(scheduledTick > totalTicks) scheduledTick = totalTicks;
+                if(scheduledTick < previousTick) scheduledTick = previousTick;
+                result[i] = scheduledTick;
+                previousTick = scheduledTick;
+            }
+
+            return result;
+        }
+    }
+
+    private static final class ParseResult {
+        private final ConnJson.ChatChannel.ChatChannelType chatType;
+        private final Integer randomizationPercent;
+
+        private ParseResult(ConnJson.ChatChannel.ChatChannelType chatType, Integer randomizationPercent) {
+            this.chatType = chatType;
+            this.randomizationPercent = randomizationPercent;
         }
     }
 

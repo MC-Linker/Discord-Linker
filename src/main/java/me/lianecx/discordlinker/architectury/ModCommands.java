@@ -67,15 +67,21 @@ public final class ModCommands {
                     .executes(ModCommands::forward)
             );
 
-            // /chatload <messages> <duration>
+            // /chatload <messages> <duration> [type] [delayRandomization]
             dispatcher.register(literal("chatload")
                     .requires(src -> new ModCommandSender(src).hasPermission(4, "discordlinker.chatload"))
                     .then(argument("messages", integer(1))
                             .then(argument("duration", integer(1))
                                     .executes(ModCommands::forward)
+                                    .then(argument("delayRandomization", integer(0, 100))
+                                            .executes(ModCommands::forward)
+                                    )
                                     .then(argument("type", word())
                                             .suggests(ModCommands::suggestChatLoadTypes)
                                             .executes(ModCommands::forward)
+                                            .then(argument("delayRandomization", integer(0, 100))
+                                                    .executes(ModCommands::forward)
+                                            )
                                     )
                             )
                     )
