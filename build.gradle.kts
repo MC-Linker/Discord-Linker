@@ -264,9 +264,10 @@ publishMods {
     }
 
     github {
-        repository = "MC-Linker/Discord-Linker"
+        repository = modPublish.githubRepository
         accessToken = modPublish.githubToken
         tagName = "Discord-Linker-${mod.version}"
         commitish = "main"
     }
 }
+

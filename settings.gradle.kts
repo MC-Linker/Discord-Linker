@@ -9,9 +9,11 @@ pluginManagement {
         maven("https://repo.spongepowered.org/maven")
         maven("https://maven.kikugie.dev/snapshots")
         maven("https://maven.kikugie.dev/releases")
+        maven("https://repo.papermc.io/repository/maven-public/")
     }
     plugins {
         kotlin("jvm") version "2.2.20"
+        id("io.papermc.hangar-publish-plugin") version "0.1.2"
     }
 }
 

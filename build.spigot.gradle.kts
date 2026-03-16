@@ -3,6 +3,7 @@ plugins {
     id("xyz.jpenilla.run-paper") version "2.3.1"
     id("com.gradleup.shadow") version "9.3.1"
     id("me.modmuss50.mod-publish-plugin")
+    id("io.papermc.hangar-publish-plugin")
 }
 
 java {
@@ -100,16 +101,38 @@ stonecutter {
 
 publishMods {
     file = tasks.shadowJar.get().archiveFile
-    displayName = "${property("mod.display_name")} $modVersion (Spigot)"
     version = modVersion
     changelog = modPublish.getChangelog(modVersion)
     type = STABLE
     dryRun = modPublish.dryRunMode
 
     github {
-        repository = "MC-Linker/Discord-Linker"
+        repository = modPublish.githubRepository
         accessToken = modPublish.githubToken
-        tagName = "Discord-Linker-Spigot-$modVersion"
+        tagName = "Discord-Linker-$modVersion"
         commitish = "main"
+    }
+}
+
+hangarPublish {
+    publications.register("plugin") {
+        version = modVersion
+        id = modPublish.hangarSlug
+        channel = "Release"
+        apiKey = modPublish.hangarToken
+        changelog = modPublish.getChangelog(modVersion)
+
+        platforms {
+            paper {
+                jar = tasks.shadowJar.flatMap { it.archiveFile }
+                platformVersions = modPublish.hangarPaperVersions
+
+                dependencies {
+                    hangar("LuckPerms") {
+                        required.set(false)
+                    }
+                }
+            }
+        }
     }
 }

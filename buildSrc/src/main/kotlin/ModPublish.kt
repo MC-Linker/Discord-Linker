@@ -53,7 +53,6 @@ class ModPublish(private val project: Project, private val mcVersion: VersionRan
     val mcTargets = arrayListOf<String>()
     val modrinthProjectId = project.optionalStrProperty("publish.project_id.modrinth").orElse("UNSET")
     val curseforgeProjectId = project.optionalStrProperty("publish.project_id.curseforge").orElse("UNSET")
-    val hangarNamespace = project.optionalStrProperty("publish.hangar.namespace").orElse("UNSET")
     val hangarSlug = project.optionalStrProperty("publish.project_id.hangar").orElse("UNSET")
     val hangarPaperVersions: List<String> = project.listProperty("publish.hangar.paper_versions")
     val githubRepository = project.optionalStrProperty("publish.github.repository").orElse("UNSET")
