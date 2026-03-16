@@ -78,14 +78,13 @@ public final class ModCommands {
                 : new String[0];
 
 
-        ServerPlayer player;
+        ServerPlayer player = /*? if <1.20 {*//* null *//*?} else {*/context.getSource().getPlayer()/*? }*/;
         //? if <1.20 {
         /*try {
             player = context.getSource().getPlayerOrException();
         }
         catch(Exception ignored) {}
-        *///? } else
-        player = context.getSource().getPlayer();
+        *//*? }*/
 
         LinkerCommandSender sender = player != null ?
                 new ModPlayer(player) :
