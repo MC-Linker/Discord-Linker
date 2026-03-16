@@ -106,6 +106,20 @@ publishMods {
     type = STABLE
     dryRun = modPublish.dryRunMode
 
+    modrinth {
+        projectId = modPublish.modrinthProjectId
+        accessToken = modPublish.modrinthToken
+        minecraftVersionRange {
+            start = modPublish.pluginVersionRange.min
+            end = modPublish.pluginVersionRange.max
+        }
+
+        optional {
+            slug = "LuckPerms"
+            version = versionProperty("deps.api.luckperms").min
+        }
+    }
+
     github {
         repository = modPublish.githubRepository
         accessToken = modPublish.githubToken
@@ -125,7 +139,7 @@ hangarPublish {
         platforms {
             paper {
                 jar = tasks.shadowJar.flatMap { it.archiveFile }
-                platformVersions = modPublish.hangarPaperVersions
+                platformVersions = listOf("${modPublish.pluginVersionRange.min}-${modPublish.pluginVersionRange.max}")
 
                 dependencies {
                     hangar("LuckPerms") {
