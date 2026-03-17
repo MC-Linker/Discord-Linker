@@ -23,6 +23,7 @@ base {
     archivesName.set(property("archives_base_name").toString())
 }
 
+val mcVersion = versionProperty("deps.core.spigot.version_range")
 val properties = mapOf(
     "name" to property("mod.display_name"),
     "description" to property("mod.description"),
@@ -30,11 +31,11 @@ val properties = mapOf(
     "website" to property("mod.general_website"),
     "version" to property("version"),
     "main" to "${property("group")}.${property("archives_base_name")}.spigot.${property("mod.spigot.main")}",
-    "spigot_version_range" to property("deps.core.spigot.version_range")
+    "spigot_api_version" to mcVersion.min
 )
 
 val shadowLib by configurations.creating
-val modPublish = ModPublish(project, versionProperty("deps.core.spigot.version_range"))
+val modPublish = ModPublish(project, mcVersion)
 val modVersion = property("version").toString()
 
 configurations.implementation {
@@ -42,7 +43,7 @@ configurations.implementation {
 }
 
 dependencies {
-    compileOnly("org.spigotmc:spigot-api:${properties["spigot_version_range"]}-R0.1-SNAPSHOT")
+    compileOnly("org.spigotmc:spigot-api:${mcVersion.min}-R0.1-SNAPSHOT")
     compileOnly("org.apache.logging.log4j:log4j-core:2.17.1")
 
     shadowLib("io.socket:socket.io-client:2.1.2")
@@ -101,9 +102,11 @@ stonecutter {
 
 publishMods {
     file = tasks.shadowJar.get().archiveFile
+    displayName = "${properties["name"]} v${properties["version"]}"
     version = modVersion
     changelog = modPublish.getChangelog(modVersion)
     type = STABLE
+    modLoaders.addAll("spigot", "paper", "bukkit", "purpur")
     dryRun = modPublish.dryRunMode
 
     modrinth {
@@ -114,17 +117,12 @@ publishMods {
             end = modPublish.pluginVersionRange.max
         }
 
-        optional {
-            slug = "LuckPerms"
-            version = versionProperty("deps.api.luckperms").min
-        }
+        optional("LuckPerms")
     }
 
     github {
-        repository = modPublish.githubRepository
         accessToken = modPublish.githubToken
-        tagName = "Discord-Linker-$modVersion"
-        commitish = "main"
+        parent(rootProject.tasks.named("publishGithub"))
     }
 }
 

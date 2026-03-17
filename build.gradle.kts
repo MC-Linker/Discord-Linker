@@ -228,7 +228,7 @@ sourceSets.main {
 
 publishMods {
     file = tasks.remapJar.get().archiveFile
-    displayName = "${mod.displayName} ${mod.version} for ${env.mcVersion.min}"
+    displayName = "${mod.displayName} v${mod.version}"
     version = mod.version
     changelog = modPublish.getChangelog(mod.version)
     type = STABLE
@@ -241,10 +241,8 @@ publishMods {
         minecraftVersions.addAll(modPublish.mcTargets)
         deps.forEach { dep ->
             if (dep.enabled && dep.publish) {
-                if (dep.optional)
-                    dep.modInfo.rinthSlug?.let { optional { slug = it; version = dep.versionRange.min } }
-                else
-                    dep.modInfo.rinthSlug?.let { requires { slug = it; version = dep.versionRange.min } }
+                if (dep.optional) dep.modInfo.rinthSlug?.let { optional(it) }
+                else dep.modInfo.rinthSlug?.let { requires(it) }
             }
         }
     }
@@ -255,19 +253,16 @@ publishMods {
         minecraftVersions.addAll(modPublish.mcTargets)
         deps.forEach { dep ->
             if (dep.enabled && dep.publish) {
-                if (dep.optional)
-                    dep.modInfo.curseSlug?.let { optional { slug = it; version = dep.versionRange.min } }
-                else
-                    dep.modInfo.curseSlug?.let { requires { slug = it; version = dep.versionRange.min } }
+                if (dep.optional) dep.modInfo.curseSlug?.let { optional(it) }
+                else dep.modInfo.curseSlug?.let { requires(it) }
             }
         }
     }
 
     github {
-        repository = modPublish.githubRepository
         accessToken = modPublish.githubToken
-        tagName = "Discord-Linker-${mod.version}"
-        commitish = "main"
+
+        parent(rootProject.tasks.named("publishGithub"))
     }
 }
 

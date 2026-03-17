@@ -5,7 +5,7 @@ author: ${author}
 website: ${website}
 description: ${description}
 prefix: Discord-Linker
-api-version: 1.12
+api-version: ${spigot_api_version}
 softdepend:
   - LuckPerms
 commands:
