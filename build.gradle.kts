@@ -1,41 +1,283 @@
 plugins {
-    java
-    id("com.github.johnrengelman.shadow") version "8.1.1"
+    kotlin("jvm") version "2.2.20" apply false
+    id("dev.architectury.loom")
+    id("architectury-plugin")
+    id("me.modmuss50.mod-publish-plugin")
+    id("com.gradleup.shadow") version "9.3.1"
 }
 
-group = "me.lianecx"
-version = "3.6-SNAPSHOT"
-description = "Official plugin for the MC Linker Discord Bot."
+// Repositories
+repositories {
+    mavenCentral()
+    exclusiveContent {
+        forRepository {
+            maven("https://www.cursemaven.com") { name = "CurseForge" }
+        }
+        filter { includeGroup("curse.maven") }
+    }
+    exclusiveContent {
+        forRepository {
+            maven("https://api.modrinth.com/maven") { name = "Modrinth" }
+        }
+        filter { includeGroup("maven.modrinth") }
+    }
+    maven("https://maven.neoforged.net/releases/")
+    maven("https://maven.architectury.dev/")
+    maven("https://modmaven.dev/")
+    maven("https://panel.ryuutech.com/nexus/repository/maven-releases/")
+}
 
-java {
-    toolchain {
-        languageVersion.set(JavaLanguageVersion.of(8))
+val env = Env(project, stonecutter::compare)
+
+val archVersion = versionProperty("deps.api.architectury")
+val lpVersion = versionProperty("deps.api.luckperms")
+
+val deps = arrayListOf(
+    Dependency(
+        ModInfo("architectury", "architectury-api"),
+        archVersion,
+        side = "SERVER"
+    ),
+    Dependency(
+        ModInfo("luckperms", "luckperms"),
+        lpVersion,
+        optional = true,
+        side = "SERVER",
+        ordering = "BEFORE"
+    ),
+    Dependency(
+        ModInfo("fabricloader", "fabricloader"),
+        env.fabricLoaderVersion,
+        enabled = env.isFabric,
+        publish = false
+    ),
+    Dependency(
+        ModInfo("minecraft", "minecraft"),
+        env.mcVersion,
+        enabled = env.isFabric,
+        publish = false
+    )
+)
+
+val modPublish = ModPublish(project)
+
+val mod = ModProperties(project)
+val metaExclude = MetadataExcludes(env)
+
+//dependencies.forEachAfter { mid, ver -> stonecutter { dependencies[mid] = ver.min } }
+deps.forEach { dep ->
+    dep.modInfo.modid?.let {
+        stonecutter { constants[it] = dep.enabled }
+        stonecutter { dependencies[it] = dep.versionRange.min }
+    }
+}
+stonecutter {
+    constants["fabric"] = env.isFabric
+    constants["forge"] = env.isForge
+    constants["neoforge"] = env.isNeo
+    constants["spigot"] = false
+    constants["mod"] = true
+
+    replacements.string(env.isNeo) {
+        replace("net.minecraftforge", "net.neoforged")
+    }
+
+    replacements.string(env.atMost("1.18.0")) {
+        replace("dev.architectury", "me.shedaniel.architectury")
     }
 }
 
-repositories {
-    mavenCentral()
-    maven("https://hub.spigotmc.org/nexus/content/repositories/snapshots/")
-    maven("https://repo.codemc.org/repository/maven-public/")
+loom {
+    silentMojangMappingsLicense()
+    runConfigs.all {
+        ideConfigGenerated(stonecutter.current.isActive)
+        runDir = "../../run"
+    }
+}
+
+base {
+    archivesName.set(env.archivesBaseName)
+}
+
+val shadowLib by configurations.creating
+
+configurations.implementation {
+    extendsFrom(shadowLib)
 }
 
 dependencies {
-    compileOnly("org.spigotmc:spigot-api:1.12-R0.1-SNAPSHOT")
-    implementation("org.apache.logging.log4j:log4j-core:2.19.0")
-    implementation("io.socket:socket.io-client:2.1.2")
-//    implementation("io.vacco.java-express:java-express:0.2.1")
-    implementation("io.github.bananapuncher714:nbteditor:7.19.10")
-    implementation("org.bstats:bstats-bukkit:3.0.0")
-    compileOnly("net.luckperms:api:5.4")
+    minecraft("com.mojang:minecraft:${env.mcVersion.min}")
+    mappings(loom.officialMojangMappings())
+    if (env.isFabric) modImplementation("net.fabricmc:fabric-loader:${env.fabricLoaderVersion.min}")
+    if (env.isForge) "forge"("net.minecraftforge:forge:${env.forgeMavenVersion.min}")
+    if (env.isNeo) "neoForge"("net.neoforged:neoforge:${env.neoforgeVersion.min}")
+
+    val archMaven = "${if (env.atLeast("1.18.0")) "dev.architectury" else "me.shedaniel"}:architectury-${env.loader}"
+    modApi("$archMaven:${archVersion.min}")
+
+    modCompileOnly("net.luckperms:api:${lpVersion.min}")
+
+    shadowLib("org.yaml:snakeyaml:2.5")
+    shadowLib("io.socket:socket.io-client:2.1.2")
+
+    if (env.isForge || env.isNeo) {
+        "forgeRuntimeLibrary"("org.yaml:snakeyaml:2.5")
+        "forgeRuntimeLibrary"("io.socket:socket.io-client:2.1.2")
+    }
 }
 
-// Shadow plugin configuration
-tasks.named<com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar>("shadowJar") {
-    minimize()
-    relocate("org.bstats", "me.lianecx")
+configurations.all {
+    resolutionStrategy {
+        force("net.fabricmc:fabric-loader:${env.fabricLoaderVersion.min}")
+    }
 }
 
-// Make the shadow JAR the default artifact
-tasks.build {
-    dependsOn(tasks.shadowJar)
+// Relocation and Shadowing
+tasks {
+    shadowJar {
+        configurations = listOf(shadowLib)
+
+        relocate("org.yaml.snakeyaml", "me.lianecx.snakeyaml")
+        relocate("io.socket", "me.lianecx.iosocket")
+        relocate("okio", "me.lianecx.okio")
+        relocate("okhttp3", "me.lianecx.okhttp3")
+        relocate("org.json", "me.lianecx.json")
+
+        destinationDirectory = layout.buildDirectory.dir("devlibs")
+    }
+
+    remapJar {
+        inputFile = shadowJar.flatMap { it.archiveFile }
+
+        archiveClassifier.set(env.loader)
+        archiveVersion.set("${mod.version}-${env.mcVersion.min}")
+        archiveBaseName.set(env.archivesBaseName)
+    }
+
+    jar {
+        enabled = false
+    }
 }
+
+java {
+    val java = when (env.javaVer) {
+        8 -> JavaVersion.VERSION_1_8
+        17 -> JavaVersion.VERSION_17
+        else -> JavaVersion.VERSION_21
+    }
+
+    sourceCompatibility = JavaVersion.VERSION_1_8 // Keep codebase in java 8 for compatibility
+    targetCompatibility = java
+    toolchain {
+        languageVersion.set(JavaLanguageVersion.of(env.javaVer))
+    }
+}
+
+// Add JBR for advanced hotreloading
+val jbrLauncher = javaToolchains.launcherFor {
+    languageVersion.set(JavaLanguageVersion.of(env.javaVer))
+    vendor.set(JvmVendorSpec.JETBRAINS)
+}
+
+tasks.withType<JavaExec>().configureEach {
+    if (name == "runServer") {
+        javaLauncher.set(jbrLauncher)
+        jvmArgs("-XX:+AllowEnhancedClassRedefinition")
+    }
+}
+
+tasks.processResources {
+    val (fabricDeps, forgeDeps) = dependencyJsonOrToml(deps)
+
+    val map = env.resourceMap(mod, env) + mapOf(
+        "dependencies_json" to fabricDeps,
+        "dependencies_field" to forgeDeps
+    )
+
+    map.forEach { (key, value) -> inputs.property(key, value) }
+
+    metaExclude.files.forEach { file -> exclude(file) }
+    filesMatching("fabric.mod.json") { expand(map) }
+    filesMatching("META-INF/mods.toml") { expand(map) }
+    filesMatching("META-INF/neoforge.mods.toml") { expand(map) }
+}
+
+sourceSets.main {
+    java {
+        val spigot = listOf("**/spigot/**")
+        exclude(
+            spigot + when {
+                env.isFabric -> listOf("**/forge/**")
+                env.isForge -> listOf("**/fabric/**")
+                env.isNeo -> listOf("**/fabric/**")
+                else -> throw IllegalStateException("No valid mod environment detected")
+            }
+        )
+    }
+
+    resources {
+        val spigot = listOf("plugin.yml")
+        exclude(
+            spigot + when {
+                env.isFabric -> listOf("META-INF/mods.toml", "META-INF/neoforge.mods.toml")
+                env.isForge -> listOf("fabric.mod.json", "META-INF/neoforge.mods.toml")
+                env.isNeo -> listOf("fabric.mod.json", "META-INF/mods.toml")
+                else -> throw IllegalStateException("No valid mod environment detected")
+            }
+        )
+    }
+}
+
+publishMods {
+    file = tasks.remapJar.flatMap { it.archiveFile }
+    displayName = "${mod.displayName} v${modPublish.version}"
+    version = modPublish.version
+    changelog = modPublish.getChangelog(modPublish.version)
+    type = STABLE
+    modLoaders.add(env.loader)
+    dryRun = modPublish.dryRunMode
+
+    modrinth {
+        projectId = modPublish.modrinthProjectId
+        accessToken = modPublish.modrinthToken
+
+        minecraftVersionRange {
+            start = modPublish.mcVersionRange.min
+            end = modPublish.mcVersionRange.max
+        }
+
+        deps.forEach { dep ->
+            if (dep.enabled && dep.publish) {
+                if (dep.optional) dep.modInfo.rinthSlug?.let { optional(it) }
+                else dep.modInfo.rinthSlug?.let { requires(it) }
+            }
+        }
+    }
+
+    curseforge {
+        projectId = modPublish.curseforgeProjectId
+        accessToken = modPublish.curseforgeToken
+
+        clientRequired = false
+        serverRequired = true
+
+        minecraftVersionRange {
+            start = modPublish.mcVersionRange.min
+            end = modPublish.mcVersionRange.max
+        }
+
+        deps.forEach { dep ->
+            if (dep.enabled && dep.publish) {
+                if (dep.optional) dep.modInfo.curseSlug?.let { optional(it) }
+                else dep.modInfo.curseSlug?.let { requires(it) }
+            }
+        }
+    }
+
+    github {
+        accessToken = modPublish.githubToken
+
+        parent(rootProject.tasks.named("publishGithub"))
+    }
+}
+
