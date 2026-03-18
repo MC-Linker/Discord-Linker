@@ -8,6 +8,11 @@ plugins {
 val modPublish = ModPublish(project)
 
 publishMods {
+    displayName = "${property("mod.display_name")} v${modPublish.version}"
+    version = modPublish.version
+    changelog = modPublish.getChangelog(modPublish.version)
+    type = STABLE
+
     github {
         accessToken = modPublish.githubToken
         repository = modPublish.githubRepository
