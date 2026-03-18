@@ -3,7 +3,7 @@ import org.gradle.api.Project
 import org.gradle.api.provider.Provider
 
 // Publishing-Konfiguration
-class ModPublish(private val project: Project, private val mcVersion: VersionRange) {
+class ModPublish(private val project: Project) {
     private fun changelogSection(allChangelogs: String, version: String): String? {
         val escapedVersion = Regex.escape(version)
         val sectionRegex = Regex("""(?ms)^#{1,2}\s+\[?$escapedVersion\]?(?:\s*-\s*[^\r\n]*)?\R?(.*?)(?=^#{1,2}\s+|\z)""")
@@ -50,22 +50,15 @@ class ModPublish(private val project: Project, private val mcVersion: VersionRan
         return project.providers.provider { requiredDotEnvValue(key) }
     }
 
-    val mcTargets = arrayListOf<String>()
+    val mcVersionRange = project.versionProperty("deps.core.mc.version_range")
+    val version = project.property("version").toString()
     val modrinthProjectId = project.optionalStrProperty("publish.project_id.modrinth").orElse("UNSET")
     val curseforgeProjectId = project.optionalStrProperty("publish.project_id.curseforge").orElse("UNSET")
     val hangarSlug = project.optionalStrProperty("publish.project_id.hangar").orElse("UNSET")
-    val pluginVersionRange: VersionRange = project.versionProperty("publish.plugin.version_range")
     val githubRepository = project.optionalStrProperty("publish.github.repository").orElse("UNSET")
     val modrinthToken = tokenProvider("MODRINTH_TOKEN")
     val curseforgeToken = tokenProvider("CURSEFORGE_TOKEN")
     val githubToken = tokenProvider("GITHUB_TOKEN")
     val hangarToken = tokenProvider("HANGAR_TOKEN")
     val dryRunMode = project.boolProperty("publish.dry_run")
-
-    init {
-        mcTargets.add(mcVersion.min)
-        if (mcVersion.min != mcVersion.max) {
-            mcTargets.add(mcVersion.max)
-        }
-    }
 }

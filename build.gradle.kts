@@ -59,12 +59,10 @@ val deps = arrayListOf(
     )
 )
 
-val modPublish = ModPublish(project, env.mcVersion)
+val modPublish = ModPublish(project)
 
 val mod = ModProperties(project)
 val metaExclude = MetadataExcludes(env)
-
-version = "${mod.version}+${env.mcVersion.min}+${env.loader}"
 
 //dependencies.forEachAfter { mid, ver -> stonecutter { dependencies[mid] = ver.min } }
 deps.forEach { dep ->
@@ -150,6 +148,10 @@ tasks {
 
     remapJar {
         inputFile = shadowJar.flatMap { it.archiveFile }
+
+        archiveClassifier.set(env.loader)
+        archiveVersion.set("${mod.version}-${env.mcVersion.min}")
+        archiveBaseName.set(env.archivesBaseName)
     }
 
     jar {
@@ -227,10 +229,10 @@ sourceSets.main {
 }
 
 publishMods {
-    file = tasks.remapJar.get().archiveFile
-    displayName = "${mod.displayName} v${mod.version}"
-    version = mod.version
-    changelog = modPublish.getChangelog(mod.version)
+    file = tasks.remapJar.flatMap { it.archiveFile }
+    displayName = "${mod.displayName} v${modPublish.version}"
+    version = modPublish.version
+    changelog = modPublish.getChangelog(modPublish.version)
     type = STABLE
     modLoaders.add(env.loader)
     dryRun = modPublish.dryRunMode
@@ -238,7 +240,12 @@ publishMods {
     modrinth {
         projectId = modPublish.modrinthProjectId
         accessToken = modPublish.modrinthToken
-        minecraftVersions.addAll(modPublish.mcTargets)
+
+        minecraftVersionRange {
+            start = modPublish.mcVersionRange.min
+            end = modPublish.mcVersionRange.max
+        }
+
         deps.forEach { dep ->
             if (dep.enabled && dep.publish) {
                 if (dep.optional) dep.modInfo.rinthSlug?.let { optional(it) }
@@ -250,7 +257,15 @@ publishMods {
     curseforge {
         projectId = modPublish.curseforgeProjectId
         accessToken = modPublish.curseforgeToken
-        minecraftVersions.addAll(modPublish.mcTargets)
+
+        clientRequired = false
+        serverRequired = true
+
+        minecraftVersionRange {
+            start = modPublish.mcVersionRange.min
+            end = modPublish.mcVersionRange.max
+        }
+
         deps.forEach { dep ->
             if (dep.enabled && dep.publish) {
                 if (dep.optional) dep.modInfo.curseSlug?.let { optional(it) }

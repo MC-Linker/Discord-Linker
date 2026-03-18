@@ -52,7 +52,7 @@ class Env(project: Project, val compare: (String, String) -> Int) {
         "name" to mod.displayName,
         "display_name" to mod.displayName,
         "version" to mod.version,
-        "description" to mod.description,
+        "description" to mod.modDescription,
         "authors" to mod.authors,
         "github_url" to mod.sourceUrl,
         "source_url" to mod.sourceUrl,

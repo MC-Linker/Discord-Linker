@@ -5,14 +5,14 @@ plugins {
     id("architectury-plugin") version "3.4-SNAPSHOT" apply false
 }
 
-val modPublish = ModPublish(project, versionProperty("deps.core.version_range"))
+val modPublish = ModPublish(project)
 
 publishMods {
     github {
-        accessToken = providers.environmentVariable("GITHUB_TOKEN")
-        repository = property("publish.github.repository").toString()
+        accessToken = modPublish.githubToken
+        repository = modPublish.githubRepository
         commitish = "main"
-        tagName = "Discord-Linker-${property("version")}"
+        tagName = "Discord-Linker-${modPublish.version}"
 
         allowEmptyFiles = true
     }

@@ -23,27 +23,28 @@ base {
     archivesName.set(property("archives_base_name").toString())
 }
 
-val mcVersion = versionProperty("deps.core.spigot.version_range")
+val mod = ModProperties(project)
+val modPublish = ModPublish(project)
+
+val spigotVersion = versionProperty("deps.core.spigot.version_range")
 val properties = mapOf(
-    "name" to property("mod.display_name"),
-    "description" to property("mod.description"),
-    "author" to property("mod.authors"),
-    "website" to property("mod.general_website"),
-    "version" to property("version"),
+    "name" to mod.displayName,
+    "description" to mod.pluginDescription,
+    "author" to mod.authors,
+    "website" to mod.generalWebsite,
+    "version" to mod.version,
     "main" to "${property("group")}.${property("archives_base_name")}.spigot.${property("mod.spigot.main")}",
-    "spigot_api_version" to mcVersion.min
+    "spigot_api_version" to spigotVersion.min
 )
 
 val shadowLib by configurations.creating
-val modPublish = ModPublish(project, mcVersion)
-val modVersion = property("version").toString()
 
 configurations.implementation {
     extendsFrom(shadowLib)
 }
 
 dependencies {
-    compileOnly("org.spigotmc:spigot-api:${mcVersion.min}-R0.1-SNAPSHOT")
+    compileOnly("org.spigotmc:spigot-api:${spigotVersion.min}-R0.1-SNAPSHOT")
     compileOnly("org.apache.logging.log4j:log4j-core:2.17.1")
 
     shadowLib("io.socket:socket.io-client:2.1.2")
@@ -57,7 +58,9 @@ tasks {
     shadowJar {
         configurations = listOf(shadowLib)
 
-        archiveClassifier.set("")
+        archiveClassifier.set("spigot")
+        archiveVersion.set(mod.version)
+        archiveBaseName.set(project.property("archives_base_name").toString())
 
         relocate("org.yaml.snakeyaml", "me.lianecx.snakeyaml")
         relocate("org.bstats", "me.lianecx.bstats")
@@ -101,10 +104,10 @@ stonecutter {
 }
 
 publishMods {
-    file = tasks.shadowJar.get().archiveFile
-    displayName = "${properties["name"]} v${properties["version"]}"
-    version = modVersion
-    changelog = modPublish.getChangelog(modVersion)
+    file = tasks.shadowJar.flatMap { it.archiveFile }
+    displayName = "${mod.displayName} v${modPublish.version}"
+    version = modPublish.version
+    changelog = modPublish.getChangelog(modPublish.version)
     type = STABLE
     modLoaders.addAll("spigot", "paper", "bukkit", "purpur")
     dryRun = modPublish.dryRunMode
@@ -112,9 +115,10 @@ publishMods {
     modrinth {
         projectId = modPublish.modrinthProjectId
         accessToken = modPublish.modrinthToken
+
         minecraftVersionRange {
-            start = modPublish.pluginVersionRange.min
-            end = modPublish.pluginVersionRange.max
+            start = modPublish.mcVersionRange.min
+            end = modPublish.mcVersionRange.max
         }
 
         optional("LuckPerms")
@@ -122,27 +126,26 @@ publishMods {
 
     github {
         accessToken = modPublish.githubToken
+
         parent(rootProject.tasks.named("publishGithub"))
     }
 }
 
 hangarPublish {
     publications.register("plugin") {
-        version = modVersion
+        version = modPublish.version
         id = modPublish.hangarSlug
         channel = "Release"
         apiKey = modPublish.hangarToken
-        changelog = modPublish.getChangelog(modVersion)
+        changelog = modPublish.getChangelog(modPublish.version)
 
         platforms {
             paper {
                 jar = tasks.shadowJar.flatMap { it.archiveFile }
-                platformVersions = listOf("${modPublish.pluginVersionRange.min}-${modPublish.pluginVersionRange.max}")
+                platformVersions = listOf("${modPublish.mcVersionRange.min}-${modPublish.mcVersionRange.max}")
 
                 dependencies {
-                    hangar("LuckPerms") {
-                        required.set(false)
-                    }
+                    hangar("LuckPerms") { required.set(false) }
                 }
             }
         }
