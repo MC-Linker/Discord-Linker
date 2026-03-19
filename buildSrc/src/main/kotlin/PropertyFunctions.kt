@@ -70,7 +70,7 @@ fun Project.versionProperty(key: String): VersionRange {
     return if (list.isEmpty()) {
         VersionRange("", "")
     } else if (list.size == 1) {
-        VersionRange(list[0], "")
+        VersionRange(list[0], list[0])
     } else {
         VersionRange(list[0], list[1])
     }
