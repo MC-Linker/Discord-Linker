@@ -10,3 +10,6 @@
 - Improved connection stability and reconnection handling
 - HTTP connections are now deprecated in favor of WebSocket
 - Various bug fixes and improvements
+
+# 4.1.0 - Hybrid Server Support
+- Added support for hybrid servers (e.g. MohistMC, Magma, Arclight, etc.)
