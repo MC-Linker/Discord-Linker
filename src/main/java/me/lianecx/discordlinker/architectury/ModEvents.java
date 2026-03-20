@@ -16,14 +16,16 @@ import net.minecraft.network.chat.*;
 //import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.entity.player.Player;
 
+import me.lianecx.discordlinker.architectury.hybrid.BukkitEventBridge;
+
 import static me.lianecx.discordlinker.common.DiscordLinkerCommon.getMinecraftEventBus;
 
 public class ModEvents {
 
     //? if <=1.16.5 {
     /*private static final InteractionResultHolder<Component> PASS_HOLDER = InteractionResultHolder.pass(null);
-    *///? } else
-    private static final EventResult PASS_HOLDER = EventResult.pass();
+    *///? } else if <1.19
+    //private static final EventResult PASS_HOLDER = EventResult.pass();
 
     //? if <=1.16.5 {
     /*private static final InteractionResult PASS = InteractionResult.PASS;
@@ -31,19 +33,23 @@ public class ModEvents {
     private static final EventResult PASS = EventResult.pass();
 
     public static void registerEvents() {
-        //? if <1.19 {
-        /*ChatEvent.SERVER.register((player, message, component) -> {
-            if(player == null || component == null) return PASS_HOLDER;
-            String finalMessage = /^? if <=1.16.5 {^/ /^message ^//^? } else {^/ message.getFiltered() /^? }^/;
-            getMinecraftEventBus().emit(new ChatEventData(finalMessage, new ModPlayer(player)));
-            return PASS_HOLDER;
-        });
-        *///? } else {
-        ChatEvent.DECORATE.register((player, component) -> {
-            if(player == null || component == null) return;
-            getMinecraftEventBus().emit(new ChatEventData(component.get().getString(), new ModPlayer(player)));
-        });
-        //?}
+        // On hybrid servers (Mohist, Magma, etc.), Architectury chat events don't fire.
+        // Chat is handled by BukkitEventBridge instead, registered on server start.
+        if (!BukkitEventBridge.isHybridServer()) {
+            //? if <1.19 {
+            /*ChatEvent.SERVER.register((player, message, component) -> {
+                if(player == null || component == null) return PASS_HOLDER;
+                String finalMessage = /^? if <=1.16.5 {^/ /^message ^//^? } else {^/ message.getFiltered() /^? }^/;
+                getMinecraftEventBus().emit(new ChatEventData(finalMessage, new ModPlayer(player)));
+                return PASS_HOLDER;
+            });
+            *///? } else {
+            ChatEvent.DECORATE.register((player, component) -> {
+                if(player == null || component == null) return;
+                getMinecraftEventBus().emit(new ChatEventData(component.get().getString(), new ModPlayer(player)));
+            });
+            //?}
+        }
         PlayerEvent.PLAYER_ADVANCEMENT.register((player, advancement) -> {
             String id = /*? if >=1.21 {*/ /*advancement.id().toString() *//*? } else {*/ advancement.getId().toString() /*? }*/;
             // Don't process recipes
