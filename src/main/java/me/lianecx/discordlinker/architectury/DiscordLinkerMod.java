@@ -4,6 +4,7 @@ package me.lianecx.discordlinker.architectury;
 /*import dev.architectury.event.events.LifecycleEvent;
 *///? } else
 import dev.architectury.event.events.common.LifecycleEvent;
+import me.lianecx.discordlinker.architectury.hybrid.BukkitEventBridge;
 import me.lianecx.discordlinker.architectury.implementation.*;
 import me.lianecx.discordlinker.common.DiscordLinkerCommon;
 
@@ -23,6 +24,8 @@ public class DiscordLinkerMod {
             ModConfig config = new ModConfig(server.getDataFolder());
 
             DiscordLinkerCommon.init(new ModLogger(config.isTestVersion()), config, server, new ModScheduler(instance), new ModTeamsBridge());
+
+            if (BukkitEventBridge.isHybridServer()) BukkitEventBridge.register();
         });
 
         LifecycleEvent.SERVER_STOPPING.register(instance -> getInstance().shutdown());
