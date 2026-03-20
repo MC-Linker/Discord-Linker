@@ -145,7 +145,7 @@ hangarPublish {
                 platformVersions = listOf("${modPublish.mcVersionRange.min}-${modPublish.mcVersionRange.max}")
 
                 dependencies {
-                    hangar("LuckPerms") { required.set(false) }
+                    url("LuckPerms", "https://luckperms.net") { required.set(false) }
                 }
             }
         }
