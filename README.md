@@ -23,7 +23,7 @@ No custom bot creation or configuration files needed!
 
 | Platform | Versions |
 |----------|----------|
-| Spigot   | 1.8 – 1.11.2 *(separate build)*, 1.12+ |
+| Spigot   | 1.8+  |
 | Fabric   | 1.16.5+  |
 | Forge    | 1.16.5 – 1.20.x |
 | NeoForge | 1.21.1+  |

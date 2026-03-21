@@ -10,15 +10,19 @@ import static me.lianecx.discordlinker.common.DiscordLinkerCommon.*;
 public class PlayerJoinMinecraftEvent implements LinkerMinecraftEvent<PlayerJoinEventData> {
 
     public void handle(PlayerJoinEventData event) {
-        if(getConnJson() != null && getConnJson().getRequiredRoleToJoin() != null) {
-            LinkerPlayer player = event.player;
+        if(getConnJson() == null || getConnJson().getRequiredRoleToJoin() == null) return;
 
-            getClientManager().hasRequiredRole(player.getUUID(), hasRequiredRoleResponse -> {
-                if(hasRequiredRoleResponse == HasRequiredRoleResponses.FALSE)
+        LinkerPlayer player = event.player;
+
+        getClientManager().hasRequiredRole(player.getUUID(), hasRequiredRoleResponse -> {
+            switch(hasRequiredRoleResponse) {
+                case FALSE:
                     kickPlayerSynchronized(player, MinecraftChatColor.RED + "You do not have the required role(s) to join this server.");
-                else if(hasRequiredRoleResponse == HasRequiredRoleResponses.ERROR)
+                    break;
+                case ERROR:
                     kickPlayerSynchronized(player, MinecraftChatColor.RED + "Your roles could not be verified. Please try again later.");
-                else if(hasRequiredRoleResponse == HasRequiredRoleResponses.NOT_CONNECTED) {
+                    break;
+                case NOT_CONNECTED:
                     // random 4 digit code
                     int randomCode = (int) (Math.random() * 9000) + 1000;
                     getClientManager().verifyUser(player, randomCode);
@@ -26,20 +30,20 @@ public class PlayerJoinMinecraftEvent implements LinkerMinecraftEvent<PlayerJoin
                     getClientManager().getInviteURL(url -> {
                         if(url == null) {
                             kickPlayerSynchronized(player, MinecraftChatColor.YELLOW + "You have not connected your Minecraft account to Discord.\nPlease DM " +
-                                    MinecraftChatColor.AQUA + "@MC Linker#7784" + MinecraftChatColor.YELLOW + " with the code " +
-                                    MinecraftChatColor.AQUA + randomCode + MinecraftChatColor.YELLOW +
-                                    " in the next" + MinecraftChatColor.BOLD + " 3 minutes " + MinecraftChatColor.YELLOW + " and rejoin.");
+                                MinecraftChatColor.AQUA + "@MC Linker#7784" + MinecraftChatColor.YELLOW + " with the code " +
+                                MinecraftChatColor.AQUA + randomCode + MinecraftChatColor.YELLOW +
+                                " in the next" + MinecraftChatColor.BOLD + " 3 minutes " + MinecraftChatColor.YELLOW + " and rejoin.");
                             return;
                         }
                         kickPlayerSynchronized(player, MinecraftChatColor.YELLOW + "You have not connected your Minecraft account to Discord.\nPlease join " +
-                                MinecraftChatColor.AQUA + MinecraftChatColor.UNDERLINE + url + MinecraftChatColor.YELLOW + " and DM " +
-                                MinecraftChatColor.AQUA + "@MC Linker#7784" + MinecraftChatColor.YELLOW + " with the code " +
-                                MinecraftChatColor.AQUA + randomCode + MinecraftChatColor.YELLOW +
-                                " in the next" + MinecraftChatColor.BOLD + " 3 minutes." + MinecraftChatColor.YELLOW + " and rejoin.");
+                            MinecraftChatColor.AQUA + MinecraftChatColor.UNDERLINE + url + MinecraftChatColor.YELLOW + " and DM " +
+                            MinecraftChatColor.AQUA + "@MC Linker#7784" + MinecraftChatColor.YELLOW + " with the code " +
+                            MinecraftChatColor.AQUA + randomCode + MinecraftChatColor.YELLOW +
+                            " in the next" + MinecraftChatColor.BOLD + " 3 minutes." + MinecraftChatColor.YELLOW + " and rejoin.");
                     });
-                }
-            });
-        }
+                    break;
+            }
+        });
     }
 
     public void kickPlayerSynchronized(LinkerPlayer player, String reason) {

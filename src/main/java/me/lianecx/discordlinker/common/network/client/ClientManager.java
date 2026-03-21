@@ -126,6 +126,7 @@ public final class ClientManager {
             client = tempClient;
 
             JsonObject dataObject = JsonUtil.parseJsonObject(data);
+            getLogger().debug("Received auth-success with data: " + dataObject);
             if(dataObject == null) {
                 future.complete(false);
                 disconnect();
