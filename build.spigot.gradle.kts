@@ -44,8 +44,10 @@ configurations.implementation {
     extendsFrom(shadowLib)
 }
 
+val spigotCompileVersion = findProperty("deps.core.spigot.compile_version")?.toString() ?: spigotVersion.min
+
 dependencies {
-    compileOnly("org.spigotmc:spigot-api:${spigotVersion.min}-R0.1-SNAPSHOT")
+    compileOnly("org.spigotmc:spigot-api:$spigotCompileVersion-R0.1-SNAPSHOT")
     compileOnly("org.apache.logging.log4j:log4j-core:2.17.1")
 
     shadowLib("io.socket:socket.io-client:2.1.2")
