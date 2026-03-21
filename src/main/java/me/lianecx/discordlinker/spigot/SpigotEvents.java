@@ -29,12 +29,19 @@ public class SpigotEvents implements Listener {
         getMinecraftEventBus().emit(new PlayerQuitEventData(new SpigotPlayer(event.getPlayer()), event.getQuitMessage()));
     }
 
+    //? if >=1.12 {
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onAdvancement(PlayerAdvancementDoneEvent event) {
         //Dont process recipes
         if(event.getAdvancement().getKey().toString().startsWith("minecraft:recipes/")) return;
         getMinecraftEventBus().emit(new AdvancementEventData(new SpigotPlayer(event.getPlayer()), event.getAdvancement().getKey().toString()));
     }
+    //? } else {
+    /*@EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void onAchievement(org.bukkit.event.player.PlayerAchievementAwardedEvent event) {
+        getMinecraftEventBus().emit(new AdvancementEventData(new SpigotPlayer(event.getPlayer()), event.getAchievement().name()));
+    }
+    *///?}
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onPlayerDeath(PlayerDeathEvent event) {

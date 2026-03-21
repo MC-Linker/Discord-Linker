@@ -297,7 +297,7 @@ public final class ClientManager {
                 JsonObject payload = new JsonObject();
                 payload.addProperty("id", role.getId());
                 JsonArray playersArray = new JsonArray();
-                for(String uuid : currentPlayers) playersArray.add(uuid);
+                for(String uuid : currentPlayers) playersArray.add(new JsonPrimitive(uuid));
                 payload.add("players", playersArray);
 
                 CompletableFuture<Void> done = new CompletableFuture<>();
