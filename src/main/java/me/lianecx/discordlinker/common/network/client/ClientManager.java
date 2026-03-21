@@ -3,6 +3,7 @@ package me.lianecx.discordlinker.common.network.client;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import com.google.gson.JsonPrimitive;
 import me.lianecx.discordlinker.common.ConnJson;
 import me.lianecx.discordlinker.common.abstraction.LinkerPlayer;
 import me.lianecx.discordlinker.common.abstraction.LinkerServer;
@@ -249,6 +250,7 @@ public final class ClientManager {
             getConnJson().write();
 
             if(!getConnJson().hasTeamSyncedRole()) getTeamsAndGroupsBridge().stopTeamCheck();
+            if(!getConnJson().hasGroupSyncedRole()) getTeamsAndGroupsBridge().stopGroupCheck();
         });
     }
 
@@ -276,8 +278,8 @@ public final class ClientManager {
             chain = chain.thenCompose(v -> reconcileSyncedRoleSequentially(conn, role));
         }
         chain.thenRun(() -> {
-            // Start team check if there are team-based synced roles
             if(conn.hasTeamSyncedRole()) getTeamsAndGroupsBridge().startTeamCheck();
+            if(conn.hasGroupSyncedRole()) getTeamsAndGroupsBridge().startGroupCheck();
         });
     }
 

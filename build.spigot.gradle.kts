@@ -17,6 +17,7 @@ repositories {
     mavenCentral()
     maven("https://hub.spigotmc.org/nexus/content/repositories/snapshots/")
     maven("https://repo.codemc.org/repository/maven-public/")
+    maven("https://jitpack.io")
 }
 
 base {
@@ -51,6 +52,7 @@ dependencies {
     shadowLib("org.bstats:bstats-bukkit:3.0.0")
     shadowLib("org.yaml:snakeyaml:2.5")
     compileOnly("net.luckperms:api:5.4")
+    compileOnly("com.github.MilkBowl:VaultAPI:1.7.1")
 }
 
 // Relocation and Shadowing
@@ -122,6 +124,7 @@ publishMods {
         }
 
         optional("LuckPerms")
+        optional("Vault")
     }
 
     github {
@@ -146,6 +149,7 @@ hangarPublish {
 
                 dependencies {
                     url("LuckPerms", "https://luckperms.net") { required.set(false) }
+                    url("Vault", "https://github.com/MilkBowl/Vault") { required.set(false) }
                 }
             }
         }

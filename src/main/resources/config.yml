@@ -11,8 +11,8 @@ private_message: "&9&o&lDiscord &8&o| &7&o%username% whispers to you: %message%"
 # %reply_username% is the username of the person who sent the message that was replied to
 reply_message: "&l&7(replying to %reply_username%) &8->&r %reply_message_reduced% \n &l&9Discord &8| &l&7%username% &8>>&r %message%"
 
-# The interval in seconds for checking team membership changes (used for synced roles with vanilla teams)
-team_check_interval: 30
+# The interval in seconds for polling team/group membership changes (used for synced roles)
+sync_check_interval: 30
 
 # Console forwarding buffer settings
 # Flushes logs to discord either after chatconsole_flush_seconds or when the message buffer reaches chatconsole_max_chars

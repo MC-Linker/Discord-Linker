@@ -1,6 +1,9 @@
 package me.lianecx.discordlinker.spigot;
 
 import me.lianecx.discordlinker.common.DiscordLinkerCommon;
+import me.lianecx.discordlinker.common.hooks.HookProvider;
+import me.lianecx.discordlinker.common.hooks.luckperms.LuckPermsHookProvider;
+import me.lianecx.discordlinker.spigot.hooks.vault.VaultHookProvider;
 import me.lianecx.discordlinker.spigot.implementation.*;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -16,7 +19,8 @@ public class DiscordLinkerSpigot extends JavaPlugin {
                 config,
                 new SpigotServer(getDataFolder().getAbsolutePath()),
                 new SpigotScheduler(this),
-                new SpigotTeamsBridge()
+                new SpigotTeamsBridge(),
+                new HookProvider[]{ new LuckPermsHookProvider(), new VaultHookProvider() }
         );
 
         this.getServer().getPluginManager().registerEvents(new SpigotEvents(), this);

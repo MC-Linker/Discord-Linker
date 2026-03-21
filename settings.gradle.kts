@@ -28,6 +28,7 @@ stonecutter {
             for (it in loaders) version("$version-$it", version)
         }
 
+        version("1.8-spigot", "1.8").buildscript("build.spigot.gradle.kts")
         version("1.12.2-spigot", "1.12.2").buildscript("build.spigot.gradle.kts")
         // loaderVersion("1.12.2", "forge")
 
