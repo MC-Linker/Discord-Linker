@@ -31,7 +31,6 @@
             <option value="$PROJECT_DIR$/versions/1.20+1-forge" />
             <option value="$PROJECT_DIR$/versions/1.21.11-fabric" />
             <option value="$PROJECT_DIR$/versions/1.21.11-neoforge" />
-            <option value="$PROJECT_DIR$/versions/1.8-spigot" />
           </set>
         </option>
         <option name="resolveExternalAnnotations" value="true" />
