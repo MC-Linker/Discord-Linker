@@ -27,11 +27,9 @@ public class DiscordLinkerSpigot extends JavaPlugin {
         this.getServer().getPluginManager().registerEvents(new SpigotEvents(), this);
 
         int minorVersion = Integer.parseInt(Bukkit.getBukkitVersion().split("-")[0].split("\\.")[1]);
-        if(minorVersion >= 12) {
-            this.getServer().getPluginManager().registerEvents(new SpigotAdvancementListener(), this);
-        } else {
-            this.getServer().getPluginManager().registerEvents(new SpigotAchievementListener(), this);
-        }
+        if(minorVersion >= 12) this.getServer().getPluginManager().registerEvents(new SpigotAdvancementListener(), this);
+        else this.getServer().getPluginManager().registerEvents(new SpigotAchievementListener(), this);
+
         getCommand("linker").setExecutor(new SpigotCommands());
         getCommand("linker").setTabCompleter(new SpigotCommands());
         getCommand("discord").setExecutor(new SpigotCommands());
