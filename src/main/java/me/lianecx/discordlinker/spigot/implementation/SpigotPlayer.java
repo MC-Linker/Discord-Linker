@@ -38,6 +38,11 @@ public class SpigotPlayer extends LinkerPlayer {
     }
 
     @Override
+    public boolean isOnline() {
+        return player.isOnline();
+    }
+
+    @Override
     public String getNBTAsString() {
         return NBTParser.parsePlayerNBT(player);
     }
