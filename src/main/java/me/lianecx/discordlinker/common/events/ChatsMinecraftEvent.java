@@ -161,7 +161,7 @@ public class ChatsMinecraftEvent {
 
     public static void sendChatAsync(String message, ConnJson.ChatChannel.ChatChannelType type, String sender) {
         if(getConnJson() == null || getConnJson().getChatChannels().isEmpty()) return;
-        getScheduler().runAsync(() -> getClientManager().chat(message, type, sender));
+        getScheduler().runAsync(() -> getClientManager().chat(MinecraftChatColor.stripColorCodes(message), type, sender));
     }
 
     public static void sendStatsAsync(ConnJson.StatsChannel.StatsChannelEvent type) {

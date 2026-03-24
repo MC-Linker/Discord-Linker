@@ -3,8 +3,8 @@ package me.lianecx.discordlinker.common.network.client;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import com.google.gson.JsonPrimitive;
 import me.lianecx.discordlinker.common.ConnJson;
-import me.lianecx.discordlinker.common.abstraction.LinkerPlayer;
 import me.lianecx.discordlinker.common.abstraction.LinkerServer;
 import me.lianecx.discordlinker.common.network.protocol.events.LinkerDiscordEventBus;
 import me.lianecx.discordlinker.common.network.protocol.responses.DiscordEventResponse;
@@ -125,6 +125,7 @@ public final class ClientManager {
             client = tempClient;
 
             JsonObject dataObject = JsonUtil.parseJsonObject(data);
+            getLogger().debug("Received auth-success with data: " + dataObject);
             if(dataObject == null) {
                 future.complete(false);
                 disconnect();
@@ -249,6 +250,7 @@ public final class ClientManager {
             getConnJson().write();
 
             if(!getConnJson().hasTeamSyncedRole()) getTeamsAndGroupsBridge().stopTeamCheck();
+            if(!getConnJson().hasGroupSyncedRole()) getTeamsAndGroupsBridge().stopGroupCheck();
         });
     }
 
@@ -276,8 +278,8 @@ public final class ClientManager {
             chain = chain.thenCompose(v -> reconcileSyncedRoleSequentially(conn, role));
         }
         chain.thenRun(() -> {
-            // Start team check if there are team-based synced roles
             if(conn.hasTeamSyncedRole()) getTeamsAndGroupsBridge().startTeamCheck();
+            if(conn.hasGroupSyncedRole()) getTeamsAndGroupsBridge().startGroupCheck();
         });
     }
 
@@ -295,7 +297,7 @@ public final class ClientManager {
                 JsonObject payload = new JsonObject();
                 payload.addProperty("id", role.getId());
                 JsonArray playersArray = new JsonArray();
-                for(String uuid : currentPlayers) playersArray.add(uuid);
+                for(String uuid : currentPlayers) playersArray.add(new JsonPrimitive(uuid));
                 payload.add("players", playersArray);
 
                 CompletableFuture<Void> done = new CompletableFuture<>();
@@ -438,11 +440,11 @@ public final class ClientManager {
     /**
      * Tells the bot the verification code that has been shown to the user so it listens for their DM.
      */
-    public void verifyUser(LinkerPlayer player, int code) {
+    public void verifyUser(String uuid, String username, int code) {
         JsonObject verifyJson = new JsonObject();
         verifyJson.addProperty("code", String.valueOf(code));
-        verifyJson.addProperty("uuid", player.getUUID());
-        verifyJson.addProperty("username", player.getName());
+        verifyJson.addProperty("uuid", uuid);
+        verifyJson.addProperty("username", username);
 
         send("verify-user", verifyJson);
     }
@@ -484,7 +486,10 @@ public final class ClientManager {
      * Sends an event to the bot with a JSON object as data and a callback for the response.
      */
     public void send(String eventName, JsonObject data, Consumer<DiscordEventResponse> callback) {
-        if(client == null) return;
+        if(client == null) {
+            if(callback != null) callback.accept(null);
+            return;
+        }
         client.send(eventName, new Object[] { data.toString() }, callback);
     }
 

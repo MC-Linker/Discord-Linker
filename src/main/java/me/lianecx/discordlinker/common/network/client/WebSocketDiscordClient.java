@@ -99,6 +99,7 @@ public final class WebSocketDiscordClient implements DiscordClient {
 
                 syncChatConsoleForwarding();
                 getTeamsAndGroupsBridge().stopTeamCheck();
+                getTeamsAndGroupsBridge().stopGroupCheck();
             }
         });
 

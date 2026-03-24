@@ -1,0 +1,16 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" factoryName="Application" name="Minecraft Server (:1.16.5-forge)" type="Application">
+    <option name="MAIN_CLASS_NAME" value="net.fabricmc.devlaunchinjector.Main"/>
+    <module name="discordlinker.1.16.5-forge.main"/>
+    <option name="PROGRAM_PARAMETERS" value="nogui"/>
+    <option name="VM_PARAMETERS" value="-Dfabric.dli.config=D:\Dokumente@@0020(D)\Programming\MC-Linker\Discord-Linker\versions\1.16.5-forge\.gradle\loom-cache\launch.cfg -Dfabric.dli.env=server -XX:+IgnoreUnrecognizedVMOptions --add-exports=java.base/sun.security.util=ALL-UNNAMED --add-exports=jdk.naming.dns/com.sun.jndi.dns=java.naming --add-opens=java.base/java.util.jar=ALL-UNNAMED -Dfabric.dli.main=net.minecraftforge.userdev.LaunchTesting"/>
+    <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/versions\1.16.5-forge/../../run/"/>
+    <method v="2">
+      <option enabled="true" name="Make"/>
+    </method>
+    <envs>
+      <env name="MOD_CLASSES" value="main%%D:\Dokumente (D)\Programming\MC-Linker\Discord-Linker\versions\1.16.5-forge\build\resources\main;main%%D:\Dokumente (D)\Programming\MC-Linker\Discord-Linker\versions\1.16.5-forge\build\classes\java\main;main%%D:\Dokumente (D)\Programming\MC-Linker\Discord-Linker\versions\1.16.5-forge\out\production\classes;main%%D:\Dokumente (D)\Programming\MC-Linker\Discord-Linker\versions\1.16.5-forge\out\production\resources"/><env name="MCP_MAPPINGS" value="loom.stub"/><env name="MCP_VERSION" value="20210115.111550"/><env name="FORGE_VERSION" value="36.2.34"/><env name="FORGE_GROUP" value="net.minecraftforge"/><env name="target" value="fmluserdevserver"/><env name="MC_VERSION" value="1.16.5"/>
+    </envs>
+    <shortenClasspath name="ARGS_FILE"/>
+  <classpathModifications/></configuration>
+</component>

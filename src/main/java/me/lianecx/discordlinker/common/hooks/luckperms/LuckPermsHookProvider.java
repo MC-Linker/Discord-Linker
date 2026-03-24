@@ -1,6 +1,6 @@
 package me.lianecx.discordlinker.common.hooks.luckperms;
 
-import me.lianecx.discordlinker.common.hooks.GroupPermissionsBridge;
+import me.lianecx.discordlinker.common.abstraction.GroupPermissionsBridge;
 import me.lianecx.discordlinker.common.hooks.HookProvider;
 import net.luckperms.api.LuckPerms;
 import net.luckperms.api.LuckPermsProvider;

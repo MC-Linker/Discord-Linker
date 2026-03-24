@@ -17,6 +17,7 @@ repositories {
     mavenCentral()
     maven("https://hub.spigotmc.org/nexus/content/repositories/snapshots/")
     maven("https://repo.codemc.org/repository/maven-public/")
+    maven("https://jitpack.io")
 }
 
 base {
@@ -26,7 +27,6 @@ base {
 val mod = ModProperties(project)
 val modPublish = ModPublish(project)
 
-val spigotVersion = versionProperty("deps.core.spigot.version_range")
 val properties = mapOf(
     "name" to mod.displayName,
     "description" to mod.pluginDescription,
@@ -34,7 +34,6 @@ val properties = mapOf(
     "website" to mod.generalWebsite,
     "version" to mod.version,
     "main" to "${property("group")}.${property("archives_base_name")}.spigot.${property("mod.spigot.main")}",
-    "spigot_api_version" to spigotVersion.min
 )
 
 val shadowLib by configurations.creating
@@ -43,14 +42,17 @@ configurations.implementation {
     extendsFrom(shadowLib)
 }
 
+val spigotVersion = versionProperty("deps.core.spigot.version_range").min
+
 dependencies {
-    compileOnly("org.spigotmc:spigot-api:${spigotVersion.min}-R0.1-SNAPSHOT")
+    compileOnly("org.spigotmc:spigot-api:$spigotVersion-R0.1-SNAPSHOT")
     compileOnly("org.apache.logging.log4j:log4j-core:2.17.1")
 
     shadowLib("io.socket:socket.io-client:2.1.2")
     shadowLib("org.bstats:bstats-bukkit:3.0.0")
     shadowLib("org.yaml:snakeyaml:2.5")
     compileOnly("net.luckperms:api:5.4")
+    compileOnly("com.github.MilkBowl:VaultAPI:1.7.1")
 }
 
 // Relocation and Shadowing
@@ -122,6 +124,7 @@ publishMods {
         }
 
         optional("LuckPerms")
+        optional("Vault")
     }
 
     github {
@@ -146,6 +149,7 @@ hangarPublish {
 
                 dependencies {
                     url("LuckPerms", "https://luckperms.net") { required.set(false) }
+                    url("Vault", "https://github.com/MilkBowl/Vault") { required.set(false) }
                 }
             }
         }

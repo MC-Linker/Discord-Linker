@@ -10,6 +10,8 @@ import me.lianecx.discordlinker.common.events.LinkerMinecraftEventBus;
 import me.lianecx.discordlinker.common.events.ChatsMinecraftEvent;
 import me.lianecx.discordlinker.common.events.data.ServerStartEventData;
 import me.lianecx.discordlinker.common.events.data.ServerStopEventData;
+import me.lianecx.discordlinker.common.abstraction.GroupPermissionsBridge;
+import me.lianecx.discordlinker.common.hooks.HookProvider;
 import me.lianecx.discordlinker.common.network.client.ClientManager;
 import me.lianecx.discordlinker.common.network.protocol.events.LinkerDiscordEventBus;
 import me.lianecx.discordlinker.common.util.Log4jCapture;
@@ -53,10 +55,19 @@ public class DiscordLinkerCommon {
         this.clientManager = token != null ? new ClientManager(token, botPort, server, discordEventBus) : new ClientManager(discordEventBus, botPort);
     }
 
-    public static synchronized DiscordLinkerCommon init(LinkerLogger logger, LinkerConfig config, LinkerServer server, LinkerScheduler scheduler, TeamsBridge teamsBridge) {
+    /**
+     * Initializes the DiscordLinkerCommon singleton instance. Must be called before any other methods. Subsequent calls will throw an exception.
+     * @param logger LinkerLogger implementation for logging
+     * @param config LinkerConfig implementation for configuration access
+     * @param server LinkerServer implementation for server interactions
+     * @param scheduler LinkerScheduler implementation for scheduling tasks
+     * @param teamsBridge TeamsBridge implementation for team support
+     * @param groupProviders Array of HookProvider implementations for group permissions support (optional, can be empty)
+     */
+    public static synchronized DiscordLinkerCommon init(LinkerLogger logger, LinkerConfig config, LinkerServer server, LinkerScheduler scheduler, TeamsBridge teamsBridge, HookProvider<? extends GroupPermissionsBridge>[] groupProviders) {
         if(discordLinker != null) throw new IllegalStateException("DiscordLinkerCommon already initialized!");
         // Initialize instance with fields
-        discordLinker = new DiscordLinkerCommon(logger, config, server, scheduler, new TeamsAndGroupsBridge(server, teamsBridge));
+        discordLinker = new DiscordLinkerCommon(logger, config, server, scheduler, new TeamsAndGroupsBridge(server, teamsBridge, groupProviders));
 
         if(getTeamsAndGroupsBridge().isGroupPermissionsEnabled()) logger.info("Group permissions support enabled with provider: " + getTeamsAndGroupsBridge().getGroupPermissionsProviderId());
 
