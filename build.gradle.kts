@@ -59,7 +59,7 @@ val deps = arrayListOf(
         publish = false
     ),
     Dependency(
-        ModInfo(if (env.atMost("1.18")) "fabric" else "fabric-api"),
+        ModInfo(if (env.atMost("1.18")) "fabric" else "fabric-api", "fabric-api"),
         fabricApiVersion,
         enabled = env.isFabric,
         side = "SERVER"
