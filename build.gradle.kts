@@ -194,6 +194,7 @@ java {
 // Add JBR for advanced hotreloading
 val jbrLauncher = javaToolchains.launcherFor {
     languageVersion.set(JavaLanguageVersion.of(env.javaVer))
+    @Suppress("UnstableApiUsage")
     if (env.javaVer > 8) vendor.set(JvmVendorSpec.JETBRAINS)
 }
 
