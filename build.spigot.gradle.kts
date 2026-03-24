@@ -92,7 +92,7 @@ sourceSets.main {
 
     resources {
         exclude(
-            listOf("fabric.mod.json", "META-INF/mods.toml", "META-INF/neoforge.mods.toml")
+            listOf("fabric.mod.json", "META-INF/mods.toml", "META-INF/neoforge.mods.toml", "discordlinker.forge.legacy.mixins.json")
         )
     }
 }
