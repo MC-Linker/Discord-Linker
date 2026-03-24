@@ -78,7 +78,7 @@ public final class ModCommands {
                 : new String[0];
 
 
-        ServerPlayer player = /*? if <1.20 {*//* null *//*?} else {*/context.getSource().getPlayer()/*? }*/;
+        ServerPlayer player = /*? if <1.20 {*/ /*null *//*?} else {*/context.getSource().getPlayer()/*? }*/;
         //? if <1.20 {
         /*try {
             player = context.getSource().getPlayerOrException();

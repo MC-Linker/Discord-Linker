@@ -1,5 +1,8 @@
 package me.lianecx.discordlinker.common.abstraction;
 
+import java.nio.charset.StandardCharsets;
+import java.util.UUID;
+
 public class LinkerOfflinePlayer {
 
     String uuid;
@@ -20,5 +23,9 @@ public class LinkerOfflinePlayer {
 
     public boolean isOnline() {
         return false;
+    }
+
+    public static String offlineUuid(String username) {
+        return UUID.nameUUIDFromBytes(("OfflinePlayer:" + username).getBytes(StandardCharsets.UTF_8)).toString();
     }
 }

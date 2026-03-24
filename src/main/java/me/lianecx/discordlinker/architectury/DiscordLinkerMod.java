@@ -7,6 +7,8 @@ import dev.architectury.event.events.common.LifecycleEvent;
 import me.lianecx.discordlinker.architectury.hybrid.BukkitEventBridge;
 import me.lianecx.discordlinker.architectury.implementation.*;
 import me.lianecx.discordlinker.common.DiscordLinkerCommon;
+import me.lianecx.discordlinker.common.hooks.HookProvider;
+import me.lianecx.discordlinker.common.hooks.luckperms.LuckPermsHookProvider;
 
 import static me.lianecx.discordlinker.common.DiscordLinkerCommon.getInstance;
 
@@ -23,7 +25,7 @@ public class DiscordLinkerMod {
             ModServer server = new ModServer(instance);
             ModConfig config = new ModConfig(server.getDataFolder());
 
-            DiscordLinkerCommon.init(new ModLogger(config.isTestVersion()), config, server, new ModScheduler(instance), new ModTeamsBridge());
+            DiscordLinkerCommon.init(new ModLogger(config.isTestVersion()), config, server, new ModScheduler(instance), new ModTeamsBridge(), new HookProvider[]{ new LuckPermsHookProvider() });
 
             if (BukkitEventBridge.isHybridServer()) BukkitEventBridge.register();
         });

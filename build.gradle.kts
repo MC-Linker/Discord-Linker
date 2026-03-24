@@ -30,6 +30,7 @@ repositories {
 val env = Env(project, stonecutter::compare)
 
 val archVersion = versionProperty("deps.api.architectury")
+val fabricApiVersion = versionProperty("deps.api.fabric")
 val lpVersion = versionProperty("deps.api.luckperms")
 
 val deps = arrayListOf(
@@ -39,23 +40,29 @@ val deps = arrayListOf(
         side = "SERVER"
     ),
     Dependency(
-        ModInfo("luckperms", "luckperms"),
+        ModInfo("luckperms"),
         lpVersion,
         optional = true,
         side = "SERVER",
         ordering = "BEFORE"
     ),
     Dependency(
-        ModInfo("fabricloader", "fabricloader"),
+        ModInfo("fabricloader"),
         env.fabricLoaderVersion,
         enabled = env.isFabric,
         publish = false
     ),
     Dependency(
-        ModInfo("minecraft", "minecraft"),
+        ModInfo("minecraft"),
         env.mcVersion,
         enabled = env.isFabric,
         publish = false
+    ),
+    Dependency(
+        ModInfo(if (env.atMost("1.18")) "fabric" else "fabric-api", "fabric-api"),
+        fabricApiVersion,
+        enabled = env.isFabric,
+        side = "SERVER"
     )
 )
 
@@ -68,7 +75,7 @@ val metaExclude = MetadataExcludes(env)
 deps.forEach { dep ->
     dep.modInfo.modid?.let {
         stonecutter { constants[it] = dep.enabled }
-        stonecutter { dependencies[it] = dep.versionRange.min }
+        if (dep.enabled) stonecutter { dependencies[it] = dep.versionRange.min }
     }
 }
 stonecutter {
@@ -79,7 +86,9 @@ stonecutter {
     constants["mod"] = true
 
     replacements.string(env.isNeo) {
-        replace("net.minecraftforge", "net.neoforged")
+        replace("net.minecraftforge.fml", "net.neoforged.fml")
+        replace("net.minecraftforge.common", "net.neoforged.neoforge.common")
+        replace("net.minecraftforge.event", "net.neoforged.neoforge.event")
     }
 
     replacements.string(env.atMost("1.18.0")) {
@@ -89,9 +98,17 @@ stonecutter {
 
 loom {
     silentMojangMappingsLicense()
+    if (env.isForge && env.atMost("1.16.5")) {
+        forge {
+            mixinConfig("discordlinker.forge.legacy.mixins.json")
+        }
+    }
+
     runConfigs.all {
-        ideConfigGenerated(stonecutter.current.isActive)
-        runDir = "../../run"
+        if (environment == "server") {
+            ideConfigGenerated(false)
+            runDir = "../../run"
+        }
     }
 }
 
@@ -109,6 +126,7 @@ dependencies {
     minecraft("com.mojang:minecraft:${env.mcVersion.min}")
     mappings(loom.officialMojangMappings())
     if (env.isFabric) modImplementation("net.fabricmc:fabric-loader:${env.fabricLoaderVersion.min}")
+    if (env.isFabric) modImplementation("net.fabricmc.fabric-api:fabric-api:${fabricApiVersion.min}")
     if (env.isForge) "forge"("net.minecraftforge:forge:${env.forgeMavenVersion.min}")
     if (env.isNeo) "neoForge"("net.neoforged:neoforge:${env.neoforgeVersion.min}")
 
@@ -176,11 +194,12 @@ java {
 // Add JBR for advanced hotreloading
 val jbrLauncher = javaToolchains.launcherFor {
     languageVersion.set(JavaLanguageVersion.of(env.javaVer))
-    vendor.set(JvmVendorSpec.JETBRAINS)
+    @Suppress("UnstableApiUsage")
+    if (env.javaVer > 8) vendor.set(JvmVendorSpec.JETBRAINS)
 }
 
 tasks.withType<JavaExec>().configureEach {
-    if (name == "runServer") {
+    if (name == "runServer" && env.javaVer > 8) {
         javaLauncher.set(jbrLauncher)
         jvmArgs("-XX:+AllowEnhancedClassRedefinition")
     }
@@ -205,8 +224,9 @@ tasks.processResources {
 sourceSets.main {
     java {
         val spigot = listOf("**/spigot/**")
+        val legacyForgeMixin = if (env.isForge && env.atMost("1.16.5")) emptyList() else listOf("**/forge/mixin/**")
         exclude(
-            spigot + when {
+            spigot + legacyForgeMixin + when {
                 env.isFabric -> listOf("**/forge/**")
                 env.isForge -> listOf("**/fabric/**")
                 env.isNeo -> listOf("**/fabric/**")
@@ -217,8 +237,10 @@ sourceSets.main {
 
     resources {
         val spigot = listOf("plugin.yml")
+        val legacyForgeMixin =
+            if (env.isForge && env.atMost("1.16.5")) emptyList() else listOf("discordlinker.forge.legacy.mixins.json")
         exclude(
-            spigot + when {
+            spigot + legacyForgeMixin + when {
                 env.isFabric -> listOf("META-INF/mods.toml", "META-INF/neoforge.mods.toml")
                 env.isForge -> listOf("fabric.mod.json", "META-INF/neoforge.mods.toml")
                 env.isNeo -> listOf("fabric.mod.json", "META-INF/mods.toml")

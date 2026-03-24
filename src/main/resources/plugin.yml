@@ -5,9 +5,9 @@ author: ${author}
 website: ${website}
 description: ${description}
 prefix: Discord-Linker
-api-version: ${spigot_api_version}
 softdepend:
   - LuckPerms
+  - Vault
 commands:
   linker:
     description: "Settings for the Discord-Linker plugin"

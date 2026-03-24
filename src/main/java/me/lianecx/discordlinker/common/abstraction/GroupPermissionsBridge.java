@@ -1,6 +1,4 @@
-package me.lianecx.discordlinker.common.hooks;
-
-import me.lianecx.discordlinker.common.abstraction.LinkerOfflinePlayer;
+package me.lianecx.discordlinker.common.abstraction;
 
 import java.util.List;
 import java.util.concurrent.CompletableFuture;

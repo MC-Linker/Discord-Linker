@@ -16,7 +16,7 @@ public interface LinkerConfig {
 
     String getTemplateReplyMessage();
 
-    int getTeamCheckIntervalSeconds();
+    int getSyncCheckIntervalSeconds();
 
     int getChatConsoleFlushSeconds();
 

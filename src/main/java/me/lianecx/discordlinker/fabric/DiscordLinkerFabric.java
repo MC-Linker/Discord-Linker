@@ -7,6 +7,7 @@ public class DiscordLinkerFabric implements DedicatedServerModInitializer {
 
     @Override
     public void onInitializeServer() {
+        FabricPreLoginEvent.register();
         DiscordLinkerMod.init();
     }
 }

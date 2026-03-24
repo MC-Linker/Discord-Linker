@@ -4,9 +4,9 @@ import me.lianecx.discordlinker.common.abstraction.LinkerOfflinePlayer;
 import me.lianecx.discordlinker.common.abstraction.LinkerServer;
 import me.lianecx.discordlinker.common.abstraction.TeamsBridge;
 import me.lianecx.discordlinker.common.abstraction.core.LinkerScheduler;
-import me.lianecx.discordlinker.common.hooks.GroupPermissionsBridge;
+import me.lianecx.discordlinker.common.abstraction.GroupPermissionsBridge;
 import me.lianecx.discordlinker.common.hooks.HookLoader;
-import me.lianecx.discordlinker.common.hooks.luckperms.LuckPermsHookProvider;
+import me.lianecx.discordlinker.common.hooks.HookProvider;
 import me.lianecx.discordlinker.common.network.protocol.payloads.SyncedRoleMemberPayload;
 import me.lianecx.discordlinker.common.network.protocol.responses.DiscordEventResponse;
 import me.lianecx.discordlinker.common.util.MinecraftChatColor;
@@ -25,12 +25,11 @@ public final class TeamsAndGroupsBridge {
     private final TeamsBridge teams;
 
     private @Nullable LinkerScheduler.LinkerSchedulerRepeatingTask teamCheckTask;
+    private @Nullable LinkerScheduler.LinkerSchedulerRepeatingTask groupCheckTask;
 
-    public TeamsAndGroupsBridge(LinkerServer server, TeamsBridge teamsBridge) {
+    public TeamsAndGroupsBridge(LinkerServer server, TeamsBridge teamsBridge, HookProvider<? extends GroupPermissionsBridge>[] groupProviders) {
         this.server = server;
-        this.groupPermissions = new HookLoader<>(
-            new LuckPermsHookProvider()
-        ).load();
+        this.groupPermissions = new HookLoader<>(groupProviders).load();
         this.teams = teamsBridge;
     }
 
@@ -71,22 +70,15 @@ public final class TeamsAndGroupsBridge {
                 });
     }
 
-    /**
-     * Starts periodic checking for team membership changes.
-     * Compares current team members against stored {@link ConnJson.SyncedRole#getPlayers()} and
-     * sends add/remove member events to the bot for any differences.
-     */
+    // ── Sync check lifecycle ────────────────────────────────────────────
+
     public void startTeamCheck() {
         if(teamCheckTask != null) return;
 
-        int intervalSeconds = getConfig().getTeamCheckIntervalSeconds();
-        int intervalTicks = intervalSeconds * 20;
-        teamCheckTask = getScheduler().runRepeatingAsync(this::runTeamCheck, intervalTicks, intervalTicks);
+        int intervalTicks = getConfig().getSyncCheckIntervalSeconds() * 20;
+        teamCheckTask = getScheduler().runRepeatingAsync(() -> runSyncCheck(false), intervalTicks, intervalTicks);
     }
 
-    /**
-     * Stops the periodic team membership check.
-     */
     public void stopTeamCheck() {
         if(teamCheckTask != null) {
             teamCheckTask.cancel();
@@ -94,63 +86,82 @@ public final class TeamsAndGroupsBridge {
         }
     }
 
+    public void startGroupCheck() {
+        if(groupCheckTask != null || groupPermissions == null) return;
+
+        int intervalTicks = getConfig().getSyncCheckIntervalSeconds() * 20;
+        groupCheckTask = getScheduler().runRepeatingAsync(() -> runSyncCheck(true), intervalTicks, intervalTicks);
+    }
+
+    public void stopGroupCheck() {
+        if(groupCheckTask != null) {
+            groupCheckTask.cancel();
+            groupCheckTask = null;
+        }
+    }
+
     /**
-     * Runs a single team membership diff for all team-based synced roles.
-     * Detects added/removed members and deleted teams, notifying the bot accordingly.
+     * Runs a single membership diff for all synced roles of the given type (group or team).
+     * Detects added/removed members and deleted groups/teams, notifying the bot accordingly.
      */
-    private void runTeamCheck() {
+    private void runSyncCheck(boolean isGroup) {
         ConnJson conn = getConnJson();
         if(conn == null) return;
 
-        // Snapshot the roles to avoid concurrent modification
         List<ConnJson.SyncedRole> roles = new ArrayList<>(conn.getSyncedRoles());
 
         boolean changed = false;
         for(ConnJson.SyncedRole role : roles) {
-            if(role.isGroup()) continue; // Only check teams, not LuckPerms groups
+            if(role.isGroup() != isGroup) continue;
+
+            String name = role.getName();
 
             // We can block here since we're already async
-            List<String> currentPlayers = getPlayersInGroupOrTeam(role.getName(), false).join();
+            List<String> currentPlayers = getPlayersInGroupOrTeam(name, isGroup).join();
 
             if(currentPlayers == null) {
-                // Team was deleted
-                getLogger().debug(MinecraftChatColor.RED + "Team '" + role.getName() + "' no longer exists. Removing synced role.");
-                getClientManager().removeSyncedRole(role.getName(), false);
+                // Group/team was deleted
+                String type = isGroup ? "Group" : "Team";
+                getLogger().debug(MinecraftChatColor.RED + type + " '" + name + "' no longer exists. Removing synced role.");
+                getClientManager().removeSyncedRole(name, isGroup);
                 changed = true;
                 continue;
             }
 
-            List<String> storedPlayers = role.getPlayers();
+            List<String> storedPlayers = new ArrayList<>(role.getPlayers());
 
-            // Find added players (in current but not in stored)
             Set<String> storedSet = new HashSet<>(storedPlayers);
             Set<String> currentSet = new HashSet<>(currentPlayers);
 
             if(role.syncsToDiscord()) {
+                // MC is authoritative — notify bot of changes
                 for(String uuid : currentPlayers) {
                     if(!storedSet.contains(uuid)) {
-                        getClientManager().addSyncedRoleMember(role.getName(), false, UUID.fromString(uuid));
+                        getClientManager().addSyncedRoleMember(name, isGroup, UUID.fromString(uuid));
+                        role.getPlayers().add(uuid);
+                        changed = true;
                     }
                 }
 
                 for(String uuid : storedPlayers) {
                     if(!currentSet.contains(uuid)) {
-                        getClientManager().removeSyncedRoleMember(role.getName(), false, UUID.fromString(uuid));
+                        getClientManager().removeSyncedRoleMember(name, isGroup, UUID.fromString(uuid));
+                        role.getPlayers().remove(uuid);
+                        changed = true;
                     }
                 }
             }
             else {
-                // If Discord is authoritative, cancel any changes
-
+                // Discord is authoritative — revert any MC-side changes
                 for(String uuid : currentPlayers) {
                     if(!storedSet.contains(uuid)) {
-                        getScheduler().runSync(() -> teams.removeFromTeam(role.getName(), resolveUUIDToName(uuid)));
+                        removePlayerFromGroupOrTeam(name, isGroup, uuid);
                     }
                 }
 
                 for(String uuid : storedPlayers) {
                     if(!currentSet.contains(uuid)) {
-                        getScheduler().runSync(() -> teams.addToTeam(role.getName(), resolveUUIDToName(uuid)));
+                        addPlayerToGroupOrTeam(name, isGroup, uuid);
                     }
                 }
             }
@@ -159,9 +170,11 @@ public final class TeamsAndGroupsBridge {
         if(changed) conn.write();
     }
 
+    // ── Group/team operations ───────────────────────────────────────────
+
     /**
      * Gets a list of player UUIDs in the specified group or team.
-     * For LuckPerms groups, UUIDs are returned directly.
+     * For groups, UUIDs are returned directly from the permissions provider.
      * For teams, player names are resolved to UUIDs via the profile cache.
      *
      * @return A Future of UUIDs, or a future of {@code null} if the group/team does not exist.
@@ -181,7 +194,7 @@ public final class TeamsAndGroupsBridge {
 
     /**
      * Adds a player to a group or team by UUID.
-     * For LuckPerms groups, the UUID is passed directly.
+     * For groups, the UUID is passed directly to the permissions provider.
      * For teams, the UUID is resolved to a player name first.
      */
     public CompletableFuture<Void> addPlayerToGroupOrTeam(String name, boolean isGroup, String uuid) {
@@ -204,7 +217,7 @@ public final class TeamsAndGroupsBridge {
 
     /**
      * Removes a player from a group or team by UUID.
-     * For LuckPerms groups, the UUID is passed directly.
+     * For groups, the UUID is passed directly to the permissions provider.
      * For teams, the UUID is resolved to a player name first.
      */
     public CompletableFuture<Void> removePlayerFromGroupOrTeam(String name, boolean isGroup, String uuid) {
@@ -225,19 +238,13 @@ public final class TeamsAndGroupsBridge {
         return CompletableFuture.completedFuture(null);
     }
 
-    /**
-     * Resolves a player name to a UUID string using the server's profile cache.
-     * Returns null if the player cannot be resolved.
-     */
+    // ── Helpers ─────────────────────────────────────────────────────────
+
     private @Nullable String resolveNameToUUID(String playerName) {
         LinkerOfflinePlayer player = server.getOfflinePlayer(playerName);
         return player != null ? player.getUUID() : null;
     }
 
-    /**
-     * Resolves a UUID string to a player name using the server's profile cache.
-     * Returns null if the player cannot be resolved.
-     */
     private @Nullable String resolveUUIDToName(String uuid) {
         LinkerOfflinePlayer player = server.getOfflinePlayer(UUID.fromString(uuid));
         return player != null ? player.getName() : null;

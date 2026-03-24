@@ -2,7 +2,7 @@ package me.lianecx.discordlinker.common.hooks.luckperms;
 
 import me.lianecx.discordlinker.common.ConnJson;
 import me.lianecx.discordlinker.common.abstraction.LinkerOfflinePlayer;
-import me.lianecx.discordlinker.common.hooks.GroupPermissionsBridge;
+import me.lianecx.discordlinker.common.abstraction.GroupPermissionsBridge;
 import me.lianecx.discordlinker.common.util.MinecraftChatColor;
 import net.luckperms.api.LuckPerms;
 import net.luckperms.api.event.group.GroupDeleteEvent;
@@ -50,7 +50,7 @@ public final class LuckPermsGroupPermissionsBridge implements GroupPermissionsBr
     @Override
     public CompletableFuture<List<String>> getPlayersInGroup(String group) {
         Group lpGroup = api.getGroupManager().getGroup(group);
-        if(lpGroup == null) return CompletableFuture.completedFuture(new ArrayList<>());
+        if(lpGroup == null) return CompletableFuture.completedFuture(null);
 
         NodeMatcher<Node> matcher = NodeMatcher.key(Node.builder(GROUP_NODE_PREFIX + group).build());
         return api.getUserManager().searchAll(matcher).thenApply(map -> map.keySet().stream()

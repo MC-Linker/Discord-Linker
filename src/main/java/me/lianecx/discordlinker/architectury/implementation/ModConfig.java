@@ -136,8 +136,8 @@ public class ModConfig implements LinkerConfig {
     }
 
     @Override
-    public int getTeamCheckIntervalSeconds() {
-        return getIntOrDefault("team_check_interval");
+    public int getSyncCheckIntervalSeconds() {
+        return getIntOrDefault("sync_check_interval");
     }
 
     @Override

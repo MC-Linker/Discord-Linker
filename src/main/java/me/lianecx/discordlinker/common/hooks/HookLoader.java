@@ -6,8 +6,7 @@ public final class HookLoader<T> {
 
     private final HookProvider<? extends T>[] providers;
 
-    @SafeVarargs
-    public HookLoader(HookProvider<? extends T>... providers) {
+    public HookLoader(HookProvider<? extends T>[] providers) {
         this.providers = providers;
     }
 

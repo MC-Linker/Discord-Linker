@@ -9,6 +9,8 @@ import net.minecraftforge.fml.common.Mod;
 @Mod("discordlinker")
 public class DiscordLinkerForge {
     public DiscordLinkerForge() {
+        //? if >1.16.5
+        ForgePreLoginEvent.register();
         DiscordLinkerMod.init();
     }
 }
