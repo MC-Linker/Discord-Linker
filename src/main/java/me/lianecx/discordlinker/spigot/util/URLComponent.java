@@ -19,17 +19,16 @@ public class URLComponent {
         List<UrlParser.Segment> segments = UrlParser.split(message);
         List<BaseComponent> components = new ArrayList<>();
 
-        for (UrlParser.Segment segment : segments) {
-            if (segment.isUrl()) {
+        for(UrlParser.Segment segment : segments) {
+            if(segment.isUrl()) {
                 TextComponent url = new TextComponent(segment.getContent());
                 url.setColor(ChatColor.BLUE);
                 url.setUnderlined(true);
                 url.setClickEvent(new ClickEvent(ClickEvent.Action.OPEN_URL, segment.getURL()));
-                url.setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new TextComponent[]{new TextComponent("Click to open link")}));
+                url.setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new TextComponent[] { new TextComponent("Click to open link") }));
                 components.add(url);
-            } else {
-                components.add(new TextComponent(segment.getContent()));
             }
+            else components.add(new TextComponent(segment.getContent()));
         }
 
         return components.toArray(new BaseComponent[0]);
