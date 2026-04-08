@@ -75,6 +75,10 @@ tasks {
     jar {
         enabled = false
     }
+
+    runServer {
+        minecraftVersion(spigotVersion)
+    }
 }
 
 tasks.processResources {
