@@ -1,7 +1,6 @@
 package me.lianecx.discordlinker.common.network.protocol.events;
 
 import com.google.gson.JsonObject;
-import me.lianecx.discordlinker.common.abstraction.LinkerOfflinePlayer;
 import me.lianecx.discordlinker.common.abstraction.LinkerPlayer;
 import me.lianecx.discordlinker.common.network.protocol.payloads.ChatPayload;
 import me.lianecx.discordlinker.common.network.protocol.payloads.InvalidPayloadException;
