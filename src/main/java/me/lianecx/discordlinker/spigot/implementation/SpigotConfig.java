@@ -11,9 +11,10 @@ public class SpigotConfig implements LinkerConfig {
     private final FileConfiguration config;
 
     public SpigotConfig(JavaPlugin plugin) {
+        plugin.saveDefaultConfig();
+
         this.plugin = plugin;
         this.config = plugin.getConfig();
-        plugin.saveDefaultConfig();
     }
 
     @Override
