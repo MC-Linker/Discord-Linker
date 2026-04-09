@@ -45,7 +45,7 @@ public class SpigotConfig implements LinkerConfig {
 
     @Override
     public String getTemplatePrivateMessage() {
-        return config.getString("private_mesage");
+        return config.getString("private_message");
     }
 
     @Override

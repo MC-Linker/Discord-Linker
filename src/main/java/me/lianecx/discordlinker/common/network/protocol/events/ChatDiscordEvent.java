@@ -68,13 +68,14 @@ public class ChatDiscordEvent implements LinkerSyncDiscordEvent<ChatPayload> {
         chatMessage = MinecraftChatColor.translateAlternateColorCodes(chatMessage, '&');
 
         if(privateMsg) {
-            LinkerOfflinePlayer player = getServer().getOfflinePlayer(targetUsername);
-            if(!(player instanceof LinkerPlayer)) return DiscordEventResponse.PLAYER_NOT_ONLINE;
-            ((LinkerPlayer) player).sendMessageWithClickableURLs(chatMessage);
+            LinkerPlayer player = getServer().getOnlinePlayers().stream()
+                    .filter(p -> p.getName().equalsIgnoreCase(targetUsername))
+                    .findFirst()
+                    .orElse(null);
+            if(player == null) return DiscordEventResponse.PLAYER_NOT_ONLINE;
+            player.sendMessageWithClickableURLs(chatMessage);
         }
-        else {
-            getServer().broadcastMessageWithClickableURLs(chatMessage);
-        }
+        else getServer().broadcastMessageWithClickableURLs(chatMessage);
 
         return DiscordEventResponse.SUCCESS;
     }
