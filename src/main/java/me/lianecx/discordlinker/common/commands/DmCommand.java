@@ -35,22 +35,21 @@ public class DmCommand implements LinkerMinecraftCommand {
             messageBuilder.append(args[i]);
         }
         String message = messageBuilder.toString();
-        String senderUuid = ((LinkerPlayer) sender).getUUID();
 
-        getClientManager().sendDm(senderUuid, user, message, response -> {
+        getClientManager().sendDm(sender.getName(), user, message, response -> {
             switch(response) {
                 case SUCCESS:
                     sender.sendMessage(MinecraftChatColor.GREEN + "DM sent.");
                     break;
                 case NOT_CONNECTED:
-                    sender.sendMessage(MinecraftChatColor.RED + "Could not find a linked Discord account for that user.");
+                    sender.sendMessage(MinecraftChatColor.RED + "Could not find a linked Discord account for that user. You can instead provide a Discord ID or username to specify the recipient.");
                     break;
                 case DM_CLOSED:
                     sender.sendMessage(MinecraftChatColor.RED + "That Discord user has DMs disabled.");
                     break;
                 case NO_RESPONSE:
                 default:
-                    sender.sendMessage(MinecraftChatColor.RED + "Bot did not respond.");
+                    sender.sendMessage(MinecraftChatColor.RED + "Bot did not respond. Please try again later.");
                     break;
             }
         });
