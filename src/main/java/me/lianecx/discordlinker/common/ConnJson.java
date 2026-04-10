@@ -259,30 +259,19 @@ public class ConnJson {
     public static class StatsChannel {
 
         private String id;
-        @SerializedName("type")
-        private StatsChannelType type;
+        private String updateTarget;
         private Map<StatsChannelEvent, String> names;
 
         public String getId() {
             return id;
         }
 
-        public StatsChannelType getType() {
-            return type;
+        public String getUpdateTarget() {
+            return updateTarget;
         }
 
         public Map<StatsChannelEvent, String> getNames() {
             return names;
-        }
-
-        public enum StatsChannelType {
-            @SerializedName("member-counter") MEMBER_COUNTER,
-            @SerializedName("status") STATUS;
-
-            @Override
-            public String toString() {
-                return name().toLowerCase().replace('_', '-');
-            }
         }
 
         public enum StatsChannelEvent {
