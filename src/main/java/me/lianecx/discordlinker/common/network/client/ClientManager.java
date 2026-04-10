@@ -8,6 +8,7 @@ import me.lianecx.discordlinker.common.ConnJson;
 import me.lianecx.discordlinker.common.abstraction.LinkerServer;
 import me.lianecx.discordlinker.common.network.protocol.events.LinkerDiscordEventBus;
 import me.lianecx.discordlinker.common.network.protocol.responses.DiscordEventResponse;
+import me.lianecx.discordlinker.common.network.protocol.responses.DmResponses;
 import me.lianecx.discordlinker.common.network.protocol.responses.HasRequiredRoleResponses;
 import me.lianecx.discordlinker.common.network.protocol.responses.ProtocolError;
 import me.lianecx.discordlinker.common.util.JsonUtil;
@@ -433,6 +434,36 @@ public final class ClientManager {
             }
             catch(Exception e) {
                 callback.accept(HasRequiredRoleResponses.ERROR);
+            }
+        });
+    }
+
+    public void sendDm(String senderUuid, String user, String message, Consumer<DmResponses> callback) {
+        JsonObject payload = new JsonObject();
+        payload.addProperty("player", senderUuid);
+        payload.addProperty("user", user);
+        payload.addProperty("message", message);
+
+        send("dm", payload, response -> {
+            try {
+                if(response == null) {
+                    callback.accept(DmResponses.NO_RESPONSE);
+                }
+                else if(response.isSuccess()) {
+                    callback.accept(DmResponses.SUCCESS);
+                }
+                else {
+                    ProtocolError error = response.getError();
+                    if(ProtocolError.NOT_CONNECTED == error)
+                        callback.accept(DmResponses.NOT_CONNECTED);
+                    else if(ProtocolError.DM_CLOSED == error)
+                        callback.accept(DmResponses.DM_CLOSED);
+                    else
+                        callback.accept(DmResponses.NO_RESPONSE);
+                }
+            }
+            catch(Exception e) {
+                callback.accept(DmResponses.NO_RESPONSE);
             }
         });
     }
