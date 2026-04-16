@@ -2,6 +2,7 @@ package me.lianecx.discordlinker.common.commands;
 
 import me.lianecx.discordlinker.common.abstraction.LinkerCommandSender;
 import me.lianecx.discordlinker.common.abstraction.LinkerPlayer;
+import me.lianecx.discordlinker.common.network.protocol.responses.ProtocolError;
 import me.lianecx.discordlinker.common.util.MinecraftChatColor;
 
 import static me.lianecx.discordlinker.common.DiscordLinkerCommon.getClientManager;
@@ -37,19 +38,27 @@ public class DmCommand implements LinkerMinecraftCommand {
         String message = messageBuilder.toString();
 
         getClientManager().sendDm(sender.getName(), user, message, response -> {
-            switch(response) {
-                case SUCCESS:
-                    sender.sendMessage(MinecraftChatColor.GREEN + "DM sent.");
-                    break;
-                case NOT_CONNECTED:
-                    sender.sendMessage(MinecraftChatColor.RED + "Could not find a linked Discord account for that user. You can instead provide a Discord ID or username to specify the recipient.");
+            if(response == null) {
+                sender.sendMessage(MinecraftChatColor.RED + "Bot did not respond. Please try again later.");
+                return;
+            }
+
+            if(response.isSuccess()) {
+                sender.sendMessage(MinecraftChatColor.GREEN + "DM sent.");
+                return;
+            }
+
+            ProtocolError error = response.getError();
+            switch(error) {
+                case NOT_FOUND:
+                    sender.sendMessage(MinecraftChatColor.RED + "Could not resolve a valid Discord account. You can provide a Discord user ID or username or, only if the user is linked, a Minecraft UUID or username.");
                     break;
                 case DM_CLOSED:
                     sender.sendMessage(MinecraftChatColor.RED + "That Discord user has DMs disabled.");
                     break;
-                case NO_RESPONSE:
+                case UNKNOWN:
                 default:
-                    sender.sendMessage(MinecraftChatColor.RED + "Bot did not respond. Please try again later.");
+                    sender.sendMessage(MinecraftChatColor.RED + "An unknown error occurred while sending the DM. Please try again later.");
                     break;
             }
         });
