@@ -11,10 +11,8 @@ import me.lianecx.discordlinker.common.util.MinecraftChatColor;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.Reader;
+import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -73,14 +71,14 @@ public class ConnJson {
     // --- Convenience methods ---
 
     public boolean hasTeamSyncedRole() {
-        for(SyncedRole role : syncedRoles) {
+        for(SyncedRole role : getSyncedRoles()) {
             if(!role.isGroup()) return true;
         }
         return false;
     }
 
     public boolean hasGroupSyncedRole() {
-        for(SyncedRole role : syncedRoles) {
+        for(SyncedRole role : getSyncedRoles()) {
             if(role.isGroup()) return true;
         }
         return false;
@@ -94,7 +92,7 @@ public class ConnJson {
     }
 
     public @Nullable SyncedRole getSyncedRole(String name, boolean isGroup) {
-        for(SyncedRole role : syncedRoles) {
+        for(SyncedRole role : getSyncedRoles()) {
             if(role.getName().equalsIgnoreCase(name) && role.isGroup() == isGroup)
                 return role;
         }
@@ -154,7 +152,7 @@ public class ConnJson {
             e.printStackTrace();
             return false;
         }
-        try(FileWriter writer = new FileWriter(new File(getServer().getDataFolder(), CONNJSON_FILENAME))) {
+        try(Writer writer = new OutputStreamWriter(Files.newOutputStream(new File(getServer().getDataFolder(), CONNJSON_FILENAME).toPath()), StandardCharsets.UTF_8)) {
             writer.write(JsonUtil.toJsonString(this));
             return true;
         }
@@ -327,7 +325,7 @@ public class ConnJson {
          * True when direction is {@code both} or {@code to_minecraft}.
          */
         public boolean syncsToMinecraft() {
-            return direction == SyncedRoleDirection.BOTH || direction == SyncedRoleDirection.TO_MINECRAFT;
+            return getDirection() == SyncedRoleDirection.BOTH || getDirection() == SyncedRoleDirection.TO_MINECRAFT;
         }
 
         /**
@@ -335,7 +333,7 @@ public class ConnJson {
          * True when direction is {@code both} or {@code to_discord}.
          */
         public boolean syncsToDiscord() {
-            return direction == SyncedRoleDirection.BOTH || direction == SyncedRoleDirection.TO_DISCORD;
+            return getDirection() == SyncedRoleDirection.BOTH || getDirection() == SyncedRoleDirection.TO_DISCORD;
         }
 
         public enum SyncedRoleDirection {

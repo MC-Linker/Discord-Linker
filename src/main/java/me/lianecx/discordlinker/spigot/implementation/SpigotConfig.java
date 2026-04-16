@@ -8,7 +8,7 @@ public class SpigotConfig implements LinkerConfig {
 
     private final JavaPlugin plugin;
 
-    private final FileConfiguration config;
+    private FileConfiguration config;
 
     public SpigotConfig(JavaPlugin plugin) {
         plugin.saveDefaultConfig();
@@ -71,5 +71,6 @@ public class SpigotConfig implements LinkerConfig {
     @Override
     public void reload() {
         plugin.reloadConfig();
+        this.config = plugin.getConfig();
     }
 }

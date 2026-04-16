@@ -46,7 +46,7 @@ public class LinkerCommand implements LinkerMinecraftCompletableCommand {
                     sender.sendMessage(
                         MinecraftChatColor.GREEN + "The current bot_port is " +
                         MinecraftChatColor.DARK_AQUA + getConfig().getBotPort() +
-                        MinecraftChatColor.GREEN + ". The default ist " +
+                        MinecraftChatColor.GREEN + ". The default is " +
                         MinecraftChatColor.DARK_AQUA + ClientManager.DEFAULT_BOT_PORT +
                         MinecraftChatColor.GREEN + "."
                     );
@@ -57,7 +57,7 @@ public class LinkerCommand implements LinkerMinecraftCompletableCommand {
                 try {
                     newPort = Integer.parseInt(args[1]);
                 }
-                catch(NumberFormatException | IndexOutOfBoundsException err) {
+                catch(NumberFormatException err) {
                     sender.sendMessage(MinecraftChatColor.RED + "Please specify a valid port number!");
                     return;
                 }

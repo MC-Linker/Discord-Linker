@@ -437,9 +437,9 @@ public final class ClientManager {
         });
     }
 
-    public void sendDm(String senderUuid, String user, String message, Consumer<DiscordEventResponse> callback) {
+    public void sendDm(String senderName, String user, String message, Consumer<DiscordEventResponse> callback) {
         JsonObject payload = new JsonObject();
-        payload.addProperty("player", senderUuid);
+        payload.addProperty("player", senderName);
         payload.addProperty("user", user);
         payload.addProperty("message", message);
 
