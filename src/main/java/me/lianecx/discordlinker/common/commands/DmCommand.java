@@ -44,7 +44,7 @@ public class DmCommand implements LinkerMinecraftCommand {
             }
 
             if(response.isSuccess()) {
-                sender.sendMessage(MinecraftChatColor.GREEN + "DM sent.");
+                sender.sendMessage(MinecraftChatColor.GREEN + "DM sent to " + user + ": " + message);
                 return;
             }
 
