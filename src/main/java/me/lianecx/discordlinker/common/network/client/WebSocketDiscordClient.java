@@ -50,7 +50,6 @@ public final class WebSocketDiscordClient implements DiscordClient {
                 .collect(Collectors.joining("&"));
 
         IO.Options ioOptions = new IO.Options();
-        ioOptions.transports = new String[] { "websocket" }; // Force WebSocket transport (avoids issues)
         ioOptions.callFactory = okHttpClient;
         ioOptions.webSocketFactory = okHttpClient;
         ioOptions.auth = auth;
