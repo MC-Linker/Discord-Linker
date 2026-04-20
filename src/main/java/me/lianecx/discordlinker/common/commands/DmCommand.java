@@ -51,7 +51,7 @@ public class DmCommand implements LinkerMinecraftCommand {
             ProtocolError error = response.getError();
             switch(error) {
                 case NOT_FOUND:
-                    sender.sendMessage(MinecraftChatColor.RED + "Could not resolve a valid Discord account. You can provide a Discord user ID or username or, only if the user is linked, a Minecraft UUID or username.");
+                    sender.sendMessage(MinecraftChatColor.RED + "Could not find a valid Discord account. You can provide a Discord user ID or username or, only if the user is linked, a Minecraft UUID or username. The user has to be in the linked Discord server.");
                     break;
                 case DM_CLOSED:
                     sender.sendMessage(MinecraftChatColor.RED + "That Discord user has DMs disabled.");
