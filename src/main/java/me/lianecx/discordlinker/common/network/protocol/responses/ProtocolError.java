@@ -35,7 +35,9 @@ public enum ProtocolError {
     /** The connection configuration file is missing. */
     CONN_JSON_MISSING,
     /** The target Discord user has DMs disabled or the bot cannot send them a DM. */
-    DM_CLOSED;
+    DM_CLOSED,
+    /** The target Discord user has blocked DMs for this request. */
+    DM_BLOCKED;
 
     public static ProtocolError fromCode(String code) {
         try {

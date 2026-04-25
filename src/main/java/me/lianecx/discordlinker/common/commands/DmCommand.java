@@ -56,6 +56,9 @@ public class DmCommand implements LinkerMinecraftCommand {
                 case DM_CLOSED:
                     sender.sendMessage(MinecraftChatColor.RED + "That Discord user has DMs disabled.");
                     break;
+                case DM_BLOCKED:
+                    sender.sendMessage(MinecraftChatColor.RED + "That Discord user has blocked DMs for this request.");
+                    break;
                 case UNKNOWN:
                 default:
                     sender.sendMessage(MinecraftChatColor.RED + "An unknown error occurred while sending the DM. Please try again later.");
