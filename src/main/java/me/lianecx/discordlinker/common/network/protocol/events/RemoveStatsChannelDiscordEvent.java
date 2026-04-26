@@ -6,7 +6,7 @@ import me.lianecx.discordlinker.common.network.protocol.responses.DiscordEventRe
 
 import static me.lianecx.discordlinker.common.DiscordLinkerCommon.*;
 
-public class RemoveStatsChannelDiscordEvent implements LinkerSyncDiscordEvent<StatsChannelPayload> {
+public class RemoveStatsChannelDiscordEvent implements LinkerDirectSyncDiscordEvent<StatsChannelPayload> {
 
     @Override
     public StatsChannelPayload decode(Object[] objects) throws InvalidPayloadException {

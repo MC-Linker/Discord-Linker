@@ -10,16 +10,14 @@ import me.lianecx.discordlinker.common.util.MinecraftChatColor;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.CompletableFuture;
 import java.util.regex.Matcher;
 
 import static me.lianecx.discordlinker.common.DiscordLinkerCommon.getConfig;
-import static me.lianecx.discordlinker.common.DiscordLinkerCommon.getScheduler;
 import static me.lianecx.discordlinker.common.DiscordLinkerCommon.getServer;
 import static me.lianecx.discordlinker.common.util.MarkdownUtil.*;
 import static me.lianecx.discordlinker.common.util.UrlParser.*;
 
-public class ChatDiscordEvent implements LinkerSyncDiscordEvent<ChatPayload> {
+public class ChatDiscordEvent implements LinkerScheduledSyncDiscordEvent<ChatPayload> {
 
     @Override
     public ChatPayload decode(Object[] objects) {
@@ -34,19 +32,6 @@ public class ChatDiscordEvent implements LinkerSyncDiscordEvent<ChatPayload> {
         String targetPlayer = payload.has("target") ? payload.get("target").getAsString() : null;
 
         return new ChatPayload(username, message, replyMessage, replyUsername, privateFlag, targetPlayer);
-    }
-
-    @Override
-    public CompletableFuture<DiscordEventResponse> handleAsync(ChatPayload payload) {
-        CompletableFuture<DiscordEventResponse> future = new CompletableFuture<>();
-        getScheduler().runSync(() -> {
-            try {
-                future.complete(handle(payload));
-            } catch(Exception e) {
-                future.complete(DiscordEventResponse.UNKNOWN);
-            }
-        });
-        return future;
     }
 
     @Override

@@ -12,7 +12,7 @@ import java.io.InputStream;
 
 import static me.lianecx.discordlinker.common.util.URLEncoderUtil.decodeURL;
 
-public class PutFileDiscordEvent implements LinkerSyncDiscordEvent<PutFilePayload> {
+public class PutFileDiscordEvent implements LinkerDirectSyncDiscordEvent<PutFilePayload> {
 
     @Override
     public PutFilePayload decode(Object[] objects) throws InvalidPayloadException {

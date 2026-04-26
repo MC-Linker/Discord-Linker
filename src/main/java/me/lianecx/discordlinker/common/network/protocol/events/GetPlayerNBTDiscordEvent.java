@@ -11,7 +11,7 @@ import java.util.UUID;
 
 import static me.lianecx.discordlinker.common.DiscordLinkerCommon.getServer;
 
-public class GetPlayerNBTDiscordEvent implements LinkerSyncDiscordEvent<GetPlayerNBTPayload> {
+public class GetPlayerNBTDiscordEvent implements LinkerScheduledSyncDiscordEvent<GetPlayerNBTPayload> {
 
     @Override
     public GetPlayerNBTPayload decode(Object[] objects) {
