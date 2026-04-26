@@ -49,6 +49,7 @@ No custom bot creation or configuration files needed!
 | `/linker debug` | Toggle debug mode                                    |
 | `/verify <code>` | Verify your Minecraft account with Discord           |
 | `/discord` | Get the Discord server invite link                   |
+| `/dm <user> <message>` | Send a Discord DM to a user (accepts Discord username/id or, if linked, MC username/uuid) |
 
 ## Plugin Integrations (Hooks)
 

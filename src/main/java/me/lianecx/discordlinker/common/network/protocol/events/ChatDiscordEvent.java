@@ -13,6 +13,7 @@ import java.util.Map;
 import java.util.regex.Matcher;
 
 import static me.lianecx.discordlinker.common.DiscordLinkerCommon.getConfig;
+import static me.lianecx.discordlinker.common.DiscordLinkerCommon.getScheduler;
 import static me.lianecx.discordlinker.common.DiscordLinkerCommon.getServer;
 import static me.lianecx.discordlinker.common.util.MarkdownUtil.*;
 import static me.lianecx.discordlinker.common.util.UrlParser.*;
@@ -66,15 +67,18 @@ public class ChatDiscordEvent implements LinkerSyncDiscordEvent<ChatPayload> {
         //Translate color codes
         chatMessage = MinecraftChatColor.translateAlternateColorCodes(chatMessage, '&');
 
-        if(privateMsg) {
-            LinkerPlayer player = getServer().getOnlinePlayers().stream()
-                    .filter(p -> p.getName().equalsIgnoreCase(targetUsername))
-                    .findFirst()
-                    .orElse(null);
-            if(player == null) return DiscordEventResponse.PLAYER_NOT_ONLINE;
-            player.sendMessageWithClickableURLs(chatMessage);
-        }
-        else getServer().broadcastMessageWithClickableURLs(chatMessage);
+        final String finalChatMessage = chatMessage;
+        getScheduler().runSync(() -> {
+            if(privateMsg) {
+                LinkerPlayer player = getServer().getOnlinePlayers().stream()
+                        .filter(p -> p.getName().equalsIgnoreCase(targetUsername))
+                        .findFirst()
+                        .orElse(null);
+                if(player == null) return;
+                player.sendMessageWithClickableURLs(finalChatMessage);
+            }
+            else getServer().broadcastMessageWithClickableURLs(finalChatMessage);
+        });
 
         return DiscordEventResponse.SUCCESS;
     }
