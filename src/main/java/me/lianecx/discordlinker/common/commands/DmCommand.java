@@ -7,6 +7,7 @@ import me.lianecx.discordlinker.common.util.MinecraftChatColor;
 
 import static me.lianecx.discordlinker.common.DiscordLinkerCommon.getClientManager;
 import static me.lianecx.discordlinker.common.DiscordLinkerCommon.getConnJson;
+import static me.lianecx.discordlinker.common.DiscordLinkerCommon.getScheduler;
 
 public class DmCommand implements LinkerMinecraftCommand {
 
@@ -37,7 +38,7 @@ public class DmCommand implements LinkerMinecraftCommand {
         }
         String message = messageBuilder.toString();
 
-        getClientManager().sendDm(sender.getName(), user, message, response -> {
+        getClientManager().sendDm(sender.getName(), user, message, response -> getScheduler().runSync(() -> {
             if(response == null) {
                 sender.sendMessage(MinecraftChatColor.RED + "Bot did not respond. Please try again later.");
                 return;
@@ -64,6 +65,6 @@ public class DmCommand implements LinkerMinecraftCommand {
                     sender.sendMessage(MinecraftChatColor.RED + "An unknown error occurred while sending the DM. Please try again later.");
                     break;
             }
-        });
+        }));
     }
 }
