@@ -1,3 +1,8 @@
+## 4.3.0 - /dm Command
+- Added `/dm <user> <message>` command to send a Discord DM to a user directly from Minecraft; accepts a Discord username, user ID, or (if linked) a Minecraft username or UUID
+- Fixed `/discord` link not being clickable in chat
+- More Bug Fixes
+
 ## 4.2.0 - 1.8 Support and Vault Integration
 - Required-role check now happens before the player fully joins, so denied players never enter the world
 - Added Vault support for group/permission-based role syncing
