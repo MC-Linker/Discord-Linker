@@ -25,7 +25,7 @@ commands:
     permission: "discordlinker.discord"
     permission-message: "You do not have permission to use this command."
   dm:
-    description: "Send a Discord DM to a user. User can be MC username/uuid (if user is connected) or Discord username/id."
+    description: "Send a Discord DM to a user. User can be MC username/uuid (if linked) or Discord username/id."
     usage: "/dm <user> <message>"
     permission: "discordlinker.dm"
     permission-message: "You do not have permission to use this command."
