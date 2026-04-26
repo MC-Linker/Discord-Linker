@@ -10,6 +10,7 @@ import me.lianecx.discordlinker.common.util.MinecraftChatColor;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 import java.util.regex.Matcher;
 
 import static me.lianecx.discordlinker.common.DiscordLinkerCommon.getConfig;
@@ -33,6 +34,19 @@ public class ChatDiscordEvent implements LinkerSyncDiscordEvent<ChatPayload> {
         String targetPlayer = payload.has("target") ? payload.get("target").getAsString() : null;
 
         return new ChatPayload(username, message, replyMessage, replyUsername, privateFlag, targetPlayer);
+    }
+
+    @Override
+    public CompletableFuture<DiscordEventResponse> handleAsync(ChatPayload payload) {
+        CompletableFuture<DiscordEventResponse> future = new CompletableFuture<>();
+        getScheduler().runSync(() -> {
+            try {
+                future.complete(handle(payload));
+            } catch(Exception e) {
+                future.complete(DiscordEventResponse.UNKNOWN);
+            }
+        });
+        return future;
     }
 
     @Override
@@ -67,18 +81,15 @@ public class ChatDiscordEvent implements LinkerSyncDiscordEvent<ChatPayload> {
         //Translate color codes
         chatMessage = MinecraftChatColor.translateAlternateColorCodes(chatMessage, '&');
 
-        final String finalChatMessage = chatMessage;
-        getScheduler().runSync(() -> {
-            if(privateMsg) {
-                LinkerPlayer player = getServer().getOnlinePlayers().stream()
-                        .filter(p -> p.getName().equalsIgnoreCase(targetUsername))
-                        .findFirst()
-                        .orElse(null);
-                if(player == null) return;
-                player.sendMessageWithClickableURLs(finalChatMessage);
-            }
-            else getServer().broadcastMessageWithClickableURLs(finalChatMessage);
-        });
+        if(privateMsg) {
+            LinkerPlayer player = getServer().getOnlinePlayers().stream()
+                    .filter(p -> p.getName().equalsIgnoreCase(targetUsername))
+                    .findFirst()
+                    .orElse(null);
+            if(player == null) return DiscordEventResponse.PLAYER_NOT_ONLINE;
+            player.sendMessageWithClickableURLs(chatMessage);
+        }
+        else getServer().broadcastMessageWithClickableURLs(chatMessage);
 
         return DiscordEventResponse.SUCCESS;
     }
