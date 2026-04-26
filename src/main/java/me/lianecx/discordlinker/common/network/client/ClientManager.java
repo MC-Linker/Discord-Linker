@@ -520,6 +520,7 @@ public final class ClientManager {
 
         Map<String, String> response = new HashMap<>();
         response.put("version", server.getMinecraftVersion());
+        response.put("pluginVersion", getConfig().getPluginVersion());
         // Minehut servers have online mode disabled in the server.properties file, because a proxy handles authentication
         response.put("online", String.valueOf(isMinehut || server.isOnline()));
         response.put("worldPath", encodeURL(server.getWorldPath()));
