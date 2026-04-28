@@ -12,6 +12,7 @@ publishMods {
     version = modPublish.version
     changelog = modPublish.getChangelog(modPublish.version)
     type = STABLE
+    dryRun = modPublish.dryRunMode
 
     github {
         accessToken = modPublish.githubToken
