@@ -6,7 +6,7 @@ import me.lianecx.discordlinker.common.network.protocol.responses.DiscordEventRe
 
 import static me.lianecx.discordlinker.common.DiscordLinkerCommon.*;
 
-public class RemoveSyncedRoleDiscordEvent implements LinkerSyncDiscordEvent<SyncedRolePayload> {
+public class RemoveSyncedRoleDiscordEvent implements LinkerDirectSyncDiscordEvent<SyncedRolePayload> {
 
     @Override
     public SyncedRolePayload decode(Object[] objects) throws InvalidPayloadException {

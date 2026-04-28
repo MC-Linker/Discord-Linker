@@ -4,15 +4,15 @@ import me.lianecx.discordlinker.common.abstraction.LinkerCommandSender;
 import me.lianecx.discordlinker.common.abstraction.LinkerPlayer;
 import me.lianecx.discordlinker.common.util.MinecraftChatColor;
 
-import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 import static me.lianecx.discordlinker.common.DiscordLinkerCommon.*;
 
 public class VerifyCommand implements LinkerMinecraftCommand {
 
-    private static final Map<String, String> playersAwaitingVerification = new HashMap<>();
+    private static final Map<String, String> playersAwaitingVerification = new ConcurrentHashMap<>();
 
     public static void addPlayerToVerificationQueue(String uuid, String code) {
         playersAwaitingVerification.put(uuid, code);

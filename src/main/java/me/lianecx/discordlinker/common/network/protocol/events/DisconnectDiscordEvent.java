@@ -7,7 +7,7 @@ import me.lianecx.discordlinker.common.util.MinecraftChatColor;
 
 import static me.lianecx.discordlinker.common.DiscordLinkerCommon.*;
 
-public class DisconnectDiscordEvent implements LinkerSyncDiscordEvent<EmptyPayload> {
+public class DisconnectDiscordEvent implements LinkerDirectSyncDiscordEvent<EmptyPayload> {
 
     @Override
     public EmptyPayload decode(Object[] objects) throws InvalidPayloadException {

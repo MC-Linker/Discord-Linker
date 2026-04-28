@@ -8,7 +8,7 @@ import me.lianecx.discordlinker.common.util.JsonUtil;
 
 import java.io.File;
 
-public class GetFileDiscordEvent implements LinkerSyncDiscordEvent<GetFilePayload> {
+public class GetFileDiscordEvent implements LinkerDirectSyncDiscordEvent<GetFilePayload> {
 
     @Override
     public GetFilePayload decode(Object[] objects) throws InvalidPayloadException {

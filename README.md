@@ -1,9 +1,10 @@
 # Discord-Linker
 
+[![SpigotMC](https://img.shields.io/spiget/downloads/98749?logo=spigotmc&label=SpigotMC)](https://www.spigotmc.org/resources/discord-linker.98749/)
 [![Modrinth](https://img.shields.io/modrinth/dt/xfelWIYh?logo=modrinth&label=Modrinth)](https://modrinth.com/plugin/xfelWIYh)
 [![CurseForge](https://img.shields.io/curseforge/dt/1487126?logo=curseforge&label=CurseForge)](https://www.curseforge.com/minecraft/mc-mods/discord-linker)
 [![Hangar](https://img.shields.io/hangar/dt/Discord-Linker?logo=paper&label=Hangar)](https://hangar.papermc.io/Lianecx/Discord-Linker)
-[![Discord](https://img.shields.io/discord/887789672923861043?logo=discord&label=Discord)](https://discord.gg/rX36kZUGNK)
+[![Discord](https://img.shields.io/discord/844156404477853716?logo=discord&label=Discord)](https://discord.gg/rX36kZUGNK)
 
 The server-side plugin/mod for [MC Linker](https://mclinker.com) — the easiest way to connect your Minecraft server with Discord.
 No custom bot creation or configuration files needed!
@@ -39,15 +40,16 @@ No custom bot creation or configuration files needed!
 
 ## In-Game Commands
 
-| Command | Description |
-|---------|-------------|
-| `/linker reload` | Reload configuration and reconnect |
-| `/linker connect <code>` | Connect server to Discord bot |
-| `/linker disconnect` | Disconnect server from Discord |
-| `/linker bot_port [port]` | Get or set the bot port |
-| `/linker debug` | Toggle debug mode |
-| `/verify <code>` | Verify your Minecraft account with Discord |
-| `/discord` | Get the Discord server invite link |
+| Command | Description                                          |
+|---------|------------------------------------------------------|
+| `/linker reload` | Reload configuration and reconnect                   |
+| `/linker connect <code>` | Connect server to Discord bot                        |
+| `/linker disconnect` | Disconnect server from Discord                       |
+| `/linker bot_port [port]` | Get or set the bot port (for custom-bot connections) |
+| `/linker debug` | Toggle debug mode                                    |
+| `/verify <code>` | Verify your Minecraft account with Discord           |
+| `/discord` | Get the Discord server invite link                   |
+| `/dm <user> <message>` | Send a Discord DM to a user (accepts Discord username/id or, if linked, MC username/uuid) |
 
 ## Plugin Integrations (Hooks)
 

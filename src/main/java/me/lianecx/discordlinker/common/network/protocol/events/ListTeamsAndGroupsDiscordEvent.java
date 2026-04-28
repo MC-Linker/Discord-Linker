@@ -9,7 +9,7 @@ import java.util.List;
 
 import static me.lianecx.discordlinker.common.DiscordLinkerCommon.getTeamsAndGroupsBridge;
 
-public class ListTeamsAndGroupsDiscordEvent implements LinkerSyncDiscordEvent<EmptyPayload> {
+public class ListTeamsAndGroupsDiscordEvent implements LinkerScheduledSyncDiscordEvent<EmptyPayload> {
 
     @Override
     public EmptyPayload decode(Object[] objects) {

@@ -30,3 +30,8 @@ out/
 
 # Local secrets
 .env
+
+# AI
+/.vscode/
+/.claude/
+/.github/copilot-instructions.md

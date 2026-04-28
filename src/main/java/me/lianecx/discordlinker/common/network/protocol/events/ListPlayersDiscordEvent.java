@@ -9,7 +9,7 @@ import java.util.stream.Collectors;
 
 import static me.lianecx.discordlinker.common.DiscordLinkerCommon.getServer;
 
-public class ListPlayersDiscordEvent implements LinkerSyncDiscordEvent<EmptyPayload> {
+public class ListPlayersDiscordEvent implements LinkerScheduledSyncDiscordEvent<EmptyPayload> {
 
     @Override
     public EmptyPayload decode(Object[] objects) {

@@ -14,7 +14,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.stream.Stream;
 
-public class ListFileDiscordEvent implements LinkerSyncDiscordEvent<ListFilePayload> {
+public class ListFileDiscordEvent implements LinkerDirectSyncDiscordEvent<ListFilePayload> {
     @Override
     public ListFilePayload decode(Object[] objects) {
         JsonObject payload = JsonUtil.parseJsonObject(objects);

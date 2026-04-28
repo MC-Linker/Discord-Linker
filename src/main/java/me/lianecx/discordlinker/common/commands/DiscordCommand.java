@@ -27,9 +27,9 @@ public class DiscordCommand implements LinkerMinecraftCommand {
             }
 
             if(sender instanceof LinkerPlayer)
-                ((LinkerPlayer) sender).sendMessageWithClickableURLs(MinecraftChatColor.BLUE + "Click the following link to join the Discord server: " + MinecraftChatColor.DARK_BLUE + url);
+                ((LinkerPlayer) sender).sendMessageWithClickableURLs(MinecraftChatColor.GREEN + "Click the following link to join the Discord server: " + MinecraftChatColor.BLUE + url);
             else
-                sender.sendMessage(MinecraftChatColor.GREEN + "Join the Discord server using the following link: " + MinecraftChatColor.DARK_GREEN + url);
+                sender.sendMessage(MinecraftChatColor.GREEN + "Join the Discord server using the following link: " + MinecraftChatColor.BLUE + url);
         });
     }
 }

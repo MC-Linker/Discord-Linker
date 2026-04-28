@@ -62,6 +62,16 @@ public final class ModCommands {
                     .executes(ModCommands::forward)
             );
 
+            // /dm <user> <message>
+            dispatcher.register(literal("dm")
+                    .requires(src -> getClientManager().isConnected())
+                    .then(argument("user", word())
+                            .then(argument("message", greedyString())
+                                    .executes(ModCommands::forward)
+                            )
+                    )
+            );
+
         });
     }
 

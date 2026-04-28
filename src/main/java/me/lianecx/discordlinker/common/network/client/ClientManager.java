@@ -437,6 +437,15 @@ public final class ClientManager {
         });
     }
 
+    public void sendDm(String senderName, String user, String message, Consumer<DiscordEventResponse> callback) {
+        JsonObject payload = new JsonObject();
+        payload.addProperty("player", senderName);
+        payload.addProperty("user", user);
+        payload.addProperty("message", message);
+
+        send("dm", payload, callback);
+    }
+
     /**
      * Tells the bot the verification code that has been shown to the user so it listens for their DM.
      */
@@ -511,6 +520,7 @@ public final class ClientManager {
 
         Map<String, String> response = new HashMap<>();
         response.put("version", server.getMinecraftVersion());
+        response.put("pluginVersion", getConfig().getPluginVersion());
         // Minehut servers have online mode disabled in the server.properties file, because a proxy handles authentication
         response.put("online", String.valueOf(isMinehut || server.isOnline()));
         response.put("worldPath", encodeURL(server.getWorldPath()));

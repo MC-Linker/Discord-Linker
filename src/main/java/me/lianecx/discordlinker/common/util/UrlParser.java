@@ -7,16 +7,12 @@ import java.util.regex.Pattern;
 
 public final class UrlParser {
 
-    private static final String URL_BODY =
-        "\\bhttps?://[\\w\\-._~:/?#\\[\\]@!$&'()*+,;=%]+";
+    private static final String URL_BODY = "https?://[\\w\\-._~:/?#\\[\\]@!$&'()*+,;=%]+";
 
-    public static final String URL_REGEX =
-        "(" + URL_BODY + ")";
-
+    public static final String URL_REGEX = "(" + URL_BODY + ")";
     public static final Pattern URL_PATTERN = Pattern.compile(URL_REGEX, Pattern.CASE_INSENSITIVE);
 
-    public static final String MD_URL_REGEX =
-            "\\[([^]]+)\\]\\(" + URL_REGEX + "\\)";
+    public static final String MD_URL_REGEX = "\\[([^]]+)\\]\\(" + URL_REGEX + "\\)";
 
     public static final String URL_OR_MD_URL_REGEX = MD_URL_REGEX + "|" + URL_REGEX;
 
@@ -30,22 +26,20 @@ public final class UrlParser {
         Matcher matcher = URL_OR_MD_URL_PATTERN.matcher(message);
 
         int lastEnd = 0;
-        while (matcher.find()) {
-            if (matcher.start() > lastEnd) {
-                segments.add(Segment.text(message.substring(lastEnd, matcher.start())));
-            }
+        while(matcher.find()) {
+            if(matcher.start() > lastEnd) segments.add(Segment.text(message.substring(lastEnd, matcher.start())));
 
             String markdownLabel = matcher.group(1);
             String markdownUrl = matcher.group(2);
             String plainUrl = matcher.group(3);
 
-            if (markdownUrl != null) segments.add(Segment.url(markdownLabel, markdownUrl));
-            else if (plainUrl != null) segments.add(Segment.url(plainUrl));
+            if(markdownUrl != null) segments.add(Segment.url(markdownLabel, markdownUrl));
+            else if(plainUrl != null) segments.add(Segment.url(plainUrl));
 
             lastEnd = matcher.end();
         }
 
-        if (lastEnd < message.length()) segments.add(Segment.text(message.substring(lastEnd)));
+        if(lastEnd < message.length()) segments.add(Segment.text(message.substring(lastEnd)));
 
         return segments;
     }

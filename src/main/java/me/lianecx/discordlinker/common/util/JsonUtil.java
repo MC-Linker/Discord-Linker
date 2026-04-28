@@ -32,7 +32,9 @@ public class JsonUtil {
 
     public static ConnJson parseConnJson(String jsonString) {
         try {
-            return GSON.fromJson(jsonString, ConnJson.class);
+            ConnJson conn = GSON.fromJson(jsonString, ConnJson.class);
+            if(conn != null) normalizeConnJson(conn);
+            return conn;
         }
         catch(Exception err) {
             return null;
@@ -41,7 +43,9 @@ public class JsonUtil {
 
     public static ConnJson parseConnJson(JsonObject jsonObject) {
         try {
-            return GSON.fromJson(jsonObject, ConnJson.class);
+            ConnJson conn = GSON.fromJson(jsonObject, ConnJson.class);
+            if(conn != null) normalizeConnJson(conn);
+            return conn;
         }
         catch(Exception err) {
             return null;
@@ -50,11 +54,24 @@ public class JsonUtil {
 
     public static ConnJson parseConnJson(Reader reader) {
         try {
-            return GSON.fromJson(reader, ConnJson.class);
+            ConnJson conn = GSON.fromJson(reader, ConnJson.class);
+            if(conn != null) normalizeConnJson(conn);
+            return conn;
         }
         catch(Exception err) {
             return null;
         }
+    }
+
+    /**
+     * Normalizes null lists in a ConnJson instance after Gson deserialization.
+     * Gson sets fields to null when the JSON value is explicitly null, even if the field has an initializer.
+     */
+    private static void normalizeConnJson(ConnJson conn) {
+        // Force the null-safe getters to initialize any null lists
+        conn.getChatChannels();
+        conn.getSyncedRoles();
+        conn.getStatsChannels();
     }
 
     /**

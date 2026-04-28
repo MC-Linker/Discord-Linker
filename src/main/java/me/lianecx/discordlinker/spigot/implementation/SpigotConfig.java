@@ -8,12 +8,13 @@ public class SpigotConfig implements LinkerConfig {
 
     private final JavaPlugin plugin;
 
-    private final FileConfiguration config;
+    private FileConfiguration config;
 
     public SpigotConfig(JavaPlugin plugin) {
+        plugin.saveDefaultConfig();
+
         this.plugin = plugin;
         this.config = plugin.getConfig();
-        plugin.saveDefaultConfig();
     }
 
     @Override
@@ -44,7 +45,7 @@ public class SpigotConfig implements LinkerConfig {
 
     @Override
     public String getTemplatePrivateMessage() {
-        return config.getString("private_mesage");
+        return config.getString("private_message");
     }
 
     @Override
@@ -70,5 +71,6 @@ public class SpigotConfig implements LinkerConfig {
     @Override
     public void reload() {
         plugin.reloadConfig();
+        this.config = plugin.getConfig();
     }
 }

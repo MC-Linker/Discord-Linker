@@ -7,7 +7,7 @@ import me.lianecx.discordlinker.common.network.protocol.responses.DiscordEventRe
 import static me.lianecx.discordlinker.common.DiscordLinkerCommon.getConnJson;
 import static me.lianecx.discordlinker.common.DiscordLinkerCommon.syncChatConsoleForwarding;
 
-public class AddChatChannelDiscordEvent implements LinkerSyncDiscordEvent<ChatChannelPayload> {
+public class AddChatChannelDiscordEvent implements LinkerDirectSyncDiscordEvent<ChatChannelPayload> {
 
     @Override
     public ChatChannelPayload decode(Object[] objects) throws InvalidPayloadException {

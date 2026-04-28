@@ -7,7 +7,7 @@ import me.lianecx.discordlinker.common.network.protocol.payloads.VerifyUserPaylo
 import me.lianecx.discordlinker.common.network.protocol.responses.DiscordEventResponse;
 import me.lianecx.discordlinker.common.util.JsonUtil;
 
-public class VerifyUserDiscordEvent implements LinkerSyncDiscordEvent<VerifyUserPayload> {
+public class VerifyUserDiscordEvent implements LinkerDirectSyncDiscordEvent<VerifyUserPayload> {
 
     @Override
     public VerifyUserPayload decode(Object[] objects) {

@@ -1,7 +1,6 @@
 package me.lianecx.discordlinker.common.commands;
 
 import me.lianecx.discordlinker.common.abstraction.LinkerCommandSender;
-import me.lianecx.discordlinker.common.events.data.*;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -16,6 +15,7 @@ public class LinkerMinecraftCommandBus {
         listeners.put("linker", new LinkerCommand());
         listeners.put("discord", new DiscordCommand());
         listeners.put("verify", new VerifyCommand());
+        listeners.put("dm", new DmCommand());
     }
 
     /**
