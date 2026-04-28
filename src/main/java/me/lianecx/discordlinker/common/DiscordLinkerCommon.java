@@ -52,7 +52,9 @@ public class DiscordLinkerCommon {
         String token = connJson != null ? connJson.getToken() : null;
         //If snapshot version, request test-bot at port 81 otherwise request main-bot at port 80/config-port
         int botPort = config.isTestVersion() ? 81 : config.getBotPort();
-        this.clientManager = token != null ? new ClientManager(token, botPort, server, discordEventBus) : new ClientManager(discordEventBus, botPort);
+        this.clientManager = token != null
+            ? ClientManager.createAuthenticated(discordEventBus, botPort, token, server, config)
+            : ClientManager.createUnauthenticated(discordEventBus, botPort);
     }
 
     /**

@@ -6,6 +6,7 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
 import me.lianecx.discordlinker.common.ConnJson;
 import me.lianecx.discordlinker.common.abstraction.LinkerServer;
+import me.lianecx.discordlinker.common.abstraction.core.LinkerConfig;
 import me.lianecx.discordlinker.common.network.protocol.events.LinkerDiscordEventBus;
 import me.lianecx.discordlinker.common.network.protocol.responses.DiscordEventResponse;
 import me.lianecx.discordlinker.common.network.protocol.responses.HasRequiredRoleResponses;
@@ -45,23 +46,28 @@ public final class ClientManager {
     private @Nullable DiscordClient client;
 
     /**
-     * Initializes the ClientManager with the given bot port.
-     * The bot port is used to determine which bot to connect to (main/test/custom bot).
+     * Creates a manager without an existing token. Used before first Discord authentication.
      */
-    public ClientManager(LinkerDiscordEventBus discordEventBus, int botPort) {
+    public static ClientManager createUnauthenticated(LinkerDiscordEventBus discordEventBus, int botPort) {
+        return new ClientManager(discordEventBus, botPort);
+    }
+
+    /**
+     * Creates a manager with an existing token and immediately prepares reconnect metadata.
+     */
+    public static ClientManager createAuthenticated(LinkerDiscordEventBus discordEventBus, int botPort, String token, LinkerServer server, LinkerConfig config) {
+        return new ClientManager(discordEventBus, botPort, token, server, config);
+    }
+
+    private ClientManager(LinkerDiscordEventBus discordEventBus, int botPort) {
         setBotPort(botPort);
         this.discordEventBus = discordEventBus;
     }
 
-    /**
-     * Initializes the ClientManager with the given token and bot port.
-     * The token is used to authenticate with the bot, and the bot port is used to determine which bot to connect to (main/test/custom bot).
-     * The connection query is generated from the server's information and sent to the bot upon connection for authentication and configuration purposes.
-     */
-    public ClientManager(String token, int botPort, LinkerServer server, LinkerDiscordEventBus discordEventBus) {
+    private ClientManager(LinkerDiscordEventBus discordEventBus, int botPort, String token, LinkerServer server, LinkerConfig config) {
         setBotPort(botPort);
         this.discordEventBus = discordEventBus;
-        this.client = new WebSocketDiscordClient(Collections.singletonMap("token", token), getConnectionQuery(server));
+        this.client = new WebSocketDiscordClient(Collections.singletonMap("token", token), getConnectionQuery(server, config));
     }
 
     public void setBotPort(int port) {
@@ -114,7 +120,7 @@ public final class ClientManager {
         auth.put("code", code);
         auth.put("token", token);
 
-        WebSocketDiscordClient tempClient = new WebSocketDiscordClient(auth, getConnectionQuery(getServer()), 5);
+        WebSocketDiscordClient tempClient = new WebSocketDiscordClient(auth, getConnectionQuery(getServer(), getConfig()), 5);
 
         CompletableFuture<Boolean> future = new CompletableFuture<>();
 
@@ -515,12 +521,12 @@ public final class ClientManager {
         client.disconnect();
     }
 
-    public @NotNull Map<String, String> getConnectionQuery(LinkerServer server) {
+    public @NotNull Map<String, String> getConnectionQuery(LinkerServer server, LinkerConfig config) {
         boolean isMinehut = server.isPluginOrModEnabled("MinehutPlugin");
 
         Map<String, String> response = new HashMap<>();
         response.put("version", server.getMinecraftVersion());
-        response.put("pluginVersion", getConfig().getPluginVersion());
+        response.put("pluginVersion", config.getPluginVersion());
         // Minehut servers have online mode disabled in the server.properties file, because a proxy handles authentication
         response.put("online", String.valueOf(isMinehut || server.isOnline()));
         response.put("worldPath", encodeURL(server.getWorldPath()));
