@@ -45,7 +45,6 @@ public abstract class ServerLoginNetHandlerMixin {
         if(result != null && result.isAllowed()) return;
 
         String reason = result != null ? result.getDenyReason() : JoinRequirementMessages.ROLE_CHECK_ERROR;
-        System.out.println("Disconnecting player during login: " + reason);
         disconnect(new TextComponent(reason));
         ci.cancel();
     }
