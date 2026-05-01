@@ -1,3 +1,7 @@
+## 4.3.1 - 26+ Support
+- This update adds support for minecraft version 26 and higher
+- Fixed advancements sometimes not being relayed on version 26 and higher
+
 ## 4.3.0 - /dm Command
 - Added `/dm <user> <message>` command to send a Discord DM to a user directly from Minecraft; accepts a Discord username, user ID, or (if linked) a Minecraft username or UUID
 - Fixed `/discord` link not being clickable in chat

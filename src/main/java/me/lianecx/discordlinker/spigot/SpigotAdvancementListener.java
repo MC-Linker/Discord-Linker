@@ -13,6 +13,7 @@ public class SpigotAdvancementListener implements Listener {
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onAdvancement(PlayerAdvancementDoneEvent event) {
+        System.out.println(event.getAdvancement().getKey());
         //Dont process recipes
         if(event.getAdvancement().getKey().toString().startsWith("minecraft:recipes/")) return;
         getMinecraftEventBus().emit(new AdvancementEventData(new SpigotPlayer(event.getPlayer()), event.getAdvancement().getKey().toString()));

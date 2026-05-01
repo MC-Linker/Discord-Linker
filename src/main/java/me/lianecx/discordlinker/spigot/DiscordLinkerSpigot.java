@@ -3,9 +3,9 @@ package me.lianecx.discordlinker.spigot;
 import me.lianecx.discordlinker.common.DiscordLinkerCommon;
 import me.lianecx.discordlinker.common.hooks.HookProvider;
 import me.lianecx.discordlinker.common.hooks.luckperms.LuckPermsHookProvider;
+import me.lianecx.discordlinker.common.util.MinecraftVersionUtil;
 import me.lianecx.discordlinker.spigot.hooks.vault.VaultHookProvider;
 import me.lianecx.discordlinker.spigot.implementation.*;
-import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import static me.lianecx.discordlinker.common.DiscordLinkerCommon.getInstance;
@@ -15,10 +15,11 @@ public class DiscordLinkerSpigot extends JavaPlugin {
     @Override
     public void onEnable() {
         SpigotConfig config = new SpigotConfig(this);
+        SpigotServer server = new SpigotServer(getDataFolder().getAbsolutePath());
         DiscordLinkerCommon.init(
                 new SpigotLogger(this.getLogger(), config.isTestVersion()),
                 config,
-                new SpigotServer(getDataFolder().getAbsolutePath()),
+                server,
                 new SpigotScheduler(this),
                 new SpigotTeamsBridge(),
                 new HookProvider[]{ new LuckPermsHookProvider(), new VaultHookProvider() }
@@ -26,8 +27,8 @@ public class DiscordLinkerSpigot extends JavaPlugin {
 
         this.getServer().getPluginManager().registerEvents(new SpigotEvents(), this);
 
-        int minorVersion = Integer.parseInt(Bukkit.getBukkitVersion().split("-")[0].split("\\.")[1]);
-        if(minorVersion >= 12) this.getServer().getPluginManager().registerEvents(new SpigotAdvancementListener(), this);
+        if (MinecraftVersionUtil.isAtLeast(server.getMinecraftVersion(), "1.12"))
+            this.getServer().getPluginManager().registerEvents(new SpigotAdvancementListener(), this);
         else this.getServer().getPluginManager().registerEvents(new SpigotAchievementListener(), this);
 
         getCommand("linker").setExecutor(new SpigotCommands());
