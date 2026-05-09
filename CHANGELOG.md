@@ -1,3 +1,7 @@
+## 4.3.2 - Bug Fixes and Improvements
+- Synced roles now sync more reliably on reconnect
+- Minor bug fixes and improvements
+
 ## 4.3.1 - 26+ Support
 - This update adds support for minecraft version 26 and higher
 - Fixed advancements sometimes not being relayed on version 26 and higher
