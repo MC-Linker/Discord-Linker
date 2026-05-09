@@ -14,6 +14,10 @@ public final class JoinRequirementEvaluator {
     private static final Map<String, Integer> pendingVerifications = new ConcurrentHashMap<>();
 
     public static void evaluate(String uuid, String username, Consumer<JoinRequirementResult> callback) {
+        if(uuid == null || username == null) {
+            callback.accept(JoinRequirementResult.deny(JoinRequirementMessages.IDENTITY_CHECK_FAILED));
+            return;
+        }
         if(getConnJson() == null || getConnJson().getRequiredRoleToJoin() == null) {
             callback.accept(JoinRequirementResult.allow());
             return;
