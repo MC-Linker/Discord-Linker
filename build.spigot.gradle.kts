@@ -82,6 +82,7 @@ tasks {
 }
 
 tasks.processResources {
+    properties.forEach { (key, value) -> inputs.property(key, value) }
     filesMatching("plugin.yml") {
         expand(properties)
     }

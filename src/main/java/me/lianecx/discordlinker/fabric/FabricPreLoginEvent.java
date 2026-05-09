@@ -50,8 +50,6 @@ public final class FabricPreLoginEvent {
         username = handlerUserName;
         //? }
 
-        System.out.println("Player " + username + " is trying to log in. Starting join requirement evaluation.");
-
         CompletableFuture<Void> waitFuture = new CompletableFuture<>();
         synchronizer.waitFor(waitFuture);
 
