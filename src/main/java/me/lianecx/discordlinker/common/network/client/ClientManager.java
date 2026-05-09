@@ -289,6 +289,75 @@ public final class ClientManager {
         });
     }
 
+    private CompletableFuture<Void> trySyncSyncedRoleMembers(ConnJson conn, ConnJson.SyncedRole role, List<String> currentPlayers, JsonObject payload, long firstRateLimitMs, long prevWaitMs) {
+        CompletableFuture<Void> done = new CompletableFuture<>();
+
+        send("sync-synced-role-members", payload, response -> {
+            if(response == null || !response.isSuccess()) {
+                if(response != null && ProtocolError.RATE_LIMITED == response.getError()) {
+                    long now = System.currentTimeMillis();
+                    long firstTime = (firstRateLimitMs == 0) ? now : firstRateLimitMs;
+
+                    if(now - firstTime > 5 * 60 * 1000L) {
+                        getLogger().error(MinecraftChatColor.RED + "Synced role '" + role.getName() + "' sync is rate-limited. Giving up after 5 minutes — manual resync required.");
+                        done.complete(null);
+                        return;
+                    }
+
+                    long retryMs = Math.max(response.getRetryMs(), 0);
+                    long nextWaitMs = Math.max(retryMs, prevWaitMs * 2);
+                    int delayTicks = (int) Math.max(nextWaitMs / 50, 1);
+
+                    getLogger().warn(MinecraftChatColor.YELLOW + "Rate-limited while syncing role '" + role.getName() + "'. Retrying in " + nextWaitMs + " ms.");
+
+                    getScheduler().runDelayedAsync(() ->
+                        trySyncSyncedRoleMembers(conn, role, currentPlayers, payload, firstTime, nextWaitMs)
+                            .thenAccept(done::complete), delayTicks);
+                    return;
+                }
+
+                if(response != null && ProtocolError.NOT_FOUND == response.getError()) {
+                    getLogger().warn(MinecraftChatColor.YELLOW + "Synced role '" + role.getName() + "' no longer exists on Discord. Removing synced role.");
+                    conn.getSyncedRoles().remove(role);
+                    conn.write();
+                    done.complete(null);
+                    return;
+                }
+
+                getLogger().warn(MinecraftChatColor.YELLOW + "Failed to reconcile synced role '" + role.getName() + "'.");
+                role.setPlayers(currentPlayers);
+                conn.write();
+                done.complete(null);
+                return;
+            }
+
+            try {
+                JsonObject data = response.getResponseData().getAsJsonObject();
+                JsonArray added = data.has("added") ? data.getAsJsonArray("added") : new JsonArray();
+                JsonArray removed = data.has("removed") ? data.getAsJsonArray("removed") : new JsonArray();
+
+                CompletableFuture<Void> memberSync = completedFuture(null);
+                if(role.syncsToMinecraft()) memberSync = applyRoleMembershipChangesParallel(role, added, removed);
+
+                memberSync
+                    .thenCompose(v -> getTeamsAndGroupsBridge().getPlayersInGroupOrTeam(role.getName(), role.isGroup()))
+                    .thenAccept(reconciledPlayers -> {
+                        if(reconciledPlayers != null) role.setPlayers(reconciledPlayers);
+                        conn.write();
+                        done.complete(null);
+                    });
+            }
+            catch(Exception e) {
+                getLogger().error(MinecraftChatColor.RED + "Error reconciling synced role '" + role.getName() + "': " + e.getMessage());
+                role.setPlayers(currentPlayers);
+                conn.write();
+                done.complete(null);
+            }
+        });
+
+        return done;
+    }
+
     private CompletableFuture<Void> reconcileSyncedRoleSequentially(ConnJson conn, ConnJson.SyncedRole role) {
         return getTeamsAndGroupsBridge().getPlayersInGroupOrTeam(role.getName(), role.isGroup())
             .thenCompose(currentPlayers -> {
@@ -306,52 +375,7 @@ public final class ClientManager {
                 for(String uuid : currentPlayers) playersArray.add(new JsonPrimitive(uuid));
                 payload.add("players", playersArray);
 
-                CompletableFuture<Void> done = new CompletableFuture<>();
-                send("sync-synced-role-members", payload, response -> {
-                    if(response == null || !response.isSuccess()) {
-                        if(response != null && ProtocolError.NOT_FOUND == response.getError()) {
-                            // Role was deleted on Discord while offline
-                            getLogger().warn(MinecraftChatColor.YELLOW + "Synced role '" + role.getName() + "' no longer exists on Discord. Removing synced role.");
-                            conn.getSyncedRoles().remove(role);
-                            conn.write();
-                            done.complete(null);
-                            return;
-                        }
-
-                        getLogger().warn(MinecraftChatColor.YELLOW + "Failed to reconcile synced role '" + role.getName() + "'.");
-                        // Still update stored players to current state
-                        role.setPlayers(currentPlayers);
-                        conn.write();
-                        done.complete(null);
-                        return;
-                    }
-
-                    try {
-                        JsonObject data = response.getResponseData().getAsJsonObject();
-                        JsonArray added = data.has("added") ? data.getAsJsonArray("added") : new JsonArray();
-                        JsonArray removed = data.has("removed") ? data.getAsJsonArray("removed") : new JsonArray();
-
-                        CompletableFuture<Void> memberSync = completedFuture(null);
-                        // Apply Discord→MC changes only if direction allows it
-                        if(role.syncsToMinecraft()) memberSync = applyRoleMembershipChangesParallel(role, added, removed);
-
-                        // Refresh the player list after reconciliation
-                        memberSync
-                            .thenCompose(v -> getTeamsAndGroupsBridge().getPlayersInGroupOrTeam(role.getName(), role.isGroup()))
-                            .thenAccept(reconciledPlayers -> {
-                                if(reconciledPlayers != null) role.setPlayers(reconciledPlayers);
-                                conn.write();
-                                done.complete(null);
-                            });
-                    }
-                    catch(Exception e) {
-                        getLogger().error(MinecraftChatColor.RED + "Error reconciling synced role '" + role.getName() + "': " + e.getMessage());
-                        role.setPlayers(currentPlayers);
-                        conn.write();
-                        done.complete(null);
-                    }
-                });
-                return done;
+                return trySyncSyncedRoleMembers(conn, role, currentPlayers, payload, 0, 0);
             });
     }
 
