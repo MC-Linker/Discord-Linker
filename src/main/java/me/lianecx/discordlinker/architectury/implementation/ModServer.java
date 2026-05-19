@@ -1,7 +1,9 @@
 package me.lianecx.discordlinker.architectury.implementation;
 
-//? if <1.21
+//? if <=1.21.1
 import com.mojang.authlib.GameProfile;
+//? if 1.21+1
+//import com.mojang.authlib.yggdrasil.ProfileResult;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.ParseResults;
 import dev.architectury.platform.Platform;
@@ -21,7 +23,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
-//? if >=1.21 {
+//? if >1.21.1 {
 /*import net.minecraft.server.permissions.PermissionSet;
 import net.minecraft.server.players.NameAndId;
 *///? }
@@ -97,7 +99,7 @@ public final class ModServer implements LinkerServer {
 
         // Player is offline
 
-        //? if <1.21 {
+        //? if <=1.21.1 {
         //TODO test if this is null in offline mode
         if(server.getProfileCache() == null) return null;
 
@@ -127,7 +129,7 @@ public final class ModServer implements LinkerServer {
 
         // Player is offline
 
-        //? if <1.21 {
+        //? if <=1.21.1 {
         //TODO test if this is null in offline mode
         if(server.getProfileCache() == null) return null;
 
@@ -344,10 +346,10 @@ public final class ModServer implements LinkerServer {
         ServerLevel serverLevel = server.overworld();
         return new CommandSourceStack(
                 source,
-                serverLevel == null ? Vec3.ZERO : Vec3.atLowerCornerOf(/*? if <1.21 {*/serverLevel.getSharedSpawnPos() /*? } else { *//*serverLevel.getRespawnData().pos()*//*? }*/),
+                serverLevel == null ? Vec3.ZERO : Vec3.atLowerCornerOf(/*? if <=1.21.1 {*/serverLevel.getSharedSpawnPos() /*? } else { *//*serverLevel.getRespawnData().pos()*//*? }*/),
                 Vec2.ZERO,
                 serverLevel,
-                /*? if <1.21 {*/4/*? } else {*//*PermissionSet.ALL_PERMISSIONS*//*? }*/,
+                /*? if <=1.21.1 {*/4/*? } else {*//*PermissionSet.ALL_PERMISSIONS*//*? }*/,
                 "Discord",
                 //? if <1.19 {
                 /*new TextComponent("Discord"),

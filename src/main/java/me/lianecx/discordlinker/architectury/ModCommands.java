@@ -10,10 +10,6 @@ import me.lianecx.discordlinker.architectury.implementation.ModPlayer;
 import me.lianecx.discordlinker.common.abstraction.LinkerCommandSender;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.server.level.ServerPlayer;
-//? if >=1.21 {
-/*import net.minecraft.server.permissions.Permission;
-import net.minecraft.server.permissions.PermissionLevel;
-*///? }
 
 import java.util.Arrays;
 

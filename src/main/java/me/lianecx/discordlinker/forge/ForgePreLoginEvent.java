@@ -36,11 +36,11 @@ public final class ForgePreLoginEvent {
         Connection connection = event.getConnection();
 
         if(profile == null || connection == null) return;
-        //~ if >=1.21 '.getName()' -> '.name()' {
+        //~ if >1.21.1 '.getName()' -> '.name()' {
         if(profile.getName() == null || profile.getName().isEmpty()) return;
 
         String username = profile.getName();
-        //~ if >=1.21 'getId()' -> 'id()'
+        //~ if >1.21.1 'getId()' -> 'id()'
         UUID rawUuid = profile.getId();
         //~ }
         String uuid = (rawUuid != null ? rawUuid : LinkerOfflinePlayer.offlineUuid(username)).toString();

@@ -4,7 +4,7 @@ import me.lianecx.discordlinker.common.abstraction.LinkerCommandSender;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.network.chat.*;
 
-//? if >=1.21 {
+//? if >1.21.1 {
 /*import net.minecraft.server.permissions.Permission;
 import net.minecraft.server.permissions.PermissionLevel;
 *///? }
@@ -27,7 +27,7 @@ public final class ModCommandSender implements LinkerCommandSender {
 
     @Override
     public boolean hasPermission(int defaultLevel, String permission) {
-        //? if <1.21 {
+        //? if <=1.21.1 {
         return source.hasPermission(defaultLevel);
         //? } else
         //return source.permissions().hasPermission(new Permission.HasCommandLevel(PermissionLevel.byId(defaultLevel)));

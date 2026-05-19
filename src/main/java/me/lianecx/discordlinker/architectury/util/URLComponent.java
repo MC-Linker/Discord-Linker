@@ -1,6 +1,6 @@
 package me.lianecx.discordlinker.architectury.util;
 
-//? if >=1.21
+//? if >1.21.1
 //import java.net.URI;
 import me.lianecx.discordlinker.common.util.UrlParser;
 import net.minecraft.ChatFormatting;
@@ -24,7 +24,7 @@ public class URLComponent {
                 /*root.append(new TextComponent(segment.getContent())
                  *///? } else
                 root.append(Component.literal(segment.getContent())
-                    //? if <1.21 {
+                    //? if <=1.21.1 {
                     .withStyle(style -> style
                         .withClickEvent(new ClickEvent(ClickEvent.Action.OPEN_URL, segment.getURL()))
                         .withHoverEvent(new HoverEvent(
