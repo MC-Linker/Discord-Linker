@@ -42,6 +42,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static me.lianecx.discordlinker.architectury.util.URLComponent.buildURLComponent;
@@ -191,7 +193,10 @@ public final class ModServer implements LinkerServer {
 
     @Override
     public String getMinecraftVersion() {
-        return Platform.getMinecraftVersion();
+        // Platform.getMinecraftVersion() can carry a build/snapshot suffix
+        // (e.g. "26.1.2.build.53"); keep only the numeric version.
+        Matcher matcher = Pattern.compile("^\\d+(?:\\.\\d+)*").matcher(Platform.getMinecraftVersion());
+        return matcher.find() ? matcher.group() : Platform.getMinecraftVersion();
     }
 
     @Override
