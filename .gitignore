@@ -11,6 +11,8 @@ run/
 .idea/**/usage.statistics.xml
 .idea/**/dictionaries
 .idea/**/shelf
+.idea/editor.xml
+.idea/claudeCodeTabState.xml
 
 .idea/**/copilot.data.migration.*.xml
 
