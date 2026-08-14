@@ -1,7 +1,7 @@
 plugins {
     kotlin("jvm")
-    id("xyz.jpenilla.run-paper") version "2.3.1"
-    id("com.gradleup.shadow") version "9.3.1"
+    id("xyz.jpenilla.run-paper") version "3.0.2"
+    id("com.gradleup.shadow") version "9.6.1"
     id("me.modmuss50.mod-publish-plugin")
     id("io.papermc.hangar-publish-plugin")
 }
@@ -49,9 +49,9 @@ dependencies {
     compileOnly("org.apache.logging.log4j:log4j-core:2.17.1")
 
     shadowLib("io.socket:socket.io-client:2.1.2")
-    shadowLib("org.bstats:bstats-bukkit:3.0.0")
+    shadowLib("org.bstats:bstats-bukkit:3.2.1")
     shadowLib("org.yaml:snakeyaml:2.5")
-    compileOnly("net.luckperms:api:5.4")
+    compileOnly("net.luckperms:api:5.5")
     compileOnly("com.github.MilkBowl:VaultAPI:1.7.1")
 }
 

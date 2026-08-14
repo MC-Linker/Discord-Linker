@@ -12,13 +12,13 @@ pluginManagement {
         maven("https://repo.papermc.io/repository/maven-public/")
     }
     plugins {
-        kotlin("jvm") version "2.2.20"
-        id("io.papermc.hangar-publish-plugin") version "0.1.2"
+        kotlin("jvm") version "2.2.21"
+        id("io.papermc.hangar-publish-plugin") version "0.1.4"
     }
 }
 
 plugins {
-    id("dev.kikugie.stonecutter") version "0.9"
+    id("dev.kikugie.stonecutter") version "0.9.7"
     id("org.gradle.toolchains.foojay-resolver-convention") version "1.0.0"
 }
 
@@ -34,13 +34,13 @@ stonecutter {
         // loaderVersion("1.14.4", "fabric", "forge")
 
         loaderVersion("1.16.5", "fabric", "forge")
-
         loaderVersion("1.18.2", "fabric", "forge")
         loaderVersion("1.19.2", "fabric", "forge")
-
         loaderVersion("1.20+1", "fabric", "forge")
 
+        loaderVersion("1.21+1", "fabric", "neoforge")
         loaderVersion("1.21.11", "fabric", "neoforge")
+        loaderVersion("26.2", "fabric", "neoforge")
 
         vcsVersion = "1.20+1-fabric"
     }

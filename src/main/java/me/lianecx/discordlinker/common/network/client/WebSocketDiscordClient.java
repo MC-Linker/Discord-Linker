@@ -29,6 +29,9 @@ public final class WebSocketDiscordClient implements DiscordClient {
 
     public static final int DEFAULT_RECONNECTION_ATTEMPTS = Integer.MAX_VALUE; // Default to unlimited reconnection attempts
 
+    private static final long RECONNECT_BASE_DELAY_MS = 5000;
+    private static final long RECONNECT_MAX_DELAY_MS = 60000;
+
     private final Dispatcher dispatcher = new Dispatcher();
     private final ExecutorService pool = dispatcher.executorService();
     private final Map<String, Long> rateLimitedUntil = new ConcurrentHashMap<>();
@@ -54,7 +57,10 @@ public final class WebSocketDiscordClient implements DiscordClient {
         ioOptions.webSocketFactory = okHttpClient;
         ioOptions.auth = auth;
         ioOptions.query = queryString;
-        ioOptions.reconnectionDelayMax = 32000;
+        ioOptions.reconnection = true;
+        ioOptions.reconnectionDelay = RECONNECT_BASE_DELAY_MS;
+        ioOptions.reconnectionDelayMax = RECONNECT_MAX_DELAY_MS;
+        ioOptions.randomizationFactor = 0.5;
         ioOptions.reconnectionAttempts = reconnectionAttempts;
 
         Socket socket = IO.socket(BOT_URI, ioOptions);
@@ -64,13 +70,16 @@ public final class WebSocketDiscordClient implements DiscordClient {
 
             try {
                 String message = JsonUtil.parseJsonObject(args).get("message").getAsString();
-                // Handled elsewhere, no reconnect
+                // Namespace-level rejection from the bot (bad token / server error). socket.io does
+                // not auto-reconnect on these (the transport is fine), which is what we want — no point
+                // retrying a bad token. Handled elsewhere.
                 if(message.equals("Unauthorized") || message.equals("Server Error")) return;
             }
             catch(Exception ignored) {}
 
+            // Transport failure (bot unreachable). socket.io's built-in reconnection handles the retry
+            // with the exponential backoff + jitter configured above
             getLogger().info(MinecraftChatColor.RED + "Could not reach the Discord Bot! Reconnecting...");
-            socket.connect(); // Need to manually reconnect
         });
         socket.on(Socket.EVENT_CONNECT, args -> {
             getLogger().debug("[Socket.io] Connected with args: " + Arrays.toString(args));

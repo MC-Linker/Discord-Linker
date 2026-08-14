@@ -6,7 +6,7 @@ import me.lianecx.discordlinker.common.abstraction.LinkerPlayer;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.*;
 import net.minecraft.server.level.ServerPlayer;
-//? if >=1.21 {
+//? if >1.21.1 {
 /*import net.minecraft.server.permissions.Permission;
 import net.minecraft.server.permissions.PermissionLevel;
 import net.minecraft.util.ProblemReporter;
@@ -43,7 +43,7 @@ public class ModPlayer extends LinkerPlayer {
 
     @Override
     public boolean hasPermission(int defaultLevel, String permission) {
-        //? if <1.21 {
+        //? if <=1.21.1 {
         return player.hasPermissions(defaultLevel);
          //? } else
         //return player.permissions().hasPermission(new Permission.HasCommandLevel(PermissionLevel.byId(defaultLevel)));
@@ -59,7 +59,7 @@ public class ModPlayer extends LinkerPlayer {
 
     @Override
     public String getNBTAsString() {
-        //? if <1.21 {
+        //? if <=1.21.1 {
         CompoundTag nbt = new CompoundTag();
         player.saveWithoutId(nbt);
         return nbt.toString();

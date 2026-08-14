@@ -44,9 +44,10 @@ public class ModEvents {
                 return PASS_HOLDER;
             });
             *///? } else {
-            ChatEvent.DECORATE.register((player, component) -> {
-                if(player == null || component == null) return;
-                getMinecraftEventBus().emit(new ChatEventData(component.get().getString(), new ModPlayer(player)));
+            ChatEvent.RECEIVED.register((player, component) -> {
+                if(player == null || component == null) return PASS;
+                getMinecraftEventBus().emit(new ChatEventData(component.getString(), new ModPlayer(player)));
+                return PASS;
             });
             //?}
         }

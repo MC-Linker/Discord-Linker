@@ -10,7 +10,8 @@ class Env(project: Project, val compare: (String, String) -> Int) {
     val javaVer = when {
         atMost("1.16.5") -> 8
         atMost("1.20.4") -> 17
-        else -> 21
+        atMost("1.21.11") -> 21
+        else -> 25
     }
     val neoforgeVersion = project.versionProperty("deps.core.neoforge.version_range")
     val neoforgeLoaderVersion = project.versionProperty("deps.core.neoforge.loader.version_range")

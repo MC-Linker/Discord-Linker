@@ -1,3 +1,13 @@
+## 4.4.0 - Minecraft 26.2 Support
+- Added support for Minecraft 26.2 on Fabric and NeoForge
+- Restored 1.21/1.21.1 builds for Fabric and NeoForge
+- Fixed the world folder being detected incorrectly on 26.1 and higher, where the overworld moved into a dimension subfolder
+- Fixed the server version being reported with a build suffix attached (e.g. `26.1.2.build.53`)
+- Fixed private player commands being forwarded through the chat bridge
+- Fixed chat message colors not being converted correctly on 26.1 and higher
+- Reconnections to the Discord bot now back off gradually instead of retrying at a fixed rate
+- Updated LuckPerms integration to API 5.5
+
 ## 4.3.2 - Bug Fixes and Improvements
 - Synced roles now sync more reliably on reconnect
 - Minor bug fixes and improvements

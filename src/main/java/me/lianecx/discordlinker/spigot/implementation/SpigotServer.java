@@ -3,6 +3,7 @@ package me.lianecx.discordlinker.spigot.implementation;
 import me.lianecx.discordlinker.common.abstraction.*;
 import me.lianecx.discordlinker.spigot.util.SpigotCommandCompletionUtil;
 import me.lianecx.discordlinker.common.util.Log4jCapture;
+import me.lianecx.discordlinker.common.util.MinecraftVersionUtil;
 import net.md_5.bungee.api.chat.BaseComponent;
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
@@ -116,12 +117,15 @@ public class SpigotServer implements LinkerServer {
 
     @Override
     public String getMinecraftVersion() {
-        return Bukkit.getServer().getBukkitVersion().split("-")[0];
+        return MinecraftVersionUtil.normalize(Bukkit.getServer().getBukkitVersion());
     }
 
     @Override
     public String getWorldPath() {
-        return Bukkit.getWorlds().get(0).getWorldFolder().getAbsolutePath();
+        // Resolve the world root from the container + level name instead of World#getWorldFolder():
+        // since MC 26.1 the overworld is stored under <root>/dimensions/minecraft/overworld, so
+        // getWorldFolder() now points into that dimension folder rather than the world root.
+        return new File(Bukkit.getWorldContainer(), Bukkit.getWorlds().get(0).getName()).getAbsolutePath();
     }
 
     @Override

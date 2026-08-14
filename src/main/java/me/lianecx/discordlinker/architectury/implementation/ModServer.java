@@ -1,7 +1,9 @@
 package me.lianecx.discordlinker.architectury.implementation;
 
-//? if <1.21
+//? if <=1.21.1
 import com.mojang.authlib.GameProfile;
+//? if 1.21+1
+//import com.mojang.authlib.yggdrasil.ProfileResult;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.ParseResults;
 import dev.architectury.platform.Platform;
@@ -9,6 +11,7 @@ import me.lianecx.discordlinker.common.abstraction.CommandCompletion;
 import me.lianecx.discordlinker.common.abstraction.LinkerOfflinePlayer;
 import me.lianecx.discordlinker.common.abstraction.LinkerPlayer;
 import me.lianecx.discordlinker.common.abstraction.LinkerServer;
+import me.lianecx.discordlinker.common.util.MinecraftVersionUtil;
 import me.lianecx.discordlinker.common.util.YamlUtil;
 //? if <1.19 {
 /*import net.minecraft.Util;
@@ -21,11 +24,10 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
-//? if >=1.21 {
+//? if >1.21.1 {
 /*import net.minecraft.server.permissions.PermissionSet;
 import net.minecraft.server.players.NameAndId;
 *///? }
-import net.minecraft.world.level.storage.LevelResource;
 import net.minecraft.world.phys.Vec2;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
@@ -97,7 +99,7 @@ public final class ModServer implements LinkerServer {
 
         // Player is offline
 
-        //? if <1.21 {
+        //? if <=1.21.1 {
         //TODO test if this is null in offline mode
         if(server.getProfileCache() == null) return null;
 
@@ -127,7 +129,7 @@ public final class ModServer implements LinkerServer {
 
         // Player is offline
 
-        //? if <1.21 {
+        //? if <=1.21.1 {
         //TODO test if this is null in offline mode
         if(server.getProfileCache() == null) return null;
 
@@ -189,12 +191,21 @@ public final class ModServer implements LinkerServer {
 
     @Override
     public String getMinecraftVersion() {
-        return Platform.getMinecraftVersion();
+        // Platform.getMinecraftVersion() can carry a build/snapshot suffix
+        // (e.g. "26.1.2.build.53"); normalize to the numeric version.
+        return MinecraftVersionUtil.normalize(Platform.getMinecraftVersion());
     }
 
     @Override
     public String getWorldPath() {
-        return server.getWorldPath(LevelResource.ROOT).toAbsolutePath().toString();
+        // Resolve the world root from the server directory + level name instead of
+        // getWorldPath(LevelResource.ROOT): since MC 26.1 the overworld is stored under
+        // <root>/dimensions/minecraft/overworld, so ROOT now resolves into that dimension folder.
+        String levelName = server.getWorldData().getLevelName();
+        //? if <1.21 {
+        return new File(server.getServerDirectory(), levelName).getAbsolutePath();
+         //? } else
+        //return server.getServerDirectory().resolve(levelName).toAbsolutePath().toString();
     }
 
     @Override
@@ -344,10 +355,10 @@ public final class ModServer implements LinkerServer {
         ServerLevel serverLevel = server.overworld();
         return new CommandSourceStack(
                 source,
-                serverLevel == null ? Vec3.ZERO : Vec3.atLowerCornerOf(/*? if <1.21 {*/serverLevel.getSharedSpawnPos() /*? } else { *//*serverLevel.getRespawnData().pos()*//*? }*/),
+                serverLevel == null ? Vec3.ZERO : Vec3.atLowerCornerOf(/*? if <=1.21.1 {*/serverLevel.getSharedSpawnPos() /*? } else { *//*serverLevel.getRespawnData().pos()*//*? }*/),
                 Vec2.ZERO,
                 serverLevel,
-                /*? if <1.21 {*/4/*? } else {*//*PermissionSet.ALL_PERMISSIONS*//*? }*/,
+                /*? if <=1.21.1 {*/4/*? } else {*//*PermissionSet.ALL_PERMISSIONS*//*? }*/,
                 "Discord",
                 //? if <1.19 {
                 /*new TextComponent("Discord"),
@@ -388,9 +399,13 @@ public final class ModServer implements LinkerServer {
      * Returns null if no legacy color matches (e.g. for custom RGB colors).
      */
     private static @Nullable ChatFormatting chatFormattingFromColor(TextColor color) {
-        for(ChatFormatting fmt : ChatFormatting.values())
-            if(fmt.isColor() && fmt.getColor() != null && fmt.getColor() == color.getValue())
+        for(ChatFormatting fmt : ChatFormatting.values()) {
+            // MC 26.1+ stripped color data off ChatFormatting; TextColor.fromLegacyFormat
+            // (available since 1.16) maps a formatting code to its color, or null for non-colors.
+            TextColor fmtColor = TextColor.fromLegacyFormat(fmt);
+            if(fmtColor != null && fmtColor.getValue() == color.getValue())
                 return fmt;
+        }
         return null;
     }
 }
