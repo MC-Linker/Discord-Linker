@@ -1,10 +1,23 @@
+import net.fabricmc.loom.api.LoomGradleExtensionAPI
+import net.fabricmc.loom.task.RemapJarTask
+
 plugins {
-    kotlin("jvm") version "2.2.20" apply false
-    id("dev.architectury.loom")
-    id("architectury-plugin")
+    kotlin("jvm") version "2.2.21" apply false
+    java
     id("me.modmuss50.mod-publish-plugin")
-    id("com.gradleup.shadow") version "9.3.1"
+    id("com.gradleup.shadow") version "9.6.1"
 }
+
+val env = Env(project, stonecutter::compare)
+
+// Only obfuscated versions (< 26) use the normal
+// remapping toolchain (mappings + remapJar + mod* configs); unobfuscated ones have to use the
+// loom-no-remap plugin. See architectury-loom#328.
+val isObfus = !env.atLeast("26")
+apply(plugin = if(isObfus) "dev.architectury.loom" else "dev.architectury.loom-no-remap")
+apply(plugin = "architectury-plugin")
+
+val loomExt = the<LoomGradleExtensionAPI>()
 
 // Repositories
 repositories {
@@ -26,8 +39,6 @@ repositories {
     maven("https://modmaven.dev/")
     maven("https://panel.ryuutech.com/nexus/repository/maven-releases/")
 }
-
-val env = Env(project, stonecutter::compare)
 
 val archVersion = versionProperty("deps.api.architectury")
 val fabricApiVersion = versionProperty("deps.api.fabric")
@@ -59,7 +70,7 @@ val deps = arrayListOf(
         publish = false
     ),
     Dependency(
-        ModInfo(if (env.atMost("1.18")) "fabric" else "fabric-api", "fabric-api"),
+        ModInfo(if(env.atMost("1.18")) "fabric" else "fabric-api", "fabric-api"),
         fabricApiVersion,
         enabled = env.isFabric,
         side = "SERVER"
@@ -75,7 +86,7 @@ val metaExclude = MetadataExcludes(env)
 deps.forEach { dep ->
     dep.modInfo.modid?.let {
         stonecutter { constants[it] = dep.enabled }
-        if (dep.enabled) stonecutter { dependencies[it] = dep.versionRange.min }
+        if(dep.enabled) stonecutter { dependencies[it] = dep.versionRange.min }
     }
 }
 stonecutter {
@@ -96,18 +107,21 @@ stonecutter {
     }
 }
 
-loom {
-    silentMojangMappingsLicense()
-    if (env.isForge && env.atMost("1.16.5")) {
+// Resolved here (Project receiver) to avoid RunConfigSettings' deprecated getProject().
+val serverRunDir = project.file("../../run")
+
+configure<LoomGradleExtensionAPI> {
+    if(isObfus) silentMojangMappingsLicense()
+    if(env.isForge && env.atMost("1.16.5")) {
         forge {
             mixinConfig("discordlinker.forge.legacy.mixins.json")
         }
     }
 
     runConfigs.all {
-        if (environment == "server") {
-            ideConfigGenerated(false)
-            runDir = "../../run"
+        if(runtimeEnvironment.get() == "server") {
+            generateRunConfig.set(false)
+            runDirectory.set(serverRunDir)
         }
     }
 }
@@ -122,23 +136,30 @@ configurations.implementation {
     extendsFrom(shadowLib)
 }
 
+// Unobfuscated versions have no remapping, so mod* configurations don't exist there;
+// use plain implementation/compileOnly instead.
+val implCfg = if(isObfus) "modImplementation" else "implementation"
+val apiCfg = if(isObfus) "modApi" else "implementation"
+val compileOnlyCfg = if(isObfus) "modCompileOnly" else "compileOnly"
+
 dependencies {
-    minecraft("com.mojang:minecraft:${env.mcVersion.min}")
-    mappings(loom.officialMojangMappings())
-    if (env.isFabric) modImplementation("net.fabricmc:fabric-loader:${env.fabricLoaderVersion.min}")
-    if (env.isFabric) modImplementation("net.fabricmc.fabric-api:fabric-api:${fabricApiVersion.min}")
-    if (env.isForge) "forge"("net.minecraftforge:forge:${env.forgeMavenVersion.min}")
-    if (env.isNeo) "neoForge"("net.neoforged:neoforge:${env.neoforgeVersion.min}")
+    "minecraft"("com.mojang:minecraft:${env.mcVersion.min}")
 
-    val archMaven = "${if (env.atLeast("1.18.0")) "dev.architectury" else "me.shedaniel"}:architectury-${env.loader}"
-    modApi("$archMaven:${archVersion.min}")
+    if(isObfus) "mappings"(loomExt.officialMojangMappings())
+    if(env.isFabric) implCfg("net.fabricmc:fabric-loader:${env.fabricLoaderVersion.min}")
+    if(env.isFabric) implCfg("net.fabricmc.fabric-api:fabric-api:${fabricApiVersion.min}")
+    if(env.isForge) "forge"("net.minecraftforge:forge:${env.forgeMavenVersion.min}")
+    if(env.isNeo) "neoForge"("net.neoforged:neoforge:${env.neoforgeVersion.min}")
 
-    modCompileOnly("net.luckperms:api:${lpVersion.min}")
+    val archMaven = "${if(env.atLeast("1.18.0")) "dev.architectury" else "me.shedaniel"}:architectury-${env.loader}"
+    apiCfg("$archMaven:${archVersion.min}")
+
+    compileOnlyCfg("net.luckperms:api:${lpVersion.min}")
 
     shadowLib("org.yaml:snakeyaml:2.5")
     shadowLib("io.socket:socket.io-client:2.1.2")
 
-    if (env.isForge || env.isNeo) {
+    if((env.isForge || env.isNeo) && isObfus) {
         "forgeRuntimeLibrary"("org.yaml:snakeyaml:2.5")
         "forgeRuntimeLibrary"("io.socket:socket.io-client:2.1.2")
     }
@@ -161,26 +182,44 @@ tasks {
         relocate("okhttp3", "me.lianecx.okhttp3")
         relocate("org.json", "me.lianecx.json")
 
-        destinationDirectory = layout.buildDirectory.dir("devlibs")
+        if(isObfus) destinationDirectory = layout.buildDirectory.dir("devlibs")
+        else {
+            // No remap step: shadowJar is the final artifact.
+            archiveClassifier.set(env.loader)
+            archiveVersion.set("${mod.version}-${env.mcVersion.min}")
+            archiveBaseName.set(env.archivesBaseName)
+        }
     }
 
-    remapJar {
-        inputFile = shadowJar.flatMap { it.archiveFile }
+    if(isObfus) {
+        named<RemapJarTask>("remapJar") {
+            inputFile.set(shadowJar.flatMap { it.archiveFile })
 
-        archiveClassifier.set(env.loader)
-        archiveVersion.set("${mod.version}-${env.mcVersion.min}")
-        archiveBaseName.set(env.archivesBaseName)
+            archiveClassifier.set(env.loader)
+            archiveVersion.set("${mod.version}-${env.mcVersion.min}")
+            archiveBaseName.set(env.archivesBaseName)
+        }
+
+        jar {
+            enabled = false
+        }
     }
-
-    jar {
-        enabled = false
+    else {
+        // Give the plain jar a distinct name so it doesn't clash with the shadowJar artifact.
+        jar {
+            archiveClassifier.set("raw")
+        }
+        assemble {
+            dependsOn(shadowJar)
+        }
     }
 }
 
 java {
-    val java = when (env.javaVer) {
-        8 -> JavaVersion.VERSION_1_8
-        17 -> JavaVersion.VERSION_17
+    val java = when(env.javaVer) {
+        8    -> JavaVersion.VERSION_1_8
+        17   -> JavaVersion.VERSION_17
+        25   -> JavaVersion.VERSION_25
         else -> JavaVersion.VERSION_21
     }
 
@@ -195,11 +234,11 @@ java {
 val jbrLauncher = javaToolchains.launcherFor {
     languageVersion.set(JavaLanguageVersion.of(env.javaVer))
     @Suppress("UnstableApiUsage")
-    if (env.javaVer > 8) vendor.set(JvmVendorSpec.JETBRAINS)
+    if(env.javaVer > 8) vendor.set(JvmVendorSpec.JETBRAINS)
 }
 
 tasks.withType<JavaExec>().configureEach {
-    if (name == "runServer" && env.javaVer > 8) {
+    if(name == "runServer" && env.javaVer > 8) {
         javaLauncher.set(jbrLauncher)
         jvmArgs("-XX:+AllowEnhancedClassRedefinition")
     }
@@ -224,13 +263,13 @@ tasks.processResources {
 sourceSets.main {
     java {
         val spigot = listOf("**/spigot/**")
-        val legacyForgeMixin = if (env.isForge && env.atMost("1.16.5")) emptyList() else listOf("**/forge/mixin/**")
+        val legacyForgeMixin = if(env.isForge && env.atMost("1.16.5")) emptyList() else listOf("**/forge/mixin/**")
         exclude(
             spigot + legacyForgeMixin + when {
                 env.isFabric -> listOf("**/forge/**")
-                env.isForge -> listOf("**/fabric/**")
-                env.isNeo -> listOf("**/fabric/**")
-                else -> throw IllegalStateException("No valid mod environment detected")
+                env.isForge  -> listOf("**/fabric/**")
+                env.isNeo    -> listOf("**/fabric/**")
+                else         -> throw IllegalStateException("No valid mod environment detected")
             }
         )
     }
@@ -238,20 +277,21 @@ sourceSets.main {
     resources {
         val spigot = listOf("plugin.yml")
         val legacyForgeMixin =
-            if (env.isForge && env.atMost("1.16.5")) emptyList() else listOf("discordlinker.forge.legacy.mixins.json")
+            if(env.isForge && env.atMost("1.16.5")) emptyList() else listOf("discordlinker.forge.legacy.mixins.json")
         exclude(
             spigot + legacyForgeMixin + when {
                 env.isFabric -> listOf("META-INF/mods.toml", "META-INF/neoforge.mods.toml")
-                env.isForge -> listOf("fabric.mod.json", "META-INF/neoforge.mods.toml")
-                env.isNeo -> listOf("fabric.mod.json", "META-INF/mods.toml")
-                else -> throw IllegalStateException("No valid mod environment detected")
+                env.isForge  -> listOf("fabric.mod.json", "META-INF/neoforge.mods.toml")
+                env.isNeo    -> listOf("fabric.mod.json", "META-INF/mods.toml")
+                else         -> throw IllegalStateException("No valid mod environment detected")
             }
         )
     }
 }
 
 publishMods {
-    file = tasks.remapJar.flatMap { it.archiveFile }
+    file = if(isObfus) tasks.named<RemapJarTask>("remapJar").flatMap { it.archiveFile }
+    else tasks.shadowJar.flatMap { it.archiveFile }
     displayName = "${mod.displayName} v${modPublish.version}"
     version = modPublish.version
     changelog = modPublish.getChangelog(modPublish.version)
@@ -269,8 +309,8 @@ publishMods {
         }
 
         deps.forEach { dep ->
-            if (dep.enabled && dep.publish) {
-                if (dep.optional) dep.modInfo.rinthSlug?.let { optional(it) }
+            if(dep.enabled && dep.publish) {
+                if(dep.optional) dep.modInfo.rinthSlug?.let { optional(it) }
                 else dep.modInfo.rinthSlug?.let { requires(it) }
             }
         }
@@ -280,8 +320,8 @@ publishMods {
         projectId = modPublish.curseforgeProjectId
         accessToken = modPublish.curseforgeToken
 
-        clientRequired = false
-        serverRequired = true
+        client = false
+        server = true
 
         minecraftVersionRange {
             start = modPublish.mcVersionRange.min
@@ -289,8 +329,8 @@ publishMods {
         }
 
         deps.forEach { dep ->
-            if (dep.enabled && dep.publish) {
-                if (dep.optional) dep.modInfo.curseSlug?.let { optional(it) }
+            if(dep.enabled && dep.publish) {
+                if(dep.optional) dep.modInfo.curseSlug?.let { optional(it) }
                 else dep.modInfo.curseSlug?.let { requires(it) }
             }
         }
