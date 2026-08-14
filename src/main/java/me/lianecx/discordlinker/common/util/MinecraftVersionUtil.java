@@ -1,8 +1,23 @@
 package me.lianecx.discordlinker.common.util;
 
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 public final class MinecraftVersionUtil {
 
+    private static final Pattern NUMERIC_VERSION = Pattern.compile("^\\d+(?:\\.\\d+)*");
+
     private MinecraftVersionUtil() {}
+
+    /**
+     * Strips any build/snapshot suffix from a raw engine version string, keeping only the numeric
+     * Minecraft version. Handles both the new build suffix (e.g. "26.1.2.build.53" ->; "26.1.2")
+     * and the Bukkit release suffix (e.g. "26.1.2.build.53-R0.1-SNAPSHOT" ->; "26.1.2").
+     */
+    public static String normalize(String version) {
+        Matcher matcher = NUMERIC_VERSION.matcher(version);
+        return matcher.find() ? matcher.group() : version;
+    }
 
     /**
      * Compares two Minecraft version strings (e.g. "1.20.1", "1.21").
