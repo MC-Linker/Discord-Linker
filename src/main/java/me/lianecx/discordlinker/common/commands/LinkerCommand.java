@@ -94,7 +94,7 @@ public class LinkerCommand implements LinkerMinecraftCompletableCommand {
                 break;
             case "disconnect":
                 if(getConnJson() == null) {
-                    sender.sendMessage(MinecraftChatColor.RED + "The server is not connected! Please connect it first using `/connect plugin` in Discord.");
+                    sender.sendMessage(MinecraftChatColor.RED + "The server is not connected! Please connect it first using `/connect` in Discord.");
                     return;
                 }
 

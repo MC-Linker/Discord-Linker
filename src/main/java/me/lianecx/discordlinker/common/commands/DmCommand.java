@@ -18,7 +18,7 @@ public class DmCommand implements LinkerMinecraftCommand {
             return;
         }
         if(getConnJson() == null) {
-            sender.sendMessage(MinecraftChatColor.RED + "There is no connected Discord server. Please use `/connect plugin` in Discord.");
+            sender.sendMessage(MinecraftChatColor.RED + "There is no connected Discord server. Please use `/connect` in Discord.");
             return;
         }
         if(!(sender instanceof LinkerPlayer)) {

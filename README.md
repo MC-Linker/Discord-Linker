@@ -35,8 +35,8 @@ No custom bot creation or configuration files needed!
 1. Invite the **MC Linker** Discord bot from the [App Directory](https://discord.com/application-directory/712759741528408064) or from [Top.gg](https://top.gg/bot/712759741528408064)
 2. Download the plugin from [Modrinth](https://modrinth.com/plugin/xfelWIYh), [CurseForge](https://www.curseforge.com/minecraft/mc-mods/discord-linker), [Hangar](https://hangar.papermc.io/Lianecx/Discord-Linker), or [Aternos](https://aternos.org)
 3. Install it on your Minecraft server and restart
-4. Run `/connect plugin` in Discord and follow the instructions
-5. Optionally run `/chatchannel add #channel` in Discord to set up the chat bridge
+4. Run `/connect` in Discord and follow the instructions
+5. Optionally run `/chatchannel add` in Discord to set up the chat bridge
 
 ## In-Game Commands
 
@@ -64,7 +64,7 @@ If both LuckPerms and Vault are present, LuckPerms takes priority. Vanilla Minec
 
 ## Discord Bot Commands
 
-Run `/help` in Discord for a full list of commands, or check the [MC Linker Guide](https://guide.mclinker.com) for more details.
+Run `/help` in Discord for a full list of commands, or check the [MC Linker Guide](https://guide.mclinker.com) for setup steps, every command and troubleshooting.
 
 ## Links
 
