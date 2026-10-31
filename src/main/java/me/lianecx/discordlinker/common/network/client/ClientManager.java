@@ -181,19 +181,27 @@ public final class ClientManager {
         chat("", type, null);
     }
 
+    /**
+     * Relays a chat event without waiting for an ack from the bot.
+     */
     public void chat(String message, ConnJson.ChatChannel.ChatChannelType type, String player) {
-        chatAwaitAck(message, type, player);
+        if(getConnJson() == null || getConnJson().getChatChannels().isEmpty()) return;
+
+        send("chat", buildChatPayload(message, type, player));
     }
 
     public CompletableFuture<Void> chatAwaitAck(String message, ConnJson.ChatChannel.ChatChannelType type, String player) {
         if(getConnJson() == null || getConnJson().getChatChannels().isEmpty()) return completedFuture(null);
 
+        return sendAwaitAck("chat", buildChatPayload(message, type, player)).thenApply(response -> null);
+    }
+
+    private JsonObject buildChatPayload(String message, ConnJson.ChatChannel.ChatChannelType type, String player) {
         JsonObject payload = new JsonObject();
         payload.addProperty("message", message);
         payload.addProperty("type", type.toString());
         payload.addProperty("player", player);
-
-        return sendAwaitAck("chat", payload).thenApply(response -> null);
+        return payload;
     }
 
     public void updateStatsChannel(ConnJson.StatsChannel.StatsChannelEvent event) {
