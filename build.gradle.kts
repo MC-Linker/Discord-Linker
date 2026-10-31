@@ -37,7 +37,6 @@ repositories {
     maven("https://maven.neoforged.net/releases/")
     maven("https://maven.architectury.dev/")
     maven("https://modmaven.dev/")
-    maven("https://panel.ryuutech.com/nexus/repository/maven-releases/")
 }
 
 val archVersion = versionProperty("deps.api.architectury")

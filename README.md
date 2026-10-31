@@ -25,9 +25,9 @@ No custom bot creation or configuration files needed!
 | Platform | Versions |
 |----------|----------|
 | Spigot   | 1.8+  |
-| Fabric   | 1.16.5 – 26.2 |
+| Fabric   | 1.16.5 – 26.3 |
 | Forge    | 1.16.5 – 1.20.x |
-| NeoForge | 1.21.1 – 26.2 |
+| NeoForge | 1.21.1 – 26.3 |
 | Hybrid (MohistMC, Magma, Arclight) | Supported |
 
 ## Setup

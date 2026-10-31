@@ -14,16 +14,20 @@ class Dependency(
     val publish: Boolean = true,
 )
 
+// A dependency with only a min (single value, or max UNSET) is open-ended; otherwise it is bounded by min and max (min == max pins an exact version).
+private fun Dependency.openOrBounded(): VersionRange =
+    if (versionRange.minOnly || versionRange.max.isEmpty()) VersionRange(versionRange.min, "") else versionRange
+
 fun dependencyJsonOrToml(deps: List<Dependency>): Pair<String, String> {
     val enabledDeps = deps.filter { it.enabled }
 
     // JSON for fabric
     val jsonDeps = enabledDeps.filter { !it.optional }
-        .joinToString(",\n") { "    \"${it.modInfo.modid}\": \">=${it.versionRange.min}\"" }
+        .joinToString(",\n") { "    \"${it.modInfo.modid}\": \"${it.openOrBounded().asFabric()}\"" }
     val fabricJsonDeps = "{\n$jsonDeps\n}"
 
     val jsonRecommends = enabledDeps.filter { it.optional }
-        .joinToString(",\n") { "    \"${it.modInfo.modid}\": \">=${it.versionRange.min}\"" }
+        .joinToString(",\n") { "    \"${it.modInfo.modid}\": \"${it.openOrBounded().asFabric()}\"" }
     val fabricJsonRecommends = if (jsonRecommends.isNotBlank()) "{\n$jsonRecommends\n}" else null
 
     val fabricJson =
@@ -37,7 +41,7 @@ fun dependencyJsonOrToml(deps: List<Dependency>): Pair<String, String> {
         [[mods.dependencies]]
         modId = "${it.modInfo.modid}"
         mandatory = ${!it.optional}
-        versionRange = "[${it.versionRange.min},${it.versionRange.max}]"
+        versionRange = "${it.openOrBounded().asForgelike()}"
         side = "${it.side}"
         ordering = "${it.ordering}"
         """.trimIndent()
