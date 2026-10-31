@@ -18,7 +18,7 @@ class Dependency(
 private fun Dependency.openOrBounded(): VersionRange =
     if (versionRange.minOnly || versionRange.max.isEmpty()) VersionRange(versionRange.min, "") else versionRange
 
-fun dependencyJsonOrToml(deps: List<Dependency>): Pair<String, String> {
+fun dependencyJsonOrToml(deps: List<Dependency>, modId: String, isNeo: Boolean): Pair<String, String> {
     val enabledDeps = deps.filter { it.enabled }
 
     // JSON for fabric
@@ -35,12 +35,16 @@ fun dependencyJsonOrToml(deps: List<Dependency>): Pair<String, String> {
             "\"depends\": $fabricJsonDeps,\n\"recommends\": $fabricJsonRecommends"
         else fabricJsonDeps
 
-    // TOML for forge/neoforge
+    // TOML for forge/neoforge. Both read dependencies from a [[dependencies.<modid>]] table;
+    // NeoForge replaced the `mandatory` boolean with a `type` field.
     val tomlDeps = enabledDeps.joinToString("\n") {
+        val requirement =
+            if (isNeo) "type = \"${if (it.optional) "optional" else "required"}\""
+            else "mandatory = ${!it.optional}"
         """
-        [[mods.dependencies]]
+        [[dependencies.$modId]]
         modId = "${it.modInfo.modid}"
-        mandatory = ${!it.optional}
+        $requirement
         versionRange = "${it.openOrBounded().asForgelike()}"
         side = "${it.side}"
         ordering = "${it.ordering}"

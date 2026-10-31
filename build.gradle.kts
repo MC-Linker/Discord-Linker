@@ -244,7 +244,7 @@ tasks.withType<JavaExec>().configureEach {
 }
 
 tasks.processResources {
-    val (fabricDeps, forgeDeps) = dependencyJsonOrToml(deps)
+    val (fabricDeps, forgeDeps) = dependencyJsonOrToml(deps, project.property("mod.id") as String, env.isNeo)
 
     val map = env.resourceMap(mod, env) + mapOf(
         "dependencies_json" to fabricDeps,
