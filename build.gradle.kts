@@ -37,7 +37,6 @@ repositories {
     maven("https://maven.neoforged.net/releases/")
     maven("https://maven.architectury.dev/")
     maven("https://modmaven.dev/")
-    maven("https://panel.ryuutech.com/nexus/repository/maven-releases/")
 }
 
 val archVersion = versionProperty("deps.api.architectury")
@@ -245,7 +244,7 @@ tasks.withType<JavaExec>().configureEach {
 }
 
 tasks.processResources {
-    val (fabricDeps, forgeDeps) = dependencyJsonOrToml(deps)
+    val (fabricDeps, forgeDeps) = dependencyJsonOrToml(deps, project.property("mod.id") as String, env.isNeo)
 
     val map = env.resourceMap(mod, env) + mapOf(
         "dependencies_json" to fabricDeps,

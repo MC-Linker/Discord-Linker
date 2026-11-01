@@ -41,6 +41,7 @@ stonecutter {
         loaderVersion("1.21+1", "fabric", "neoforge")
         loaderVersion("1.21.11", "fabric", "neoforge")
         loaderVersion("26.2", "fabric", "neoforge")
+        loaderVersion("26.3", "fabric", "neoforge")
 
         vcsVersion = "1.20+1-fabric"
     }

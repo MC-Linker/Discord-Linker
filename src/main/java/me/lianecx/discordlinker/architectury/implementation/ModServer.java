@@ -359,13 +359,15 @@ public final class ModServer implements LinkerServer {
                 Vec2.ZERO,
                 serverLevel,
                 /*? if <=1.21.1 {*/4/*? } else {*//*PermissionSet.ALL_PERMISSIONS*//*? }*/,
+                //? if <26.3
                 "Discord",
                 //? if <1.19 {
                 /*new TextComponent("Discord"),
                  *///? } else
                 Component.literal("Discord"),
-                server,
-                null
+                server
+                //? if <26.3
+                ,null
         );
     }
 

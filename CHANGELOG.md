@@ -1,3 +1,6 @@
+## 4.4.1 - Minecraft 26-3 Support
+- Support 26.3
+
 ## 4.4.0 - Minecraft 26.2 Support
 - Added support for Minecraft 26.2 on Fabric and NeoForge
 - Restored 1.21/1.21.1 builds for Fabric and NeoForge

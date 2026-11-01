@@ -34,7 +34,7 @@ fun Project.optionalStrProperty(key: String): Optional<String> {
     return Optional.of(str)
 }
 
-class VersionRange(val min: String, val max: String) {
+class VersionRange(val min: String, val max: String, val minOnly: Boolean = false) {
     fun asForgelike(): String {
         return "${if (min.isEmpty()) "(" else "["}${min},${max}${if (max.isEmpty()) ")" else "]"}"
     }
@@ -70,7 +70,7 @@ fun Project.versionProperty(key: String): VersionRange {
     return if (list.isEmpty()) {
         VersionRange("", "")
     } else if (list.size == 1) {
-        VersionRange(list[0], list[0])
+        VersionRange(list[0], list[0], minOnly = true)
     } else {
         VersionRange(list[0], list[1])
     }

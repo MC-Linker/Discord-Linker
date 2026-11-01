@@ -17,6 +17,8 @@ import java.util.Arrays;
 import java.util.Map;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -31,6 +33,14 @@ public final class WebSocketDiscordClient implements DiscordClient {
 
     private static final long RECONNECT_BASE_DELAY_MS = 5000;
     private static final long RECONNECT_MAX_DELAY_MS = 60000;
+
+    private static final long ACK_TIMEOUT_MS = 10_000;
+    private static final long TIMEOUT_LOG_INTERVAL_MS = 60_000;
+
+    private final AtomicLong lastTimeoutLog = new AtomicLong(0);
+    private final AtomicInteger suppressedTimeoutLogs = new AtomicInteger(0);
+
+    private final OfflineSendBuffer sendBuffer = new OfflineSendBuffer(ACK_TIMEOUT_MS, this::isConnected, this::rateLimitRemainingMs, this::emit);
 
     private final Dispatcher dispatcher = new Dispatcher();
     private final ExecutorService pool = dispatcher.executorService();
@@ -87,6 +97,7 @@ public final class WebSocketDiscordClient implements DiscordClient {
             // Reconcile synced roles and update member count on connect to ensure consistency after bot restarts or disconnects
             getClientManager().reconcileSyncedRoles();
             getClientManager().updateStatsChannel(ConnJson.StatsChannel.StatsChannelEvent.MEMBERS);
+            sendBuffer.flush();
         });
 
         socket.on(Socket.EVENT_DISCONNECT, args -> {
@@ -99,6 +110,7 @@ public final class WebSocketDiscordClient implements DiscordClient {
 
             // Server disconnected, meaning someone ran /disconnect
             if(args[0].equals("io server disconnect")) {
+                sendBuffer.clear();
                 if(getConnJson() == null) {
                     getLogger().info(MinecraftChatColor.YELLOW + "No connection data found to clean up.");
                     return;
@@ -227,25 +239,52 @@ public final class WebSocketDiscordClient implements DiscordClient {
 
     @Override
     public void send(String event, Object[] payload) {
-        if(isRateLimited(event)) {
-            getLogger().warn("[Socket.io] Dropping event '" + event + "' due to rate limit.");
-            return;
-        }
-
-        getLogger().debug("[Socket.io] Emitting event: " + event + ", payload: " + Arrays.toString(payload));
-        socket.emit(event, payload);
+        dispatch(event, payload, null);
     }
 
     @Override
     public void send(String event, Object[] payload, Consumer<DiscordEventResponse> callback) {
+        dispatch(event, payload, callback);
+    }
+
+    /**
+     * Shared path of both {@code send} overloads: rate limit, then the offline buffer, then the socket.
+     * @param callback nullable
+     */
+    private void dispatch(String event, Object[] payload, Consumer<DiscordEventResponse> callback) {
         if(isRateLimited(event)) {
             getLogger().warn("[Socket.io] Dropping event '" + event + "' due to rate limit.");
-            callback.accept(DiscordEventResponse.RATE_LIMITED);
+            if(callback != null) callback.accept(DiscordEventResponse.RATE_LIMITED);
+            return;
+        }
+
+        if(!isConnected()) {
+            if(sendBuffer.offer(event, payload, callback)) {
+                getLogger().debug("[Socket.io] Buffered event '" + event + "' until the Discord Bot is reachable again.");
+            }
+            else {
+                getLogger().debug("[Socket.io] Dropping event '" + event + "' because the Discord Bot is not connected.");
+                if(callback != null) callback.accept(null);
+            }
+            return;
+        }
+
+        emit(event, payload, callback);
+    }
+
+    /**
+     * Emits on the socket without buffering or rate-limit checks. Also the {@link OfflineSendBuffer.Sink}.
+     * @param callback nullable; if set, the bot's ack is awaited and forwarded to it
+     */
+    private void emit(String event, Object[] payload, Consumer<DiscordEventResponse> callback) {
+        if(callback == null) {
+            getLogger().debug("[Socket.io] Emitting event: " + event + ", payload: " + Arrays.toString(payload));
+            socket.emit(event, payload);
             return;
         }
 
         getLogger().debug("[Socket.io] Emitting event with callback: " + event + ", payload: " + Arrays.toString(payload));
-        socket.emit(event, payload, new AckWithTimeout(10_000) {
+        socket.emit(event, payload, new AckWithTimeout(ACK_TIMEOUT_MS) {
             @Override
             public void onSuccess(Object... args) {
                 // Assume the response is JSON
@@ -276,30 +315,57 @@ public final class WebSocketDiscordClient implements DiscordClient {
 
             @Override
             public void onTimeout() {
-                getLogger().error(MinecraftChatColor.RED + "Request to Discord Bot timed out.");
+                // AckWithTimeout (socket.io-client) only stops its Timer thread on success; without this every
+                // timed-out request leaks a non-daemon thread until the JVM can no longer create threads.
+                cancelTimer();
+                logTimeout();
                 callback.accept(null);
             }
         });
     }
 
-    private boolean isRateLimited(String event) {
-        Long expiry = rateLimitedUntil.get(event);
-        if(expiry == null) return false;
-        if(System.currentTimeMillis() >= expiry) {
-            rateLimitedUntil.remove(event);
-            return false;
+    /**
+     * Logs ack timeouts at most once per {@link #TIMEOUT_LOG_INTERVAL_MS}. The log line itself can be forwarded to the
+     * Discord console channel, which is another request that can time out, so an unthrottled log would feed itself.
+     */
+    private void logTimeout() {
+        long now = System.currentTimeMillis();
+        long last = lastTimeoutLog.get();
+        if(now - last >= TIMEOUT_LOG_INTERVAL_MS && lastTimeoutLog.compareAndSet(last, now)) {
+            int suppressed = suppressedTimeoutLogs.getAndSet(0);
+            getLogger().warn(MinecraftChatColor.RED + "Request to Discord Bot timed out."
+                    + (suppressed > 0 ? " (" + suppressed + " more timeouts since the last report)" : ""));
         }
-        return true;
+        else suppressedTimeoutLogs.incrementAndGet();
+    }
+
+    /** @return ms until the event's rate limit ends, or 0 if it is not rate-limited. */
+    private long rateLimitRemainingMs(String event) {
+        Long until = rateLimitedUntil.get(event);
+        if(until == null) return 0;
+
+        long remaining = until - System.currentTimeMillis();
+        if(remaining > 0) return remaining;
+        // Expired: remove only this deadline, not one that a concurrent ack just stored.
+        rateLimitedUntil.remove(event, until);
+        return 0;
+    }
+
+    private boolean isRateLimited(String event) {
+        return rateLimitRemainingMs(event) > 0;
     }
 
     @Override
     public void disconnect() {
-        if(!isConnected()) return;
+        sendBuffer.shutdown();
 
-        socket.disconnect();
+        boolean wasConnected = isConnected();
+        socket.disconnect(); // also stops socket.io's reconnect loop while offline
 
         // https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/concurrent/ExecutorService.html#:~:text=Further%20customization%20is%20also%20possible.%20For%20example%2C%20the%20following%20method%20shuts%20down%20an%20ExecutorService%20in%20two%20phases%2C%20first%20by%20calling%20shutdown%20to%20reject%20incoming%20tasks%2C%20and%20then%20calling%20shutdownNow%2C%20if%20necessary%2C%20to%20cancel%20any%20lingering%20tasks%3A
         pool.shutdown(); // Disable new tasks from being submitted
+        if(!wasConnected) return; // nothing in flight worth waiting for
+
         try {
             // Wait a while for existing tasks to terminate
             if(!pool.awaitTermination(60, TimeUnit.SECONDS)) {
